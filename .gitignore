@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[oc]
+.venv/
+build/
+dist/
+wheels/
+*.egg-info
+
+
+# Models (too large for git)
+*.onnx
+*.bin
+*.litertlm
+
+# Generated benchmark artifacts
+benchmarks/fixtures/
+benchmarks/results/
+
+# macOS
+.DS_Store
+default.profraw
+
+# IDE
+.idea/
+.vscode/
+.env

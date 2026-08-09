@@ -1,0 +1,20 @@
+{
+  "timestamp": 1786133706.537913,
+  "face": {
+    "face_detected": false,
+    "au04_brow_furrow": 0.0,
+    "au07_lid_tightener": 0.0,
+    "au15_lip_depressor": 0.0,
+    "au20_lip_stretcher": 0.0,
+    "ear": 0.3,
+    "blink_rate_per_min": 0.0,
+    "brow_tension": 0.0,
+    "jaw_tension_variance": 0.0
+  },
+  "audio": {
+    "voice_detected": false,
+    "pitch_variance": 0.0,
+    "speech_rate_proxy": 0.0,
+    "energy_jitter": 0.0
+  }
+}

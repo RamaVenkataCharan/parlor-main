@@ -1,0 +1,299 @@
+"""llama.cpp backend: spawns/manages llama-server and speaks its
+OpenAI-compatible chat API (blocking, streaming, and cache-priming)."""
+
+import http.client
+import json
+import os
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv()  # config below is read at import time — .env must apply first
+
+# Google's official QAT quants: q4_0 quality trained-in, faster than
+# K-quants. MODEL picks the size; MODEL_PATH/MMPROJ_PATH override entirely.
+# Rough guide on an M3 Pro: e2b ≈ 0.6-1.0s to first audio, e4b ≈ 1.0-1.7s
+# (noticeably better answers — the default), 12b needs ~8GB and is slower
+# still.
+MODELS = {
+    "e2b": ("google/gemma-4-E2B-it-qat-q4_0-gguf",
+            "gemma-4-E2B_q4_0-it.gguf", "gemma-4-E2B-it-mmproj.gguf"),
+    "e4b": ("google/gemma-4-E4B-it-qat-q4_0-gguf",
+            "gemma-4-E4B_q4_0-it.gguf", "gemma-4-E4B-it-mmproj.gguf"),
+    "12b": ("google/gemma-4-12B-it-qat-q4_0-gguf",
+            "gemma-4-12b-it-qat-q4_0.gguf", "mmproj-gemma-4-12b-it-qat-q4_0.gguf"),
+}
+MODEL = os.environ.get("MODEL", "e4b").lower()
+
+PORT = int(os.environ.get("LLAMA_PORT", "8081"))
+URL = os.environ.get("LLAMA_SERVER_URL", "")  # set to use an external server
+CTX = int(os.environ.get("LLAMA_CTX", "16384"))
+TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.7"))
+
+_proc: subprocess.Popen | None = None
+
+
+def resolve_model_paths() -> tuple[str, str]:
+    model = os.environ.get("MODEL_PATH", "")
+    mmproj = os.environ.get("MMPROJ_PATH", "")
+    if model and mmproj:
+        return model, mmproj
+    if MODEL not in MODELS:
+        raise RuntimeError(f"MODEL={MODEL!r} — expected one of {', '.join(MODELS)}")
+    repo, gguf, mmproj_file = MODELS[MODEL]
+    from huggingface_hub import hf_hub_download
+    try:
+        model = model or hf_hub_download(repo, gguf)
+        mmproj = mmproj or hf_hub_download(repo, mmproj_file)
+    except Exception:  # offline — use the local cache
+        kw = {"local_files_only": True}
+        model = model or hf_hub_download(repo, gguf, **kw)
+        mmproj = mmproj or hf_hub_download(repo, mmproj_file, **kw)
+    return model, mmproj
+
+
+def model_label() -> str:
+    """Human-readable model name for the UI."""
+    path = os.environ.get("MODEL_PATH", "")
+    if path:
+        return Path(path).stem
+    return f"Gemma 4 {MODEL.upper()}" if MODEL in MODELS else MODEL
+
+
+def host_port() -> tuple[str, int]:
+    if URL:
+        host, _, port = URL.split("//")[-1].partition(":")
+        return host, int(port or 80)
+    return "127.0.0.1", PORT
+
+
+def _connect(timeout: float) -> http.client.HTTPConnection:
+    return http.client.HTTPConnection(*host_port(), timeout=timeout)
+
+
+# Gemma 4 needs a recent llama.cpp: builds before b9503 lack its audio
+# support or abort loading the E2B/E4B mmproj (upstream #24084), and the
+# 12B mmproj needs b9512. An old install otherwise fails with a confusing
+# crash at model load, so the floor is enforced up front, per model.
+MIN_BUILD = 9503
+MODEL_MIN_BUILD = {"12b": 9512}
+
+INSTALL_GUIDE = "https://github.com/ggml-org/llama.cpp/blob/master/docs/install.md"
+
+
+def _hint(verb: str) -> str:
+    """brew on macOS, upstream's guide everywhere else."""
+    if sys.platform == "darwin":
+        return f"brew {verb} llama.cpp"
+    return "see " + INSTALL_GUIDE
+
+
+def server_command() -> list[str]:
+    """The llama.cpp server invocation. Homebrew and the release tarballs
+    install `llama-server`; llama.cpp's first-party installer
+    (llama.app/install.sh) instead ships a unified `llama` binary whose
+    `serve` subcommand is the same server."""
+    binary = shutil.which("llama-server")
+    if binary:
+        return [binary]
+    unified = shutil.which("llama")
+    if unified:
+        return [unified, "serve"]
+    raise RuntimeError(f"llama-server not found — install llama.cpp: {_hint('install')}")
+
+
+def check_build(cmd: list[str], floor: int) -> None:
+    """Refuse to start on a llama.cpp build below the model's floor. The
+    version is probed on the root binary (`llama serve --version` may not
+    exit). Its line looks like 'version: 10150 (dee2a846b)'; a binary
+    that reports nothing parseable (self-built trees print 'version: 0
+    (unknown)') is let through — the guard is for stale installs, not
+    custom builds."""
+    try:
+        out = subprocess.run([cmd[0], "--version"], capture_output=True,
+                             text=True, timeout=5)
+        m = re.search(r"version:\s*(\d+)", out.stderr + out.stdout)
+    except (OSError, subprocess.SubprocessError):
+        return
+    if m and 0 < int(m.group(1)) < floor:
+        # The upgrade advice must match how llama.cpp was installed: brew
+        # never put the unified `llama` binary there.
+        hint = ("re-run the llama.app installer (or see " + INSTALL_GUIDE + ")"
+                if len(cmd) > 1 else _hint("upgrade"))
+        raise RuntimeError(
+            f"llama.cpp build {m.group(1)} is too old for Gemma 4 audio "
+            f"(needs {floor}+, June 2026) — {hint}")
+
+
+class LLAMAServerError(RuntimeError):
+    """Raised when llama-server process dies, crashes, or becomes unresponsive."""
+    pass
+
+
+def is_healthy(timeout: float = 2.0) -> bool:
+    """Check if llama-server process is running and responding to GET /health."""
+    if not URL and _proc is not None:
+        if _proc.poll() is not None:
+            return False
+    try:
+        conn = _connect(timeout=timeout)
+        conn.request("GET", "/health")
+        ok = conn.getresponse().status == 200
+        conn.close()
+        return ok
+    except Exception:
+        return False
+
+
+def start() -> None:
+    global _proc
+    if URL:
+        print(f"[STAGE 7] [MODEL SANITY CHECK] Using external llama-server at {URL}")
+        return
+    cmd = server_command()
+    check_build(cmd, MODEL_MIN_BUILD.get(MODEL, MIN_BUILD))
+    model, mmproj = resolve_model_paths()
+    print(f"[STAGE 7] [MODEL SANITY CHECK] Model={MODEL}, GGUF={Path(model).name}, CTX={CTX}, Port={PORT}")
+    print(f"Starting llama-server with {Path(model).name} (ctx={CTX})...")
+    # Output goes to DEVNULL — un-silence here when debugging llama itself.
+    _proc = subprocess.Popen(
+        cmd + ["-m", model, "--mmproj", mmproj, "-ngl", "99",
+               "--port", str(PORT), "-c", str(CTX), "-np", "1"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    deadline = time.time() + 180
+    while time.time() < deadline:
+        if _proc.poll() is not None:
+            raise LLAMAServerError(f"llama-server process exited unexpectedly with code {_proc.returncode}")
+        if is_healthy(timeout=2.0):
+            print("[STAGE 7] [LLAMA-SERVER HEALTH OK] llama-server ready.")
+            return
+        time.sleep(1)
+    raise LLAMAServerError("llama-server did not become ready in 180s")
+
+
+def stop() -> None:
+    if _proc:
+        _proc.terminate()
+
+
+def _chat_body(messages: list, max_tokens: int, stream: bool,
+               temperature: float | None = None,
+               json_schema: dict | None = None) -> dict:
+    body = {
+        "messages": messages,
+        "max_tokens": max_tokens,
+        "temperature": TEMPERATURE if temperature is None else temperature,
+        "stream": stream,
+        "cache_prompt": True,
+        "chat_template_kwargs": {"enable_thinking": False},
+    }
+    if json_schema:
+        # llama-server compiles the schema to a grammar: the output is
+        # structurally guaranteed to parse (used by the action head).
+        body["response_format"] = {"type": "json_schema",
+                                   "json_schema": {"schema": json_schema}}
+    if stream:
+        # The final chunk then carries usage.prompt_tokens — the REAL
+        # context size, which drives history rotation (estimates drift).
+        body["stream_options"] = {"include_usage": True}
+    return body
+
+
+def chat_blocking(messages: list, max_tokens: int,
+                  temperature: float | None = None,
+                  json_schema: dict | None = None) -> str:
+    """Non-streaming request; returns the message content ('' on discard)."""
+    try:
+        conn = _connect(timeout=300)
+        conn.request("POST", "/v1/chat/completions",
+                     json.dumps(_chat_body(messages, max_tokens, stream=False,
+                                           temperature=temperature,
+                                           json_schema=json_schema)),
+                     {"Content-Type": "application/json"})
+        resp = conn.getresponse()
+        data = json.loads(resp.read())
+        conn.close()
+        if "error" in data:
+            raise LLAMAServerError(f"llama-server: {data['error']}")
+        return data["choices"][0]["message"].get("content") or ""
+    except Exception as e:
+        if not is_healthy(timeout=1.0):
+            print(f"[LLAMA-SERVER CRASH DETECTED] llama-server process is unhealthy/dead: {e}")
+            raise LLAMAServerError(f"llama-server crashed or is unreachable: {e}") from e
+        raise
+
+
+class ChatStream:
+    """Streaming chat request, driven from an executor thread. cancel() is
+    thread-safe and actually aborts generation server-side (the connection
+    close is observed by llama-server)."""
+
+    def __init__(self, messages: list, max_tokens: int):
+        self.body = _chat_body(messages, max_tokens, stream=True)
+        self.conn = None
+        self.cancelled = False
+        self.prompt_tokens: int | None = None  # real count, from the usage chunk
+
+    def run(self, on_delta):
+        # self.conn is published before the request is sent, so a cancel()
+        # landing mid-upload still tears the socket down.
+        t0 = time.time()
+        print(f"[STAGE 5] [LLM POST REQUEST] Connecting to llama-server at http://{host_port()[0]}:{host_port()[1]}/v1/chat/completions...")
+        try:
+            self.conn = _connect(timeout=300)
+            self.conn.request("POST", "/v1/chat/completions", json.dumps(self.body),
+                              {"Content-Type": "application/json"})
+            resp = self.conn.getresponse()
+            print(f"[STAGE 5] [LLM HTTP RESPONSE] status={resp.status} (took {time.time()-t0:.2f}s)")
+            if resp.status != 200:
+                body = resp.read()[:300]
+                self.conn.close()
+                print(f"[STAGE 5] [LLM HTTP ERROR] HTTP {resp.status}: {body!r}")
+                raise LLAMAServerError(f"llama-server HTTP {resp.status}: {body!r}")
+            while True:
+                line = resp.readline()
+                if not line:
+                    break
+                line = line.strip()
+                if not line.startswith(b"data: "):
+                    continue
+                payload = line[6:]
+                if payload == b"[DONE]":
+                    break
+                chunk = json.loads(payload)
+                usage = chunk.get("usage")
+                if usage and usage.get("prompt_tokens"):
+                    self.prompt_tokens = usage["prompt_tokens"]
+                choices = chunk.get("choices") or []
+                text = choices[0].get("delta", {}).get("content") if choices else None
+                if text:
+                    on_delta(text)
+        except Exception as e:
+            if not self.cancelled:
+                print(f"LLM stream ended early: {type(e).__name__}: {e}")
+                if not is_healthy(timeout=1.0):
+                    print(f"[LLAMA-SERVER CRASH DETECTED] Process is unresponsive/dead.")
+                    raise LLAMAServerError(f"llama-server process crashed or disconnected mid-stream: {e}") from e
+        finally:
+            try:
+                if self.conn:
+                    self.conn.close()
+            except OSError:
+                pass
+
+    def cancel(self):
+        self.cancelled = True
+        try:
+            if self.conn and self.conn.sock:
+                self.conn.sock.shutdown(socket.SHUT_RDWR)
+            if self.conn:
+                self.conn.close()
+        except OSError:
+            pass

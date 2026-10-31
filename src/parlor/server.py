@@ -40,11 +40,12 @@ DISCONNECT_ERRORS = (WebSocketDisconnect, ClientDisconnected)
 from dotenv import load_dotenv
 load_dotenv()  # before importing llama — it reads its config at import time
 
-from parlor import actions, llama, reasoner, tts
+from parlor import actions, db, llama, reasoner, tts
 from parlor.modes import MODES
 from parlor.pipeline import (estimate_tokens, pad_tail_silence, prime_cache,
                              release_client, run_turn, send_json, text_part,
                              user_content, valid_audio, wav_to_float32)
+from parlor.wellness import WellnessService
 
 # Turn completeness is judged by the smart-turn audio classifier before the
 # LLM is involved, so the prompt carries no FINISHED/WAIT machinery at all.
@@ -297,6 +298,21 @@ REASONER_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="reasoner")
 
 STARTUP_ERROR: str | None = None
 ACTIVE_SESSION_WS: WebSocket | None = None
+wellness_service: WellnessService | None = None
+
+
+async def dispatch_wellness_intervention(intervention_pkg: dict) -> None:
+    """Pushes a triggered micro-intervention over the active client WebSocket."""
+    global ACTIVE_SESSION_WS
+    if ACTIVE_SESSION_WS is not None:
+        try:
+            await send_json(ACTIVE_SESSION_WS, {
+                "type": "intervention_triggered",
+                "intervention": intervention_pkg
+            })
+            print(f"[WELLNESS WS] Dispatched intervention '{intervention_pkg.get('title')}' to active client.")
+        except Exception as e:
+            print(f"[WELLNESS WS ERROR] Failed pushing intervention: {e}")
 
 
 def load_models():
@@ -313,13 +329,27 @@ def load_models():
 
 @asynccontextmanager
 async def lifespan(app):
-    global STARTUP_ERROR
+    global STARTUP_ERROR, wellness_service
     try:
         await asyncio.get_event_loop().run_in_executor(None, load_models)
     except Exception as e:
         STARTUP_ERROR = str(e)
         print(f"[STARTUP ERROR] Lifespan task failed: {e}")
+
+    # Start Phase 5 Wellness Monitoring loop on the active event loop
+    try:
+        wellness_service = WellnessService(
+            cycle_interval_sec=8.0,
+            on_intervention=dispatch_wellness_intervention
+        )
+        wellness_service.start()
+    except Exception as e:
+        print(f"[WELLNESS START ERROR] Could not initialize WellnessService: {e}")
+
     yield
+
+    if wellness_service:
+        wellness_service.stop()
     llama.stop()
 
 
@@ -331,6 +361,12 @@ app.mount("/static", StaticFiles(directory=Path(__file__).parent / "web" / "stat
 async def root():
     html = (Path(__file__).parent / "web" / "index.html").read_text(encoding="utf-8")
     return HTMLResponse(content=html.replace("{{model}}", llama.model_label()))
+
+
+@app.get("/api/wellness/history")
+async def get_wellness_history(limit: int = 50):
+    """Retrieve recent affective stress assessments from local SQLite database."""
+    return db.get_recent_history(limit=limit)
 
 
 def turn_instruction(msg: dict, has_image: bool, has_audio: bool) -> str:
@@ -737,11 +773,45 @@ async def _run_session(ws: WebSocket):
                                          "id": msg["id"], "cancelled": True})
                 continue
 
+            if msg.get("type") == "set_wellness_sensitivity":
+                sens = str(msg.get("sensitivity", "balanced"))
+                if wellness_service:
+                    wellness_service.set_sensitivity(sens)
+                await send_json(ws, {"type": "wellness_sensitivity_changed", "sensitivity": sens})
+                continue
+
+            if msg.get("type") == "set_wellness_mute":
+                muted = bool(msg.get("muted", False))
+                if wellness_service:
+                    wellness_service.set_muted(muted)
+                await send_json(ws, {"type": "wellness_mute_changed", "muted": muted})
+                continue
+
+            if msg.get("type") == "snooze_wellness":
+                mins = float(msg.get("minutes", 10.0))
+                if wellness_service:
+                    wellness_service.snooze(mins)
+                await send_json(ws, {"type": "wellness_snoozed", "minutes": mins})
+                continue
+
+            if msg.get("type") == "wellness_telemetry":
+                if msg.get("image") and wellness_service:
+                    wellness_service.feed_frame(msg["image"])
+                if msg.get("audio") and valid_audio(msg.get("audio")) and wellness_service:
+                    try:
+                        wellness_service.feed_audio(wav_to_float32(msg["audio"]))
+                    except Exception:
+                        pass
+                continue
+
             if msg.get("type") == "frame":
-                if msg.get("image") and mode.wants_camera:
-                    frame_image = msg["image"]
-                    speech_chunks = []
-                    await prime(held_audio)
+                if msg.get("image"):
+                    if wellness_service:
+                        wellness_service.feed_frame(msg["image"])
+                    if mode.wants_camera:
+                        frame_image = msg["image"]
+                        speech_chunks = []
+                        await prime(held_audio)
                 continue
 
             if msg.get("type") == "speech_chunk":
@@ -750,6 +820,11 @@ async def _run_session(ws: WebSocket):
                 if valid_audio(msg.get("audio")):
                     speech_chunks.append(msg["audio"])
                     last_activity["t"] = time.time()
+                    if wellness_service:
+                        try:
+                            wellness_service.feed_audio(wav_to_float32(msg["audio"]))
+                        except Exception:
+                            pass
                     await prime(held_audio + speech_chunks)
                 continue
 
@@ -758,6 +833,13 @@ async def _run_session(ws: WebSocket):
             speech_chunks = []
             if valid_audio(msg.get("audio")):
                 audio_b64s.append(msg["audio"])
+                if wellness_service:
+                    try:
+                        wellness_service.feed_audio(wav_to_float32(msg["audio"]))
+                    except Exception:
+                        pass
+            if msg.get("image") and wellness_service:
+                wellness_service.feed_frame(msg["image"])
             image = (msg.get("image") or frame_image) if mode.wants_camera else None
             has_audio = bool(audio_b64s)
             is_flush = msg.get("type") == "flush"

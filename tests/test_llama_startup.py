@@ -2,16 +2,27 @@
 stub binaries on PATH, no real llama.cpp involved."""
 
 import stat
+import sys
 
 import pytest
 
 from parlor import llama
 
+EXT = ".cmd" if sys.platform == "win32" else ""
+
 
 def _stub(dir, name: str, script: str) -> None:
-    path = dir / name
-    path.write_text(f"#!/bin/sh\n{script}\n")
-    path.chmod(path.stat().st_mode | stat.S_IXUSR)
+    if sys.platform == "win32":
+        path = dir / f"{name}.cmd"
+        if '[ "$1" = "--version" ]' in script:
+            cmd_body = 'if "%~1"=="--version" echo version: 9000 (cafe) 1>&2'
+        else:
+            cmd_body = script.replace('>&2', '1>&2').replace('"', '')
+        path.write_text(f"@echo off\n{cmd_body}\n")
+    else:
+        path = dir / name
+        path.write_text(f"#!/bin/sh\n{script}\n")
+        path.chmod(path.stat().st_mode | stat.S_IXUSR)
 
 
 @pytest.fixture
@@ -24,14 +35,16 @@ def on_path(tmp_path, monkeypatch):
 def test_prefers_llama_server(on_path):
     _stub(on_path, "llama-server", "")
     _stub(on_path, "llama", "")
-    assert llama.server_command() == [str(on_path / "llama-server")]
+    cmd = llama.server_command()
+    assert [c.lower() for c in cmd] == [str(on_path / f"llama-server{EXT}").lower()]
 
 
 def test_falls_back_to_unified_binary(on_path):
     # llama.cpp's first-party installer ships `llama` with a `serve`
     # subcommand and no `llama-server` at all.
     _stub(on_path, "llama", "")
-    assert llama.server_command() == [str(on_path / "llama"), "serve"]
+    cmd = llama.server_command()
+    assert [cmd[0].lower()] + cmd[1:] == [str(on_path / f"llama{EXT}").lower(), "serve"]
 
 
 def test_missing_binary_says_how_to_install(on_path):

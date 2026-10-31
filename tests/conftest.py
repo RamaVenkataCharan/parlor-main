@@ -10,6 +10,7 @@ PARLOR_TEST_URL=ws://host:port/ws to test an already-running server instead
 import http.server
 import json
 import os
+import shutil
 import socket
 import subprocess
 import sys
@@ -116,6 +117,9 @@ def server(tmp_path_factory, reasoner_mock) -> Server:
     if external:
         yield Server(url=external)
         return
+
+    if not shutil.which("llama-server") and not shutil.which("llama"):
+        pytest.skip("llama-server binary not found on PATH — E2E suite requires llama.cpp installed (or set PARLOR_TEST_URL)")
 
     # A stale process on either port would make the readiness probe pass
     # against the WRONG server and the whole run would test old code.

@@ -8,10 +8,13 @@ const waveformCtx = waveformCanvas.getContext('2d');
 
 const diagBtn = $('diagBtn'), diagPanel = $('diagPanel'), diagClose = $('diagClose');
 const diagMic = $('diagMic'), diagVad = $('diagVad'), diagWs = $('diagWs'), diagLlm = $('diagLlm');
+const wellnessBtn = $('wellnessBtn'), wellnessPanel = $('wellnessPanel'), wellnessClose = $('wellnessClose');
+const wellnessSensitivity = $('wellnessSensitivity'), wellnessMuteToggle = $('wellnessMuteToggle');
 const toastContainer = $('toastContainer');
 
 let ws, mediaStream, myvad;
 let diagnosticsBound = false;
+let wellnessControlsBound = false;
 let cameraEnabled = true;
 let audioCtx;
 let state = 'loading';
@@ -89,7 +92,10 @@ function toggleDiagnostics(forceOpen) {
   const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : diagPanel.hidden;
   diagPanel.hidden = !shouldOpen;
   diagBtn.setAttribute('aria-expanded', String(shouldOpen));
-  if (shouldOpen) updateDiagnostics();
+  if (shouldOpen) {
+    if (wellnessPanel && !wellnessPanel.hidden) toggleWellness(false);
+    updateDiagnostics();
+  }
 }
 
 function bindDiagnosticsControls() {
@@ -109,6 +115,49 @@ function bindDiagnosticsControls() {
     }
   }
   diagnosticsBound = true;
+}
+
+function toggleWellness(forceOpen) {
+  if (!wellnessBtn || !wellnessPanel) return;
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : wellnessPanel.hidden;
+  wellnessPanel.hidden = !shouldOpen;
+  wellnessBtn.setAttribute('aria-expanded', String(shouldOpen));
+  if (shouldOpen && diagPanel && !diagPanel.hidden) {
+    toggleDiagnostics(false);
+  }
+}
+
+function bindWellnessControls() {
+  if (wellnessControlsBound) return;
+  if (wellnessBtn && wellnessPanel) {
+    wellnessBtn.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      toggleWellness();
+    });
+    if (wellnessClose) {
+      wellnessClose.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleWellness(false);
+      });
+    }
+  }
+  if (wellnessSensitivity) {
+    wellnessSensitivity.addEventListener('change', (e) => {
+      const val = e.target.value;
+      wsSend({ type: 'set_wellness_sensitivity', sensitivity: val });
+      showToast(`Wellness sensitivity set to ${val}`, 'success', 3000);
+    });
+  }
+  if (wellnessMuteToggle) {
+    wellnessMuteToggle.addEventListener('change', (e) => {
+      const isMuted = e.target.checked;
+      wsSend({ type: 'set_wellness_mute', muted: isMuted });
+      showToast(isMuted ? 'Wellness alerts muted' : 'Wellness alerts active', isMuted ? 'warning' : 'success', 3000);
+    });
+  }
+  wellnessControlsBound = true;
 }
 
 // ── Waveform Visualizer ──
@@ -1111,6 +1160,7 @@ function hideInterventionCard() {
 
 document.addEventListener('DOMContentLoaded', () => {
   bindDiagnosticsControls();
+  bindWellnessControls();
 
   const closeBtn = document.getElementById('interventionClose');
   if (closeBtn) closeBtn.addEventListener('click', hideInterventionCard);
@@ -1123,9 +1173,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const snoozeBtn = document.getElementById('interventionSnooze');
   if (snoozeBtn) snoozeBtn.addEventListener('click', () => {
+    wsSend({ type: 'snooze_wellness', minutes: 10 });
     showToast('Interventions snoozed for 10 minutes', 'warning', 4000);
     hideInterventionCard();
   });
+
+  // Periodic wellness telemetry sender: stream camera frames every 8s while idle
+  setInterval(() => {
+    if (wsOpen() && cameraEnabled && !speechActive && state === 'listening') {
+      const frame = captureFrame();
+      if (frame) {
+        wsSend({ type: 'wellness_telemetry', image: frame });
+      }
+    }
+  }, 8000);
 });
 
 init();

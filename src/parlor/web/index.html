@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
 </head>
 <body>
 
@@ -17,10 +18,36 @@
     <h1>Parlor</h1>
   </div>
   <div class="header-right">
+    <button id="wellnessBtn" class="diag-btn" title="Wellness Settings" type="button" aria-controls="wellnessPanel" aria-expanded="false">🌿 Wellness</button>
     <button id="diagBtn" class="diag-btn" title="Toggle Diagnostics" type="button" aria-controls="diagPanel" aria-expanded="false">⚙ Diagnostics</button>
     <div id="status" class="status-pill disconnected">Disconnected</div>
   </div>
 </header>
+
+<!-- Collapsible Wellness Settings Panel -->
+<div id="wellnessPanel" class="diag-panel" hidden role="dialog" aria-label="Wellness Settings">
+  <div class="diag-header">
+    <span>Wellness & Stress Settings</span>
+    <button id="wellnessClose" class="diag-close">✕</button>
+  </div>
+  <div class="diag-body">
+    <div class="diag-row">
+      <span class="diag-label">Sensitivity</span>
+      <select id="wellnessSensitivity" class="wellness-select">
+        <option value="conservative">Conservative (4 cycles, 7.5m cooldown)</option>
+        <option value="balanced" selected>Balanced (3 cycles, 5m cooldown)</option>
+        <option value="sensitive">Sensitive (2 cycles, 3m cooldown)</option>
+      </select>
+    </div>
+    <div class="diag-row">
+      <span class="diag-label">Mute Alerts</span>
+      <label class="switch">
+        <input type="checkbox" id="wellnessMuteToggle">
+        <span class="slider round"></span>
+      </label>
+    </div>
+  </div>
+</div>
 
 <!-- Collapsible Diagnostics Panel -->
 <div id="diagPanel" class="diag-panel" hidden role="dialog" aria-label="Pipeline Diagnostics">

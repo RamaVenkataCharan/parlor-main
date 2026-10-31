@@ -5,12 +5,16 @@ child; every turn after that can only fail gracefully.
 """
 
 import subprocess
+import sys
+import pytest
 
 from util import audio
 
 
 def test_llama_death_fails_gracefully(server, session):
     server.require_managed()
+    if sys.platform == "win32":
+        pytest.skip("POSIX process inspection (pgrep/kill) not supported on Windows")
     out = subprocess.run(["pgrep", "-P", str(server.proc.pid), "llama-server"],
                          capture_output=True, text=True).stdout.split()
     assert out, "could not find the spawned llama-server"

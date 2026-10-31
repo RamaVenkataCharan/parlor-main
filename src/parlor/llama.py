@@ -117,7 +117,7 @@ def check_build(cmd: list[str], floor: int) -> None:
     custom builds."""
     try:
         out = subprocess.run([cmd[0], "--version"], capture_output=True,
-                             text=True, timeout=5)
+                             text=True, timeout=5, shell=(sys.platform == "win32"))
         m = re.search(r"version:\s*(\d+)", out.stderr + out.stdout)
     except (OSError, subprocess.SubprocessError):
         return

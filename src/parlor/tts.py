@@ -41,10 +41,22 @@ class ONNXBackend(TTSBackend):
 
     def __init__(self):
         import kokoro_onnx
-        from huggingface_hub import hf_hub_download
-
-        model_path = hf_hub_download("fastrtc/kokoro-onnx", "kokoro-v1.0.onnx")
-        voices_path = hf_hub_download("fastrtc/kokoro-onnx", "voices-v1.0.bin")
+        from pathlib import Path
+        model_path = os.environ.get("KOKORO_MODEL_PATH")
+        voices_path = os.environ.get("KOKORO_VOICES_PATH")
+        if not model_path or not voices_path:
+            cand_dir = Path(__file__).resolve().parent.parent.parent / "models"
+            cand_m = cand_dir / "kokoro-v1.0.onnx"
+            cand_v = cand_dir / "voices-v1.0.bin"
+            if cand_m.exists() and cand_v.exists():
+                model_path = str(cand_m)
+                voices_path = str(cand_v)
+        if not model_path:
+            from huggingface_hub import hf_hub_download
+            model_path = hf_hub_download("fastrtc/kokoro-onnx", "kokoro-v1.0.onnx")
+        if not voices_path:
+            from huggingface_hub import hf_hub_download
+            voices_path = hf_hub_download("fastrtc/kokoro-onnx", "voices-v1.0.bin")
 
         self._model = kokoro_onnx.Kokoro(model_path, voices_path)
         self.sample_rate = 24000

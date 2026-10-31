@@ -10,9 +10,12 @@ wheels/
 
 
 # Models (too large for git)
+models/
+*.gguf
 *.onnx
 *.bin
 *.litertlm
+!src/parlor/web/static/vendor/*.onnx
 
 # Generated benchmark artifacts
 benchmarks/fixtures/

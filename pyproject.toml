@@ -17,6 +17,9 @@ dependencies = [
     "websockets>=16.0",
     "python-dotenv>=1.0.0",
     "onnxruntime>=1.24.4",
+    "opencv-python>=5.0.0.93",
+    "mediapipe==0.10.14",
+    "scipy>=1.17.1",
 ]
 
 [project.scripts]

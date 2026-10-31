@@ -367,7 +367,8 @@ function connect() {
       setStatus('disconnected', 'Server Error');
       setState('muted');
       updateDiagnostics();
-      showToast('Server initialization failed — check server logs and configuration', 'error', 15000);
+      showToast('Server initialization failed: llama-server or model unavailable', 'error', 15000);
+      showModelUnavailableMessage('The assistant engine (llama-server) or quantized model weights failed to initialize. Please check server configuration.');
       console.warn('[SERVER INIT ERROR] Connection closed (code 1011): server model load failed.');
       return;
     }
@@ -1093,8 +1094,8 @@ async function init() {
         console.log('VAD misfire (too short)');
       },
       onFrameProcessed: (probs, frame) => handleVadFrame(probs, Float32Array.from(frame)),
-      onnxWASMBasePath: "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/",
-      baseAssetPath: "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.29/dist/",
+      onnxWASMBasePath: "/static/vendor/",
+      baseAssetPath: "/static/vendor/",
     });
     myvad.start();
   } catch (e) {

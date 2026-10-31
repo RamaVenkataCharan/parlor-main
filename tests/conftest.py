@@ -20,6 +20,9 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import load_dotenv
+load_dotenv()
+
 import pytest
 
 import fixtures  # resolved via pythonpath = ["benchmarks"] (pyproject.toml)

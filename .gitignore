@@ -3,7 +3,8 @@ __pycache__/
 *.py[oc]
 .venv/
 build/
-dist/
+dist/*
+!dist/parlor_submission_batch14.zip
 wheels/
 *.egg-info
 .pytest_cache/

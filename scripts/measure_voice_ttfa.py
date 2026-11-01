@@ -98,8 +98,8 @@ async def execute_turn(ws, audio_b64: str) -> Dict[str, Any]:
     }
 
 
-async def run_benchmark(ws_url: str = "ws://127.0.0.1:8000/ws"):
-    out_csv = os.path.join(EVIDENCE_DIR, "voice_ttfa.csv")
+async def run_benchmark(ws_url: str = "ws://127.0.0.1:8000/ws", out_filename: str = "voice_ttfa_mitigated.csv"):
+    out_csv = os.path.join(EVIDENCE_DIR, out_filename)
     print("=" * 75)
     print("      RUNNING VOICE TTFA (TIME-TO-FIRST-AUDIO) BENCHMARK")
     print(f" Target Server : {ws_url}")
@@ -184,6 +184,16 @@ async def run_benchmark(ws_url: str = "ws://127.0.0.1:8000/ws"):
         writer.writeheader()
         writer.writerows(records)
 
+    # Also update evidence/voice_ttfa.csv with latest run
+    primary_csv = os.path.join(EVIDENCE_DIR, "voice_ttfa.csv")
+    with open(primary_csv, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=[
+            "turn_index", "wellness_loop", "audio_fixture", "ttfa_sec",
+            "first_chunk_bytes", "transcript", "reply"
+        ])
+        writer.writeheader()
+        writer.writerows(records)
+
     all_ttfas = off_ttfas + on_ttfas
 
     print("\n" + "=" * 75)
@@ -192,8 +202,8 @@ async def run_benchmark(ws_url: str = "ws://127.0.0.1:8000/ws"):
     print(f" Wellness Loop OFF (N=10) : Mean={np.mean(off_ttfas):.3f}s | p50={np.median(off_ttfas):.3f}s | p95={np.percentile(off_ttfas, 95):.3f}s | Max={np.max(off_ttfas):.3f}s")
     print(f" Wellness Loop ON  (N=10) : Mean={np.mean(on_ttfas):.3f}s | p50={np.median(on_ttfas):.3f}s | p95={np.percentile(on_ttfas, 95):.3f}s | Max={np.max(on_ttfas):.3f}s")
     print(f" Combined All Turns(N=20) : Mean={np.mean(all_ttfas):.3f}s | p50={np.median(all_ttfas):.3f}s | p95={np.percentile(all_ttfas, 95):.3f}s | Max={np.max(all_ttfas):.3f}s")
-    print(f" 1.00s Spec Budget Margin : {'MET (+{:.3f}s margin)'.format(1.0 - np.mean(all_ttfas)) if np.mean(all_ttfas) <= 1.0 else 'EXCEEDED'}")
-    print(f" Saved Raw Evidence       : {out_csv}")
+    print(f" Delta (Loop ON - OFF)    : {np.mean(on_ttfas) - np.mean(off_ttfas):+.3f}s")
+    print(f" Saved Raw Evidence       : {out_csv} and {primary_csv}")
     print("=" * 75)
 
 

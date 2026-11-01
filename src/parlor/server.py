@@ -826,6 +826,7 @@ async def _run_session(ws: WebSocket):
                     speech_chunks.append(msg["audio"])
                     last_activity["t"] = time.time()
                     if wellness_service:
+                        wellness_service.set_voice_active(True)
                         try:
                             wellness_service.feed_audio(wav_to_float32(msg["audio"]))
                         except Exception:
@@ -861,6 +862,8 @@ async def _run_session(ws: WebSocket):
             # session loop.
             p_complete = None  # smart-turn probability, surfaced in the UI
             print(f"[SERVER TURN START] mode={mode.name!r}, has_audio={has_audio}, uses_smart_turn={mode.uses_smart_turn}")
+            if wellness_service:
+                wellness_service.set_voice_active(True)
             try:
                 # The audio classifier judges completeness before the LLM is
                 # involved at all. Incomplete → hold the segments (they stay
@@ -986,6 +989,9 @@ async def _run_session(ws: WebSocket):
             except Exception:
                 traceback.print_exc()  # keep the session alive
                 await release_client(ws)
+            finally:
+                if wellness_service:
+                    wellness_service.set_voice_active(False)
 
             # A result that finished while the floor was busy delivers now.
             drain_ready()

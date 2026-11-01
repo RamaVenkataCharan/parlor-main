@@ -1,8 +1,8 @@
 # Ecological Momentary Assessment (EMA) Re-Collection Kit
 ## Standard Human Study Protocol, Collector Harness & Evaluation Guide
 
-> **PROTOCOL STATUS:** `REQUIRES HUMAN: Collect empirical data with ≥ 3 human participants before final viva`  
-> **ETHICAL COMPLIANCE:** Voluntary academic peer evaluation; 100% on-device local execution; zero telemetry or external transmission; immediate disposal of raw audio/video frames.
+> **PROTOCOL STATUS:** `REQUIRES HUMAN: Collect empirical data with ≥ 8 human participants (including external peers) before final viva`  
+> **ETHICAL COMPLIANCE:** Voluntary academic peer evaluation; informed consent mandatory; 100% on-device local execution; zero telemetry or external transmission; immediate disposal of raw audio/video frames.
 
 ---
 
@@ -101,25 +101,31 @@ cd parlor-main-main
 uv run python scripts/ema_collector.py
 ```
 Follow the interactive prompts:
-1. Enter Participant ID (e.g., `P01`, `P02`, `P03`).
-2. Select experimental condition (1 to 4).
-3. Allow the participant to perform the activity for 5 minutes.
-4. Press `[Enter]` upon completion of the window.
-5. Enter the participant's ratings for Q1, Q2, and Q3.
-6. The script automatically fetches the timestamp-aligned assessment from `shared_state/wellness_history.db`, checks agreement, and appends the paired trial to `shared_state/ema_records.json`.
+1. Confirm participant signed informed consent (`[y/N]`).
+2. Enter Participant ID (e.g., `P01`, `P02`, `P08`).
+3. Indicate whether participant is a project developer or external peer (`[y/N]`).
+4. Select experimental condition (1 to 4).
+5. Allow the participant to perform the activity for 5 minutes.
+6. Press `[Enter]` upon completion of the window.
+7. Enter the participant's ratings for Q1, Q2, and Q3.
+8. The script automatically fetches the timestamp-aligned assessment from `shared_state/wellness_history.db`, checks agreement, and appends the paired trial to `shared_state/ema_records.json`.
 
-Repeat across all 4 conditions for at least 3 distinct human participants ($N \ge 12$ paired observation trials).
+Repeat across all 4 conditions for at least 8 distinct human participants (recommended: 4 developers + 4 external peers; $N \ge 32$ paired observation trials) to establish statistical power and test for confirmation bias.
 
 ### Step 3: Run the Empirical Evaluation Script
 After completing all collection sessions, generate the official empirical accuracy report:
 ```powershell
-uv run python scripts/evaluate_ema.py
+.\.venv\Scripts\python.exe scripts/evaluate_ema.py
 ```
 This script computes:
-- Exact Tier Agreement Percentage
-- $\pm 1$-Tier Clinical Tolerance Percentage
-- Normalized Confusion Matrix
-- Mean absolute error across stress tiers
+- Strict integrity & consent audit (refuses processing if consent flag or IDs are missing)
+- Ground-truth class distribution and majority-class baseline
+- Exact Tier Agreement Percentage with 95% bootstrap confidence intervals
+- $\pm 1$-Tier Clinical Tolerance Percentage with 95% bootstrap confidence intervals
+- Quadratic-Weighted Cohen's Kappa ($\kappa_w$)
+- 3x3 Confusion Matrix (System Prediction vs Ground Truth)
+- Per-participant agreement breakdown
+- Tier 2 safety rates (False Positive Rate and False Negative Rate) computed separately with and without developers
 
 Save the terminal output to `evidence/ema_human_evaluation.txt` and reference the resulting verified figures in your final presentation.
 

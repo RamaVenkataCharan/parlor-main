@@ -10,7 +10,7 @@
 **Parlor** is a privacy-first, on-device multimodal AI assistant capable of real-time conversational voice interaction, visual understanding via camera stream, hands-free turn-taking, neural text-to-speech synthesis, and passive affective stress/wellness monitoring.
 
 Operating as a unified single process, Parlor coordinates two complementary cognitive architectures:
-1. **System 1 (Conversational Interaction Engine):** Low-latency cascade pipeline achieving **Time to First Audio (TTFA ~0.7s - 0.8s)** through acoustic turn-taking classification (`smart-turn-v3.2`), speculative prompt cache prefilling on `llama-server` (Gemma 4 GGUF), and local neural TTS (`kokoro-onnx`).
+1. **System 1 (Conversational Interaction Engine):** Low-latency cascade pipeline achieving **Time to First Audio (TTFA measured: $1.411\,\text{s}$ loop off, $1.829\,\text{s}$ loop on)** through acoustic turn-taking classification (`smart-turn-v3.2`), speculative prompt cache prefilling on `llama-server` (Google Gemma 4 E2B Q4_0), and local neural TTS (`kokoro-onnx`).
 2. **System 2 (Affective Wellness Monitoring Engine):** Continuous on-device stress analysis extracting facial Action Units via MediaPipe FaceMesh and vocal acoustic biomarkers via Librosa/DSP. It reasons qualitatively over rolling feature windows using the local SLM, records longitudinal trends in an on-device SQLite store, and delivers personalized micro-interventions over WebSocket without relying on brittle fixed numeric thresholds.
 
 ---

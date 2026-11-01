@@ -1,0 +1,32 @@
+{
+  "timestamp": 1793556263.9827678,
+  "camera_only": {
+    "latency_s": 4.633,
+    "parsed": {
+      "stress_level": "Moderate (Tier 1)",
+      "primary_drivers": [
+        "AU04 Brow Furrow=0.76",
+        "AU07 Lid Tightener=0.68"
+      ],
+      "explainable_reasoning": "The presence of elevated AU04 (Brow Furrow) and AU07 (Lid Tightener) indicates active cognitive engagement or mild negative affect, suggesting concentration or slight concern. The lack of vocal activity and normal vocal metrics (zero tension index) suggest the current state is internal and focused, rather than externally vocalized stress.",
+      "confidence_score": 0.85,
+      "ambiguity_note": "The lack of vocal data (RMS Energy: 0.0) means the assessment is purely based on facial micro-expressions. The low EAR (0.24) suggests the eyes are not actively engaged in speech or intense focus, which slightly tempers the interpretation of the facial tension."
+    },
+    "raw": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow=0.76\",\n    \"AU07 Lid Tightener=0.68\"\n  ],\n  \"explainable_reasoning\": \"The presence of elevated AU04 (Brow Furrow) and AU07 (Lid Tightener) indicates active cognitive engagement or mild negative affect, suggesting concentration or slight concern. The lack of vocal activity and normal vocal metrics (zero tension index) suggest the current state is internal and focused, rather than externally vocalized stress.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The lack of vocal data (RMS Energy: 0.0) means the assessment is purely based on facial micro-expressions. The low EAR (0.24) suggests the eyes are not actively engaged in speech or intense focus, which slightly tempers the interpretation of the facial tension.\"\n}\n```"
+  },
+  "mic_only": {
+    "latency_s": 2.368,
+    "parsed": {
+      "stress_level": "Moderate (Tier 1)",
+      "primary_drivers": [
+        "Pitch Mean (F0) Delta=+43.0 Hz",
+        "Local Jitter (Period Perturbation)=4.1%",
+        "Vocal Tension Index (HF Energy >1kHz Ratio)=0.72"
+      ],
+      "explainable_reasoning": "The vocal biomarkers indicate significant physiological arousal, evidenced by a high mean pitch shift (+43.0 Hz) and elevated vocal tension (0.72). The increased jitter and shimmer suggest vocal instability and increased muscular effort in the vocal folds, consistent with moderate stress or heightened emotional engagement.",
+      "confidence_score": 0.85,
+      "ambiguity_note": "Facial micro-expression data is not detected due to poor lighting, limiting the assessment of facial tension markers (AU04, AU07, etc.)."
+    },
+    "raw": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+43.0 Hz\",\n    \"Local Jitter (Period Perturbation)=4.1%\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.72\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate significant physiological arousal, evidenced by a high mean pitch shift (+43.0 Hz) and elevated vocal tension (0.72). The increased jitter and shimmer suggest vocal instability and increased muscular effort in the vocal folds, consistent with moderate stress or heightened emotional engagement.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"Facial micro-expression data is not detected due to poor lighting, limiting the assessment of facial tension markers (AU04, AU07, etc.).\"\n}\n```"
+  }
+}

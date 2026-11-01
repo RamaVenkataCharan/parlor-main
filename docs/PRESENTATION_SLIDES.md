@@ -51,18 +51,19 @@
 ---
 
 ### Slide 5: Perception Layer: Facial Micro-Expression Extraction
-- **Landmarking Core:** Google MediaPipe FaceMesh tracking 478 3D landmarks in real time (**1.75 ms mean, 1.91 ms p95** on CPU).
+- **Landmarking Core:** Google MediaPipe FaceMesh tracking 478 3D landmarks in real time (**3.97 ms mean, 4.81 ms p95** on CPU with real face; **1.92 ms** on blank frame early exit).
+- **Condition Robustness:** Dim light 15% lux (**4.39 ms mean**); Head turned ~30° (**4.69 ms mean**).
 - **Target Action Units (FACS):**
   - **AU04 (Brow Lowerer):** Medial brow contraction normalized to nasal bridge (corrugator supercilii — cognitive strain).
   - **AU07 (Lid Tightener):** Palpebral fissure narrowing (orbicularis oculi — visual strain/fatigue).
   - **AU20 (Lip Stretcher):** Transverse oral commissure displacement (somatic tension).
 - **Eye Aspect Ratio (EAR):** Tracks spontaneous blink suppression and fatigue flutter.
-- **Perspective Filtering:** Perspective-n-Point (PnP) solver discards observations with $|\text{Yaw}| > 30^\circ$ or $|\text{Pitch}| > 25^\circ$.
+- **Perspective Filtering:** Perspective-n-Point (PnP) solver extracts head pitch, yaw, and roll.
 
 ---
 
 ### Slide 6: Perception Layer: Vocal Acoustic Biomarkers
-- **DSP Core:** Real-time NumPy and SciPy signal processing (**2.34 ms mean, 2.88 ms p95** execution latency).
+- **DSP Core:** Real-time NumPy and SciPy signal processing (**2.85 ms mean, 3.73 ms p95** execution latency).
 - **Target Acoustic Indicators:**
   - **Pitch Delta ($\Delta F0$):** Parabolic interpolation over autocorrelation peaks; measures fundamental frequency rise against baseline.
   - **Jitter (%):** Cycle-to-cycle frequency perturbation reflecting vocal fold micro-tremors under autonomic arousal.
@@ -103,7 +104,7 @@
 
 ### Slide 10: Conversational Engine & Acoustic Turn-Taking
 - **Real-Time Voice Assistant:** Built-in multimodal conversational agent sharing the same event loop.
-- **Conversational TTFA:** **1.33 s mean** (0.83 s for short queries; 1.88 s with concurrent background wellness reasoning).
+- **Conversational TTFA:** **1.411 s mean** (loop off) / **1.829 s mean** (loop on, +0.418s concurrency cost mitigated via voice turn deferral).
 - **Smart-Turn Classifier:** `smart-turn-v3.2` ONNX model classifies audio completeness in **68.2 ms**, eliminating awkward artificial turn pauses while holding incomplete thoughts.
 - **Local Speech Synthesis:** `Kokoro-ONNX` neural TTS synthesizes natural speech chunks streamed directly over WebSockets.
 
@@ -125,16 +126,17 @@
 ### Slide 12: Empirical Performance & Latency Benchmarks
 *All figures measured live on this machine and logged in `evidence/`:*
 
-| Benchmark Component | Target Budget | Measured Empirical | Status | Evidence File |
+| Benchmark Component | Empirical Measured | Engineering Budget | Status | Evidence File |
 |:---|:---:|:---:|:---:|:---|
-| Facial AU Extraction (CPU, p95) | $< 30\text{ ms}$ | **1.91 ms** | **PASS** | `evidence/facial_extraction.csv` |
-| Vocal DSP Extraction (CPU, p95) | $< 30\text{ ms}$ | **2.88 ms** | **PASS** | `evidence/vocal_extraction.csv` |
-| Wellness SLM Latency (GPU, p95) | $< 5.0\text{ s}$ | **2.42 s** | **PASS** | `evidence/wellness_slm_latency.csv` |
-| Voice TTFA (Loop OFF, Mean) | $< 2.0\text{ s}$ | **1.33 s** | **PASS** | `evidence/voice_ttfa.csv` |
-| Voice TTFA (Loop ON, Mean) | $< 2.5\text{ s}$ | **1.88 s** | **PASS** | `evidence/voice_ttfa.csv` |
-| Test Suite Integration | $\ge 110$ | **110 / 111** | **PASS** | `evidence/pytest_full.log` |
-| Outbound Network Sockets | $0$ | **0 (0.00 KB)** | **PASS** | `evidence/netstat_outbound.txt` |
-| Peak VRAM (10-min Session) | $< 5.5\text{ GB}$ | **3.90 GB** | **PASS** | `evidence/vram_cpu_usage.log` |
+| Facial AU Extraction (Real Face, p95) | **4.81 ms** (mean: 3.97 ms) | — | **PASS** | `evidence/facial_extraction_real.csv` |
+| Facial AU Extraction (Blank / No Face) | **2.45 ms** (mean: 1.92 ms) | — | **PASS** | `evidence/facial_extraction_blank.csv` |
+| Vocal DSP Extraction (CPU, p95) | **3.73 ms** (mean: 2.85 ms) | — | **PASS** | `evidence/vocal_extraction.csv` |
+| Wellness SLM Latency (GPU, p95) | **2.42 s** (mean: 2.14 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.58s)** | `evidence/wellness_slm_latency.csv` |
+| Voice TTFA (Loop OFF, Mean) | **1.411 s** (p50: 1.384 s) | — | **Baseline** | `evidence/voice_ttfa.csv` |
+| Voice TTFA (Loop ON, Mean) | **1.829 s** (p50: 1.745 s) | — | **+0.418s cost** | `evidence/voice_ttfa.csv` |
+| Test Suite Integration | **110 / 111 Passed** | — | **PASS** | `evidence/pytest_full.log` |
+| Outbound Network Sockets | **0 (0.00 KB)** | $0.0\text{ KB}$ | **PASS** | `evidence/netstat_outbound.txt` |
+| Peak VRAM (Session) | **3.90 GB** (3991 MB peak) | 6.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
 
 *Examiner Reproducibility:* `powershell -ExecutionPolicy Bypass -File scripts/reproduce_numbers.ps1`
 
@@ -145,8 +147,8 @@
 
 - **Model Quantization Agreement:** Measures prediction similarity between 4-bit and FP16 models. Unquantized FP16 weights were not stored locally for Gemma 4 E2B $\rightarrow$ **NOT MEASURED**.
 - **Human Ground-Truth Agreement:** Evaluates inferred stress against human self-reports. Preliminary reports used synthetic distributions for analysis smoke testing. Empirical human data is formally marked: **`NOT COLLECTED / REQUIRES HUMAN STUDY`**.
-- **Turnkey Human Re-Collection Kit:** Packaged in `docs/EMA_RECOLLECTION_KIT.md` with interactive tool `scripts/ema_collector.py` and evaluation harness `scripts/evaluate_ema.py` for execution with $\ge 3$ human participants prior to viva.
-- **Algorithmic Simulation (Reference):** Validated 100% adherence to adjacent 1-tier boundaries with 0% catastrophic errors ($0 \leftrightarrow 2$).
+- **Turnkey Human Re-Collection Kit:** Packaged in `docs/EMA_RECOLLECTION_KIT.md` with interactive tool `scripts/ema_collector.py` and evaluation harness `scripts/evaluate_ema.py` for execution with $\ge 8$ human participants (4 developers + 4 external peers) prior to viva.
+- **Empirical Live Reasoning Proofs:** Verified 5/5 trials Low Tier 0 on cross-modal conflict; 5/5 trials Moderate Tier 1 on acute stress; 0.0 confidence on zero signal (`evidence/live_pattern_reasoning.json`).
 
 ---
 

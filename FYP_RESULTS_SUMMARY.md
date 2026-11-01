@@ -4,74 +4,69 @@
 ---
 
 ### Abstract
-This project presents **Parlor**, a fully on-device multimodal artificial intelligence assistant that passively monitors digital burnout and affective workplace stress without specialized wearable sensors or manual logging. Utilizing standard laptop webcams and microphones, Parlor extracts facial Action Units (MediaPipe FaceMesh) and vocal acoustic biomarkers (Librosa/DSP), combining them across rolling temporal observation windows. Rather than enforcing static numeric thresholds, an on-device Small Language Model (Gemma 4 / Llama 3 8B GGUF via `llama-server`) performs qualitative clinical reasoning over the pattern of signals, deciding both the stress tier and an explainable rationale citing active biomarkers. Triggered micro-interventions are pushed directly via WebSocket into an intuitive user interface with granular sensitivity, snooze, and mute controls.
+This project presents **Parlor**, a fully on-device multimodal artificial intelligence assistant that passively monitors digital burnout and affective workplace stress without specialized wearable sensors or manual logging. Utilizing standard laptop webcams and microphones, Parlor extracts facial Action Units (MediaPipe FaceMesh) and vocal acoustic biomarkers (Librosa/NumPy DSP), combining them across rolling temporal observation windows. Rather than enforcing static numeric thresholds, an on-device Small Language Model (Google Gemma 4 E2B IT Q4_0 via `llama.cpp` b12015) performs qualitative clinical reasoning over the pattern of signals, deciding both the stress tier and an explainable rationale citing active biomarkers. Triggered micro-interventions are pushed directly via WebSocket into an intuitive user interface with granular sensitivity, snooze, and mute controls.
 
 ---
 
-### 1. Key Performance & Latency Benchmarks
+### 1. Key Performance & Latency Benchmarks (Empirically Measured)
 
-All metrics were evaluated under live concurrent conditions (System 1 voice assistant and System 2 affective monitoring sharing the same process event loop):
+All metrics were evaluated on the host workstation (**Intel Core i5-13450HX, NVIDIA GeForce RTX 4050 6GB VRAM, 16GB RAM, Windows 11**) running **Gemma 4 E2B IT Q4_0** on `llama.cpp` b12015 with CUDA 12.4:
 
-| Metric / Stage | Target Budget | Laptop Tier (RTX 4050 GPU) | Edge/CPU Tier (Raspberry Pi 5 / 4-core) | Evaluation Verdict |
+| Metric / Stage | Engineering Budget | Workstation Measured (RTX 4050 GPU + i5 CPU) | Edge Tier (Raspberry Pi 5) | Empirical Verdict |
 | :--- | :---: | :---: | :---: | :---: |
-| **Conversational Turn TTFA (Time to First Audio)** | $\le 1.00\,\text{s}$ | **$0.781\,\text{s}$** | **$0.920\,\text{s}$** | **PASS** (Zero regression from background task) |
-| **Acoustic Turn-Taking Classification (`smart-turn-v3.2`)** | $\le 0.10\,\text{s}$ | **$0.068\,\text{s}$** ($68\,\text{ms}$) | **$0.084\,\text{s}$** ($84\,\text{ms}$) | **PASS** |
-| **Facial AU Extraction (MediaPipe FaceMesh)** | $\le 35\,\text{ms}$ | **$14.2\,\text{ms}$** | **$26.8\,\text{ms}$** | **PASS** |
-| **Vocal Acoustic DSP (F0, Jitter, Shimmer, Tension)** | $\le 30\,\text{ms}$ | **$18.7\,\text{ms}$** | **$24.1\,\text{ms}$** | **PASS** |
-| **Temporal Feature Fusion & Prompt Generation** | $\le 5\,\text{ms}$ | **$0.02\,\text{ms}$** | **$0.05\,\text{ms}$** | **PASS** |
-| **On-Device SLM Qualitative Reasoning** | $\le 4.50\,\text{s}$ | **$2.76\,\text{s}$** | **$4.15\,\text{s}$** | **PASS** (Sub-100ms TTFT on GPU) |
-| **Trigger Policy & Intervention Dispatch** | $\le 5\,\text{ms}$ | **$0.01\,\text{ms}$** | **$0.02\,\text{ms}$** | **PASS** |
-| **SQLite Longitudinal Store Logging** | $\le 10\,\text{ms}$ | **$2.57\,\text{ms}$** | **$4.10\,\text{ms}$** | **PASS** |
-| **Total Wellness Observation Window E2E Latency** | $\le \mathbf{5.00\,\text{s}}$ | **$\mathbf{2.82\,\text{s}}$** | **$\mathbf{4.23\,\text{s}}$** | **PASS** |
-| **Outbound Data Transmission (Privacy Audit)** | **$0.0\,\text{KB}$** | **$0.00\,\text{KB}$** | **$0.00\,\text{KB}$** | **PASS** ($100\%$ on-device isolation) |
+| **Conversational Turn TTFA (Loop OFF)** | — | **$1.411\,\text{s}$** (p50: $1.384\,\text{s}$, N=10) | Untested | Empirical Baseline (`evidence/voice_ttfa.csv`) |
+| **Conversational Turn TTFA (Loop ON)** | — | **$1.829\,\text{s}$** (p50: $1.745\,\text{s}$, N=10) | Untested | **+0.418s Latency Cost** (Mitigated via Voice Deferral) |
+| **Facial AU Extraction (Real Face, Normal Light)** | — | **$3.97\,\text{ms}$** (p95: $4.81\,\text{ms}$, N=100) | Literature est: ~26.8 ms | Real Face active tracking (`evidence/facial_extraction_real.csv`) |
+| **Facial AU Extraction (Real Face, Dim Light 15%)**| — | **$4.39\,\text{ms}$** (p95: $6.84\,\text{ms}$, N=100) | Literature est | Robust face detection under low light |
+| **Facial AU Extraction (Head Turned ~30°)** | — | **$4.69\,\text{ms}$** (p95: $6.58\,\text{ms}$, N=100) | Literature est | Pose-invariant tracking (`evidence/facial_extraction_turned.csv`) |
+| **Facial AU Extraction (Blank / No Face)** | — | **$1.92\,\text{ms}$** (p95: $2.45\,\text{ms}$, N=100) | Literature est | Early exit when no face detected |
+| **Vocal Acoustic DSP (F0, Jitter, Shimmer, Tension)**| — | **$2.85\,\text{ms}$** (p95: $3.73\,\text{ms}$, N=100) | Literature est: ~24.1 ms | Fast vectorized CPU DSP (`evidence/vocal_extraction.csv`) |
+| **SQLite Longitudinal Store Logging** | — | **$4.07\,\text{ms}$** (p95: $5.29\,\text{ms}$, N=100) | Literature est | Local synchronous write (`evidence/db_write_latency.csv`) |
+| **SLM Wellness Qualitative Reasoning (GPU)** | $\le 5.00\,\text{s}$ (window) | **$2.14\,\text{s}$** mean (p95: $2.42\,\text{s}$, N=30) | Literature est: ~4.15 s | **PASS** (+2.58s margin within 5.0s window) |
+| **Peak GPU VRAM Consumption** | — | **$3.90\,\text{GB}$** (3991 MB / 6141 MB) | N/A (Shared RAM) | Fully resident within 6GB VRAM (`evidence/vram_cpu_usage.log`) |
+| **Outbound Data Transmission (Privacy Audit)** | **$0.0\,\text{KB}$** | **$0.00\,\text{KB}$** (0 outbound sockets) | $0.00\,\text{KB}$ | **PASS** (100% on-device isolation, `evidence/netstat_outbound.txt`) |
+| **Automated Test Suite Pass Rate** | — | **110 / 111 Passed** (1 skipped) | N/A | **PASS** (`evidence/pytest_full.log`) |
+
+> [!NOTE]
+> Raspberry Pi 5 figures represent published literature estimates from Phase 0 feasibility modeling; no Raspberry Pi hardware was deployed or benchmarked in this project.
 
 ---
 
-### 2. SLM Quantization & Model Fidelity Benchmarks
+### 2. SLM Architecture & Empirical Reasoning Behavior
 
-Evaluated against the ground-truth multimodal affective dataset across 250 clinical test scenarios:
-
-| Model Architecture | Quantization Format | Weight Size (GB) | Stress Tier Agreement (%) | Reasoning Quality Score (1–5) | Compliance with Schema (%) |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Llama 3 8B Instruct** | `FP16` (Reference Baseline) | 16.0 GB | $94.2\%$ | $4.9 / 5.0$ | $100.0\%$ |
-| **Llama 3 8B Instruct** | `Q8_0` | 8.54 GB | $93.6\%$ | $4.9 / 5.0$ | $100.0\%$ |
-| **Llama 3 8B Instruct** | `Q4_K_M` (Production Tier) | 4.92 GB | **$91.4\%$** | **$4.8 / 5.0$** | **$100.0\%$** |
-| **Gemma 4 E4B** | `Q4_K_M` | 4.30 GB | **$89.8\%$** | **$4.7 / 5.0$** | **$99.6\%$** |
-| **Gemma 4 E2B** | `Q4_K_M` (Edge/Low-RAM Tier) | 2.45 GB | **$86.4\%$** | **$4.4 / 5.0$** | **$98.8\%$** |
-| **Llama 3 8B Instruct** | `Q2_K` (Extreme Compression) | 2.96 GB | $74.8\%$ | $3.2 / 5.0$ | $88.4\%$ |
-
-*Conclusion:* `Q4_K_M` quantization preserves **$97.0\%$** of full FP16 diagnostic accuracy while reducing RAM footprint by **$69.2\%$**, enabling execution on consumer laptop hardware.
+* **Deployed Model:** Google Gemma 4 E2B IT Q4_0 (`gemma-4-E2B_q4_0-it.gguf` + `gemma-4-E2B-it-mmproj.gguf`, size: 2.45 GB).
+* Earlier reported quantization fidelity (91.4% tier agreement at Q4_K_M) was an initial literature estimate and is marked as **NOT MEASURED** for this specific model configuration.
+* **Empirical Pattern Reasoning Verification (N=5 repeats each, live on GPU):**
+  1. **Cross-Modal Conflict (Vocal Pitch Spike + Relaxed Face):**
+     - Biomarkers: AU04=0.05, AU07=0.05, Pitch Delta=+37.5Hz, Vocal Tension=0.65.
+     - SLM Assessment: Consistently evaluated as **Low (Tier 0)** across all 5 trials ($2.35\text{s} - 4.32\text{s}$).
+     - Verbatim Reasoning: *"The vocal biomarkers indicate a slight elevation in pitch and a high Vocal Tension Index (0.65)... However, all facial micro-expressions are at baseline/relaxed levels (AU04=0.05, AU07=0.05), indicating an absence of emotional facial tension. This conflicting data lowers the overall stress assessment to Low (Tier 0)."* (`evidence/live_pattern_reasoning.json`).
+  2. **Consistent Acute Stress (Brow Furrow + Vocal Strain):**
+     - Biomarkers: AU04=0.84, AU07=0.72, Pitch Delta=+49.0Hz, Vocal Tension=0.76.
+     - SLM Assessment: Consistently evaluated as **Moderate (Tier 1)** with high confidence (0.92) across all 5 trials ($1.88\text{s} - 4.18\text{s}$).
+  3. **Zero-Signal Honesty (Covered Camera + Silence):**
+     - Output: `confidence_score: 0.0`, `stress_level: "Low (Tier 0)"`, `ambiguity_note: "Camera unlit/obscured and microphone silent."` with zero compute wasted (`evidence/live_zero_signal.json`).
+  4. **Graceful Failure & Recovery:**
+     - Killing `llama-server` mid-session triggers immediate caught exception `LLAMAServerError`. Server automatically respawns and restores healthy state in **$3.95\,\text{s}$ mean** across 3 test cycles (`evidence/live_llama_kill_recovery.log`).
 
 ---
 
-### 3. Ground-Truth Empirical Accuracy (EMA Protocol Validation)
+### 3. Human Ground-Truth Accuracy Status
 
 > [!IMPORTANT]
-> **Defending Accuracy vs Fidelity:** During defense, clearly distinguish between **91.4% quantization fidelity** (model compression consistency vs uncompressed FP16 weights across benchmark test vectors) and **77.8% ground-truth tier agreement** (empirical diagnostic agreement against actual human psychological self-report).
+> **Human Ground-Truth Accuracy Status:** **`NOT YET COLLECTED — REQUIRES HUMAN STUDY`**  
+> Earlier reported figures (77.8% exact / 100% one-tier agreement) were generated using a synthetic simulation harness (`scripts/run_ema_validation.py`) and have been **expunged from all submission documents**.
 
-Over **144 paired observation windows** across **$N=8$ participants** (3 core developers + 5 peer student volunteers) evaluating quiet focus, active meetings, acute cognitive stressors (Stroop + timed arithmetic), and camera-occluded fallback:
-
-- **Exact-Tier Agreement:** **`77.8%`** (112 / 144 windows matched ground truth exactly).
-- **One-Tier-Tolerance Agreement:** **`100.0%`** (144 / 144 windows; zero catastrophic two-tier errors).
-- **Confusion Matrix:**
-  - `System Tier 0`: 40 true Tier 0, 28 Tier 1 (animated engagement without physiological distress), 0 Tier 2.
-  - `System Tier 1`: 0 Tier 0, 12 true Tier 1, 3 Tier 2 (sub-threshold vocal strain).
-  - `System Tier 2`: 0 Tier 0, 1 Tier 1 (physiological lag after acute stress), 60 true Tier 2.
-- **Safety Profile:** **`0.0%` False Positive Rate** (no calm user interrupted) and **`0.0%` False Negative Rate** (no acute stress episode misdiagnosed as calm).
-- **Modality Robustness:** **`75.0%`** exact in full multimodal mode; **`91.7%`** exact in audio-only fallback mode.
-- **Disagreement Attribution:** 100% of disagreements were boundary cutoff artifacts (scores 5–6 or 10–11) or autonomic recovery lag rather than SLM reasoning hallucinations.
+The standardized collection harness (`scripts/ema_collector.py`), audit-grade evaluation tool (`scripts/evaluate_ema.py`), and experimental protocol (`docs/EMA_RECOLLECTION_KIT.md`) are complete and validated using a toy verification dataset (`shared_state/toy_ema_records.json`). The protocol is ready for human data collection ($\ge 8$ participants) prior to viva.
 
 ---
 
-### 4. Verification of Core Abstract Claims
+### 4. Verification of Core Architectural Claims
 
 1. **"Reasons over the pattern, not fixed thresholds":**
-   - In cross-modal conflict tests (elevated vocal pitch $\Delta F0 > 30\,\text{Hz}$ coupled with completely relaxed facial musculature), static thresholds produce a false-positive Tier 2 alert.
-   - Parlor's SLM correctly downgrades the assessment to Tier 1 (confidence $0.72$) and notes: *"Assessed as Moderate Stress due to conflicting signals between modalities... Vocal biomarkers indicate acoustic tension while facial expressions remain neutral."*
+   - Verified live: Gemma 4 E2B correctly identifies cross-modal conflict (vocal spike + neutral face) and avoids false-positive alerts, citing the lack of facial tension.
 2. **"Fails gracefully / stays honest about insufficient signal":**
-   - When the camera is covered or lighting is absent, the system switches to audio-only assessment without crashing.
-   - When both camera and microphone are inactive, the system reports: *"No facial or vocal signals detected in the current observation window"* with confidence $0.0$, strictly suppressing false-positive intervention firings.
-   - When `llama-server` is stopped mid-session, the voice pipeline continues uninterrupted, and the wellness background task engages exponential backoff and recovers automatically upon restart.
+   - Camera covered + silence produces `confidence_score: 0.0` with zero hallucinated stress.
+   - Killing `llama-server` mid-session is safely caught without server crash and recovers in ~3.95s.
 3. **"No personal data ever leaves the device":**
-   - Live socket packet logging and static network boundary audits verify zero outbound requests from the wellness engine, facial extractors, vocal DSP, and SQLite store.
-   - All computation is strictly confined to `127.0.0.1`.
+   - Socket audit confirms 0 outbound network connections. All inference and storage run on `127.0.0.1`.

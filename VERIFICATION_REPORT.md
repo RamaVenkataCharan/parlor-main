@@ -15,10 +15,17 @@ This document serves as the primary empirical record for all operational paramet
 
 ### Core Verification Status
 - **Test Suite Pass Rate:** **`99.1%`** (110 passed, 0 failed, 1 intentionally skipped for live prosody judgement out of 111 tests; evidence: `evidence/pytest_full.log`).
-- **Core Conversational Latency (TTFA):** **`1.33s`** mean (wellness loop OFF, short turns 0.83s), **`1.88s`** mean (wellness loop ON) (evidence: `evidence/voice_ttfa.csv`).
-- **Affective Reasoning Latency (SLM on GPU):** **`2.14s`** mean, **`2.23s`** p50, **`2.42s`** p95, **`2.45s`** max (5.0s window budget met with $2.58\text{s}$ margin; evidence: `evidence/wellness_slm_latency.csv`).
-- **Feature Extraction Latency (CPU):** **`1.75 ms`** mean / **`1.91 ms`** p95 (Facial AU), **`2.34 ms`** mean / **`2.88 ms`** p95 (Vocal DSP) (evidence: `evidence/facial_extraction.csv`, `evidence/vocal_extraction.csv`).
-- **SQLite Logging Latency:** **`2.67 ms`** mean / **`3.59 ms`** p95 (evidence: `evidence/db_write_latency.csv`).
+- **Core Conversational Latency (TTFA):**
+  - **Loop OFF:** **`1.411s`** mean / **`1.384s`** p50 (N=10 turns; evidence: `evidence/voice_ttfa.csv`).
+  - **Loop ON:** **`1.829s`** mean / **`1.745s`** p50 (N=10 turns; mitigated via voice turn deferral; +0.418s delta).
+- **Affective Reasoning Latency (SLM on GPU):** **`2.14s`** mean, **`2.23s`** p50, **`2.42s`** p95, **`2.45s`** max (5.0s engineering window budget met with $2.58\text{s}$ margin; evidence: `evidence/wellness_slm_latency.csv`).
+- **Feature Extraction Latency (CPU, N=100 runs each):**
+  - **Real Face (Normal Light):** **`3.97 ms`** mean / **`4.81 ms`** p95 (evidence: `evidence/facial_extraction_real.csv`).
+  - **Real Face (Dim Light 15% Lux):** **`4.39 ms`** mean / **`6.84 ms`** p95 (evidence: `evidence/facial_extraction_dim.csv`).
+  - **Real Face (Head Turned ~30°):** **`4.69 ms`** mean / **`6.58 ms`** p95 (evidence: `evidence/facial_extraction_turned.csv`).
+  - **Blank / Empty Frame (No Face):** **`1.92 ms`** mean / **`2.45 ms`** p95 (early exit; evidence: `evidence/facial_extraction_blank.csv`).
+  - **Vocal Acoustic DSP (CPU):** **`2.85 ms`** mean / **`3.73 ms`** p95 (evidence: `evidence/vocal_extraction.csv`).
+- **SQLite Logging Latency:** **`4.07 ms`** mean / **`5.29 ms`** p95 (evidence: `evidence/db_write_latency.csv`).
 - **Network Boundary & Telemetry Audit:** **`0.00 KB`** outbound transmission (100% strictly local loopback sockets on `127.0.0.1`, 0 external calls; evidence: `evidence/netstat_outbound.txt`).
 - **Peak Hardware Footprint:** **`3.90 GB`** (3991 MB / 6141 MB) GPU VRAM, host RAM within 4.2 GB (evidence: `evidence/vram_cpu_usage.log`).
 
@@ -64,35 +71,58 @@ The automated test suite (`uv run pytest tests/ -v`) was executed across all con
 
 ## 3. Live Empirical Latency & Timing Measurements
 
-All measurements below were captured directly on this workstation with real CSV outputs preserved in `evidence/`.
+### 3.1 Subsystem Empirical Latencies
 
-### 3.1 Subsystem Latency Table
-
-| Operation / Subsystem | Measured Duration (Empirical) | Target Budget | Safety Margin | Evidence Log | Evaluation Status |
-|:---|:---:|:---:|:---:|:---|:---:|
-| **Conversational Turn TTFA (Loop OFF)** | **1.33 s** (mean) / **0.83 s** (short query) | $\le 2.00\text{ s}$ | $+670\text{ ms}$ | `evidence/voice_ttfa.csv` | **PASSED** |
-| **Conversational Turn TTFA (Loop ON)** | **1.88 s** (mean) | $\le 2.50\text{ s}$ | $+620\text{ ms}$ | `evidence/voice_ttfa.csv` | **PASSED** |
-| **Facial AU Extraction (CPU, MediaPipe)** | **1.75 ms** (mean) / **1.91 ms** (p95) | $\le 30.0\text{ ms}$ | $+28.09\text{ ms}$ | `evidence/facial_extraction.csv` | **PASSED** |
-| **Vocal Acoustic DSP Extraction (CPU)** | **2.34 ms** (mean) / **2.88 ms** (p95) | $\le 30.0\text{ ms}$ | $+27.12\text{ ms}$ | `evidence/vocal_extraction.csv` | **PASSED** |
-| **Feature Fusion & Prompt Assembly** | **< 0.05 ms** | $\le 5.0\text{ ms}$ | $+4.95\text{ ms}$ | `evidence/wellness_slm_latency.csv` | **PASSED** |
-| **SLM Wellness Reasoning (GPU, Gemma 4 E2B)** | **2.14 s** (mean) / **2.42 s** (p95) | $\le 5.00\text{ s}$ | $+2.58\text{ s}$ | `evidence/wellness_slm_latency.csv` | **PASSED** |
-| **SQLite DB Logging Transaction** | **2.67 ms** (mean) / **3.59 ms** (p95) | $\le 10.0\text{ ms}$ | $+6.41\text{ ms}$ | `evidence/db_write_latency.csv` | **PASSED** |
-| **Complete Background Observation Cycle** | **2.43 s** (p95 total) | $\le 5.00\text{ s}$ | $+2.57\text{ s}$ | `evidence/wellness_slm_latency.csv` | **PASSED** |
+| Operation / Subsystem | Measured Duration (Empirical) | Engineering Budget | Evidence Log | Evaluation Status |
+|:---|:---:|:---:|:---|:---:|
+| **Conversational Turn TTFA (Loop OFF)** | **1.411 s** (mean) / **1.384 s** (p50) | — | `evidence/voice_ttfa.csv` | Baseline Turn Latency |
+| **Conversational Turn TTFA (Loop ON)** | **1.829 s** (mean) / **1.745 s** (p50) | — | `evidence/voice_ttfa.csv` | **+0.418s Concurrency Cost** |
+| **Facial AU Extraction (Real Face, Normal Light)** | **3.97 ms** (mean) / **4.81 ms** (p95) | — | `evidence/facial_extraction_real.csv` | Active FaceMesh Tracking |
+| **Facial AU Extraction (Real Face, Dim Light 15%)**| **4.39 ms** (mean) / **6.84 ms** (p95) | — | `evidence/facial_extraction_dim.csv` | Low-Light FaceMesh Tracking |
+| **Facial AU Extraction (Head Turned ~30°)** | **4.69 ms** (mean) / **6.58 ms** (p95) | — | `evidence/facial_extraction_turned.csv` | Pose-Variant Tracking |
+| **Facial AU Extraction (Blank / No Face)** | **1.92 ms** (mean) / **2.45 ms** (p95) | — | `evidence/facial_extraction_blank.csv` | Fast Early Exit |
+| **Vocal Acoustic DSP Extraction (CPU)** | **2.85 ms** (mean) / **3.73 ms** (p95) | — | `evidence/vocal_extraction.csv` | Vectorized CPU DSP |
+| **Feature Fusion & Prompt Assembly** | **< 0.05 ms** | — | In-memory deque | Sub-millisecond |
+| **SLM Wellness Qualitative Reasoning (GPU)** | **2.14 s** (mean) / **2.42 s** (p95) | $\le 5.00\text{ s}$ (window) | `evidence/wellness_slm_latency.csv` | **PASS (+2.58s margin)** |
+| **SQLite DB Logging Transaction** | **4.07 ms** (mean) / **5.29 ms** (p95) | — | `evidence/db_write_latency.csv` | Local Disk Write |
+| **Total Wellness Loop E2E Latency** | **2.15 s** (mean) / **2.43 s** (p95) | $\le 5.00\text{ s}$ (window) | Combined Pipeline | **PASS (+2.57s margin)** |
 
 ### 3.2 SLM Wellness Latency Distribution ($N=30$ Live Calls)
 - **Mean:** **`2.14 s`**
 - **Median (p50):** **`2.23 s`**
 - **95th Percentile (p95):** **`2.42 s`**
 - **Maximum:** **`2.45 s`**
-- **Cycle Timing Analysis:** Non-SLM overhead is $< 8\text{ ms}$ (Facial + Vocal running concurrently in background executor threads, followed by $2.67\text{ ms}$ SQLite write). Total p95 cycle latency is $2.42\text{ s} + 0.008\text{ s} = 2.428\text{ s}$, maintaining a **$2.572\text{ s}$ safety cushion** well below the 5.0-second background cycle budget.
+- **Cycle Timing Analysis:** Non-SLM overhead is $< 8\text{ ms}$ (Facial + Vocal running concurrently in background executor threads, followed by $4.07\text{ ms}$ SQLite write). Total p95 cycle latency is $2.42\text{ s} + 0.008\text{ s} = 2.428\text{ s}$, maintaining a **$2.572\text{ s}$ safety cushion** well below the 5.0-second background cycle budget.
 
 ---
 
-## 4. Hardware Resource & Memory Footprint
+## 4. Empirical Verification of Pattern Reasoning, Resilience & Graceful Degradation
+
+### 4.1 Cross-Modal Conflict Reasoning (5 Repeats, Evidence: `evidence/live_pattern_reasoning.json`)
+- **Signal Vector:** Vocal pitch spike ($\Delta F0=+37.5\,\text{Hz}$), vocal tension $0.65$, with completely relaxed face ($\text{AU04}=0.05, \text{AU07}=0.05, \text{EAR}=0.32$).
+- **Gemma 4 E2B Verdict (5/5 trials):** Evaluated as **Low (Tier 0)** across all 5 runs ($2.35\text{s} - 4.32\text{s}$).
+- **Verbatim Reasoning:** *"The vocal biomarkers indicate a slight elevation in pitch and a high Vocal Tension Index (0.65)... However, all facial micro-expressions are at baseline/relaxed levels (AU04=0.05, AU07=0.05), indicating an absence of emotional facial tension. This conflicting data lowers the overall stress assessment to Low (Tier 0)."*
+
+### 4.2 Consistent Multimodal Stress Reasoning (5 Repeats, Evidence: `evidence/live_pattern_reasoning.json`)
+- **Signal Vector:** Brow furrow ($\text{AU04}=0.84$), eye squint ($\text{AU07}=0.72$), pitch elevation ($\Delta F0=+49.0\,\text{Hz}$), vocal tension $0.76$.
+- **Gemma 4 E2B Verdict (5/5 trials):** Evaluated as **Moderate (Tier 1)** with high confidence ($0.92$) across all 5 runs ($1.88\text{s} - 4.18\text{s}$).
+
+### 4.3 Zero-Signal Honesty (Evidence: `evidence/live_zero_signal.json`)
+- **Condition:** Covered camera (`face_detected: False`) + silence (`speech_detected: False`).
+- **Verbatim Output:** `confidence_score: 0.0`, `stress_level: "Low (Tier 0)"`, `ambiguity_note: "Camera unlit/obscured and microphone silent."` with zero compute wasted.
+
+### 4.4 Mid-Session llama-server Crash & Recovery (3 Repeats, Evidence: `evidence/live_llama_kill_recovery.log`)
+- Mid-session process kill cleanly raises `LLAMAServerError`.
+- Server watchdog respawns `llama-server` and restores healthy state in **$4.63\text{s}$ (Trial 1), $3.62\text{s}$ (Trial 2), $3.59\text{s}$ (Trial 3)** — Mean recovery time: **$3.95\,\text{s}$**.
+- Post-recovery test inference completed in $0.19\text{s} - 0.29\text{s}$.
+
+---
+
+## 5. Hardware Resource & Memory Footprint
 
 Continuous monitoring captured across real runtime execution (evidence: `evidence/vram_cpu_usage.log`):
 
-| Resource Dimension | Idle Baseline | Active Multi-Turn Session | Workstation Limit |
+| Resource Dimension | Idle Baseline | Active Multi-Turn Session | Workstation Capacity |
 |:---|:---:|:---:|:---:|
 | **NVIDIA GPU Dedicated VRAM** | ~1.2 GB | **3.90 GB** (3991 MB peak) | 6.00 GB (RTX 4050) |
 | **System CPU Utilization** | ~3.5% | **18% – 28%** | 100.0% (16 threads) |
@@ -101,7 +131,7 @@ Continuous monitoring captured across real runtime execution (evidence: `evidenc
 
 ---
 
-## 5. Security & Privacy Audit
+## 6. Security & Privacy Audit
 
 1. **Network Transmission Audit:**  
    - Network socket telemetry (`netstat -ano`) audited in `evidence/netstat_outbound.txt`.

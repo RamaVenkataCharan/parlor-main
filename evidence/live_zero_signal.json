@@ -1,0 +1,22 @@
+{
+  "timestamp": 1793556256.979982,
+  "input_state": {
+    "face_detected": false,
+    "face_confidence": 0.0,
+    "au04_brow_furrow": 0.0,
+    "speech_detected": false,
+    "rms_energy": 0.0,
+    "f0_mean_hz": 0.0
+  },
+  "system_response": {
+    "stress_level": "Low (Tier 0)",
+    "primary_drivers": [
+      "No active signals detected"
+    ],
+    "explainable_reasoning": "No facial or vocal signals detected in the current observation window.",
+    "confidence_score": 0.0,
+    "ambiguity_note": "Camera unlit/obscured and microphone silent."
+  },
+  "slm_compute_wasted": false,
+  "intervention_fired": false
+}

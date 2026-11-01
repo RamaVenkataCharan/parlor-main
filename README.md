@@ -25,8 +25,8 @@
 Combining an ultra-low-latency conversational voice interface with continuous, passive affective monitoring, Parlor operates exclusively on consumer-grade laptop hardware (webcam + microphone) without requiring smartwatches, chest straps, or manual journal logging.
 
 ### Key Capabilities
-- **Sub-Second Voice Conversational Assistant:** Achieves **1.33s mean Time-To-First-Audio (TTFA)** across diverse turns (with short queries reaching **0.83s**) using acoustic endpointing (`smart-turn-v3.2.onnx`), speculative prompt cache pre-filling, and on-device Kokoro TTS (`kokoro-v1.0.onnx`).
-- **Passive Multimodal Feature Extraction:** Concurrently extracts MediaPipe FaceMesh facial Action Units (`AU04` brow furrow, `AU07` eyelid tightener, `AU20` lip stretcher: **1.75 ms**) and Librosa acoustic DSP features ($\Delta F0$ pitch shift, jitter %, shimmer %, spectral tension: **2.34 ms**) on standard CPU threads.
+- **Conversational Voice Assistant:** Achieves **1.411s mean Time-To-First-Audio (TTFA)** with wellness loop off (**1.829s mean** with loop on, +0.418s concurrency cost mitigated via voice turn deferral) using acoustic endpointing (`smart-turn-v3.2.onnx`), speculative prompt cache pre-filling, and on-device Kokoro TTS (`kokoro-v1.0.onnx`).
+- **Passive Multimodal Feature Extraction:** Concurrently extracts MediaPipe FaceMesh facial Action Units (`AU04` brow furrow, `AU07` eyelid tightener, `AU20` lip stretcher: **3.97 ms mean / 4.81 ms p95** on real face; **1.92 ms** on blank frame early exit) and Librosa/NumPy acoustic DSP features ($\Delta F0$ pitch shift, jitter %, shimmer %, spectral tension: **2.85 ms mean**) on standard CPU threads.
 - **Pattern-Based Qualitative SLM Reasoning:** Evaluates cross-modal physiological signals using a local Small Language Model (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) with structured JSON schema outputs in **2.14 s mean / 2.42 s p95** on GPU, eliminating brittle rigid thresholds.
 - **Explainable, Gated Micro-Interventions:** Enforces consecutive elevated observation cycles (Tier 2) and an 80-second cooldown before triggering non-intrusive micro-breaks (Somatic, Cognitive, Environmental) with complete provenance disclosure (*"Why did this fire?"*).
 - **Strict Local Isolation & Zero External Transmission:** Transmits **0.00 KB** over external networks. The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.
@@ -37,18 +37,20 @@ Combining an ultra-low-latency conversational voice interface with continuous, p
 
 All metrics reported below were measured directly on the evaluation hardware: **Windows 11 Home, Intel Core i5-13450HX, NVIDIA GeForce RTX 4050 Laptop GPU (6GB GDDR6 VRAM, CUDA 12.4), 16GB RAM**.
 
-| Metric Dimension | Measured Empirical Result | Target Spec Budget | Verification Source |
+| Metric Dimension | Measured Empirical Result | Engineering Budget | Verification Source |
 | :--- | :---: | :---: | :--- |
-| **Conversational Turn TTFA (Loop OFF)** | **`1.33 s`** (0.83 s short turn) | $\le 2.000\text{ s}$ | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) |
-| **Conversational Turn TTFA (Loop ON)** | **`1.88 s`** | $\le 2.500\text{ s}$ | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) |
-| **Acoustic Turn Classification** | **`68.2 ms`** | $\le 100.0\text{ ms}$ | [`VERIFICATION_REPORT.md`](VERIFICATION_REPORT.md) |
-| **Facial AU Feature Extraction (CPU, p95)** | **`1.91 ms`** (mean: 1.75 ms) | $\le 30.0\text{ ms}$ | [`evidence/facial_extraction.csv`](evidence/facial_extraction.csv) |
-| **Vocal Acoustic DSP Extraction (CPU, p95)** | **`2.88 ms`** (mean: 2.34 ms) | $\le 30.0\text{ ms}$ | [`evidence/vocal_extraction.csv`](evidence/vocal_extraction.csv) |
-| **SLM Wellness Cycle Latency (GPU, p95)** | **`2.42 s`** (mean: `2.14 s`) | $\le 5.00\text{ s}$ | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) |
-| **Complete Observation Cycle Latency** | **`2.43 s`** (p95 total) | $\le 5.00\text{ s}$ | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) |
+| **Conversational Turn TTFA (Loop OFF)** | **`1.411 s`** (mean, 1.384 s p50, N=10) | — | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) |
+| **Conversational Turn TTFA (Loop ON)** | **`1.829 s`** (mean, 1.745 s p50, N=10) | — | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) (+0.418s mitigated cost) |
+| **Facial AU Extraction (Real Face, Normal)** | **`3.97 ms`** (mean) / **`4.81 ms`** (p95) | — | [`evidence/facial_extraction_real.csv`](evidence/facial_extraction_real.csv) |
+| **Facial AU Extraction (Dim Light / Turned)**| **`4.39 ms`** (dim) / **`4.69 ms`** (turned)| — | [`evidence/facial_extraction_dim.csv`](evidence/facial_extraction_dim.csv) |
+| **Facial AU Extraction (Blank / No Face)**  | **`1.92 ms`** (mean) / **`2.45 ms`** (p95) | — | [`evidence/facial_extraction_blank.csv`](evidence/facial_extraction_blank.csv) (early exit) |
+| **Vocal Acoustic DSP Extraction (CPU)** | **`2.85 ms`** (mean) / **`3.73 ms`** (p95) | — | [`evidence/vocal_extraction.csv`](evidence/vocal_extraction.csv) |
+| **SLM Wellness Cycle Latency (GPU, p95)** | **`2.42 s`** (mean: `2.14 s`) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.58s margin) |
+| **SQLite Transaction Logging (p95)** | **`5.29 ms`** (mean: `4.07 ms`) | — | [`evidence/db_write_latency.csv`](evidence/db_write_latency.csv) |
+| **Complete Observation Cycle Latency** | **`2.15 s`** (mean) / **`2.43 s`** (p95) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.57s margin) |
 | **Outbound Network Transmission** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) |
-| **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB) | $\le 5.50\text{ GB}$ | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) |
-| **Automated Test Suite Pass Rate** | **`99.1%`** (110 pass, 0 fail, 1 skip\*) | $\ge 95\%$ | [`evidence/pytest_full.log`](evidence/pytest_full.log) |
+| **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB) | 6.0 GB capacity | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) |
+| **Automated Test Suite Pass Rate** | **`99.1%`** (110 pass, 0 fail, 1 skip\*) | All functional | [`evidence/pytest_full.log`](evidence/pytest_full.log) |
 | **Model Quantization Agreement** | **`NOT MEASURED`** (No FP16 weights on disk) | N/A | [`EVIDENCE_AUDIT.md`](EVIDENCE_AUDIT.md) |
 | **EMA Ground-Truth Human Agreement** | **`NOT COLLECTED / REQUIRES HUMAN STUDY`** | Kit Ready | [`docs/EMA_RECOLLECTION_KIT.md`](docs/EMA_RECOLLECTION_KIT.md) |
 
@@ -67,7 +69,7 @@ powershell -ExecutionPolicy Bypass -File scripts/reproduce_numbers.ps1
 > [!IMPORTANT]
 > In academic research and viva defense, it is critical to distinguish between these two distinct metrics:
 > 1. **Model Quantization Consistency:** Measures algorithmic compression fidelity between 4-bit integer weights (`Q4_0`) and uncompressed 16-bit floating point weights (`FP16`) across identical prompts. Uncompressed FP16 weights were not stored locally for Gemma 4 E2B, so this is marked **NOT MEASURED**.
-> 2. **Ground-Truth Diagnostic Accuracy:** Measures agreement between system-inferred stress tiers and actual human psychological self-report collected via the 3-item Ecological Momentary Assessment (EMA) protocol. Preliminary reports referenced a 144-window synthetic distribution (`run_ema_validation.py`); empirical human data is designated **`NOT COLLECTED / REQUIRES HUMAN STUDY`**. A standardized collection harness and protocol guide are packaged in `docs/EMA_RECOLLECTION_KIT.md` for study execution with $\ge 3$ human participants prior to viva.
+> 2. **Ground-Truth Diagnostic Accuracy:** Measures agreement between system-inferred stress tiers and actual human psychological self-report collected via the 3-item Ecological Momentary Assessment (EMA) protocol. Preliminary reports referenced a 144-window synthetic distribution (`run_ema_validation.py`); empirical human data is designated **`NOT COLLECTED / REQUIRES HUMAN STUDY`**. A standardized collection harness and protocol guide are packaged in `docs/EMA_RECOLLECTION_KIT.md` for study execution with $\ge 8$ human participants (4 developers + 4 external peers) prior to viva.
 
 ---
 

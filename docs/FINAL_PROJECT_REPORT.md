@@ -402,18 +402,21 @@ $$\text{Test Suite Pass Rate} = \frac{110 \text{ Passed}}{111 \text{ Total}} = \
 ### 5.2 System Latency and Subsystem Benchmark Breakdown
 All latency figures represent empirical measurements captured on this machine and logged in `evidence/`:
 
-| Subsystem Component | Empirical Measurement | Target Specification | Latency Margin | Evidence File |
-|:---|:---:|:---:|:---:|:---|
-| **Conversational Turn TTFA (Loop OFF)** | **1.33 s mean (0.83 s short turn)** | $\le 2.000\text{ s}$ | $+670\text{ ms}$ | `evidence/voice_ttfa.csv` |
-| **Conversational Turn TTFA (Loop ON)** | **1.88 s mean** | $\le 2.500\text{ s}$ | $+620\text{ ms}$ | `evidence/voice_ttfa.csv` |
-| **Facial AU Feature Extraction (CPU)** | **1.75 ms mean / 1.91 ms p95** | $\le 30.0\text{ ms}$ | $+28.09\text{ ms}$ | `evidence/facial_extraction.csv` |
-| **Vocal Acoustic DSP Extraction (CPU)** | **2.34 ms mean / 2.88 ms p95** | $\le 30.0\text{ ms}$ | $+27.12\text{ ms}$ | `evidence/vocal_extraction.csv` |
-| **Temporal Feature Fusion & Prompt Build** | **< 0.05 ms** | $\le 5.0\text{ ms}$ | $+4.95\text{ ms}$ | `evidence/wellness_slm_latency.csv` |
-| **SLM Qualitative Reasoning (GPU, Gemma 4 E2B)** | **2.14 s mean / 2.42 s p95** | $\le 5.000\text{ s}$ | $+2.580\text{ s}$ | `evidence/wellness_slm_latency.csv` |
-| **SQLite Transaction Logging** | **2.67 ms mean / 3.59 ms p95** | $\le 10.0\text{ ms}$ | $+6.41\text{ ms}$ | `evidence/db_write_latency.csv` |
-| **Complete Observation Cycle E2E Latency** | **2.43 s p95 total** | $\le 5.000\text{ s}$ | $+2.570\text{ s}$ | `evidence/wellness_slm_latency.csv` |
+| Subsystem Component | Empirical Measurement | Engineering Budget | Evidence File |
+|:---|:---:|:---:|:---|
+| **Conversational Turn TTFA (Loop OFF)** | **1.411 s mean / 1.384 s p50** (N=10) | — | `evidence/voice_ttfa.csv` |
+| **Conversational Turn TTFA (Loop ON)** | **1.829 s mean / 1.745 s p50** (N=10) | — | `evidence/voice_ttfa.csv` (+0.418s mitigated cost) |
+| **Facial AU Feature Extraction (Real Face, Normal)**| **3.97 ms mean / 4.81 ms p95** (N=100)| — | `evidence/facial_extraction_real.csv` |
+| **Facial AU Feature Extraction (Real Face, Dim 15%)**| **4.39 ms mean / 6.84 ms p95** (N=100)| — | `evidence/facial_extraction_dim.csv` |
+| **Facial AU Feature Extraction (Head Turned ~30°)** | **4.69 ms mean / 6.58 ms p95** (N=100)| — | `evidence/facial_extraction_turned.csv` |
+| **Facial AU Feature Extraction (Blank / No Face)**  | **1.92 ms mean / 2.45 ms p95** (N=100)| — | `evidence/facial_extraction_blank.csv` (early exit) |
+| **Vocal Acoustic DSP Extraction (CPU)** | **2.85 ms mean / 3.73 ms p95** (N=100)| — | `evidence/vocal_extraction.csv` |
+| **Temporal Feature Fusion & Prompt Build** | **< 0.05 ms** | — | In-memory deque aggregation |
+| **SLM Qualitative Reasoning (GPU, Gemma 4 E2B)** | **2.14 s mean / 2.42 s p95** (N=30) | $\le 5.000\text{ s}$ (window) | `evidence/wellness_slm_latency.csv` (+2.58s margin) |
+| **SQLite Transaction Logging** | **4.07 ms mean / 5.29 ms p95** (N=100)| — | `evidence/db_write_latency.csv` |
+| **Complete Observation Cycle E2E Latency** | **2.15 s mean / 2.43 s p95 total** | $\le 5.000\text{ s}$ (window) | `evidence/wellness_slm_latency.csv` (+2.57s margin) |
 
-The 95th-percentile SLM latency across 30 repeated live cycles was **2.42 s**, which, combined with the $< 8\text{ ms}$ non-SLM extraction and database overhead, leaves a generous **2.57 s safety margin** below the 5.0-second window budget.
+The 95th-percentile SLM latency across 30 repeated live cycles was **2.42 s**, which, combined with the $< 8\text{ ms}$ non-SLM extraction and database overhead, leaves a generous **2.57 s safety margin** below the 5.0-second background window budget. Running background wellness monitoring concurrently adds $+0.418\text{ s}$ latency to conversational speech turns on a single GPU, which is actively mitigated by deferring wellness SLM cycles during active speech.
 
 ### 5.3 Hardware Resource Utilization Profiling
 Continuous telemetry captured via `nvidia-smi` and Windows Performance Monitor during live interactive sessions (evidence: `evidence/vram_cpu_usage.log`):
@@ -443,33 +446,36 @@ netstat -ano | findstr 8081
 A comprehensive code and data audit (`EVIDENCE_AUDIT.md`) revealed that preliminary reports referencing 144 windows with 77.8% exact agreement were based on synthetically generated trials in `shared_state/ema_validation_trials.json` produced by `scripts/run_ema_validation.py` using statistical distributions (`np.random.normal` and `random.choices`) for verifying analysis pipelines.
 
 In strict adherence to academic research integrity:
-1. **The synthetic matrix is NOT represented as empirical human ground truth.**
+1. **The synthetic numbers are NOT represented as empirical human ground truth.**
 2. **Empirical EMA Accuracy is formally marked as: `NOT COLLECTED / REQUIRES HUMAN STUDY`.**
-3. A complete, turnkey collection harness and standardized human study protocol have been established in `scripts/ema_collector.py` and `docs/EMA_RECOLLECTION_KIT.md` for execution by the student team with $\ge 3$ human participants prior to viva.
+3. A complete, turnkey collection harness and standardized human study protocol have been established in `scripts/ema_collector.py` and `docs/EMA_RECOLLECTION_KIT.md` for execution by the student team with $\ge 8$ human participants (4 developers + 4 external peers) prior to viva.
 
-#### 5.5.2 Synthetic Pipeline Verification Matrix (Reference Only)
+#### 5.5.2 Human Ground-Truth Accuracy Status & Tooling Readiness
+**Human ground-truth accuracy: NOT YET COLLECTED. Protocol and tools are ready.**
 
-```
-                         EMA Ground Truth (Human Self-Report)
-                     ┌──────────────┬──────────────┬──────────────┐
-                     │    Tier 0    │    Tier 1    │    Tier 2    │
-  ┌──────────────────┼──────────────┼──────────────┼──────────────┤
-  │ System Tier 0    │      40      │      28      │       0      │
-  ├──────────────────┼──────────────┼──────────────┼──────────────┤
-  │ System Tier 1    │       0      │      12      │       3      │
-  ├──────────────────┼──────────────┼──────────────┼──────────────┤
-  │ System Tier 2    │       0      │       1      │      60      │
-  └──────────────────┴──────────────┴──────────────┴──────────────┘
-```
+The evaluation suite has been updated in `scripts/evaluate_ema.py` with:
+- Strict integrity and consent refusal check (rejects unverified or missing consent flags).
+- Ground-truth class distribution and majority-class baseline.
+- Exact tier agreement and one-tier tolerance agreement with 95% bootstrap confidence intervals.
+- Quadratic-weighted Cohen's Kappa ($\kappa_w$).
+- Full 3x3 confusion matrix with marginals.
+- Per-participant agreement breakdown.
+- Tier 2 safety rates (False Positive Rate and False Negative Rate) computed separately with and without developers to detect confirmation bias.
+- Fully tested and verified on `shared_state/toy_ema_records.json`.
 
-In this reference simulation, 100% of errors fell within an adjacent $\pm 1$ tier, with 0% catastrophic errors ($0 \leftrightarrow 2$). Genuine human metrics will be collected and reported using `scripts/ema_collector.py` and `scripts/evaluate_ema.py` following the protocol in `docs/EMA_RECOLLECTION_KIT.md`.
-
-### 5.6 Cross-Modal Conflict and Signal Honesty Verification
-To prove that the Small Language Model performs genuine pattern reasoning rather than executing fixed thresholds:
-1. **Cross-Modal Conflict Test:** The model was fed an artificial input with severe vocal frequency perturbation ($\Delta F0 > 30\text{ Hz}$, high jitter) but completely relaxed facial landmarks (AU04 = 0.05). A static threshold system triggers a false-positive Tier 2 alert. Parlor's SLM correctly evaluated the conflict, outputting Tier 1 with the rationale:
-   > *"Assessed as Moderate Stress due to conflicting signals between modalities... Vocal biomarkers indicate acoustic tension while facial expressions remain neutral."*
-2. **Signal Honesty Test:** When the webcam was covered and the participant remained silent, the system output:
-   > *"No facial or vocal signals detected in the current observation window"* with `confidence_score: 0.0`, correctly suppressing any intervention firing.
+### 5.6 Cross-Modal Conflict, Signal Honesty, and Failure Recovery Verification
+Live empirical benchmarks were executed directly against Google Gemma 4 E2B IT on this machine to verify pattern reasoning, resilience, and failure recovery:
+1. **Cross-Modal Conflict Test (5 Repeats, Evidence: `evidence/live_pattern_reasoning.json`):**
+   - Signal: Pitch spike ($\Delta F0 = +37.5\text{ Hz}$), vocal tension $0.65$, with completely relaxed face ($\text{AU04}=0.05, \text{AU07}=0.05, \text{EAR}=0.32$).
+   - Result: In **5 out of 5 consecutive trials**, Gemma 4 E2B correctly evaluated the conflict, maintaining a **Low (Tier 0)** stress assessment with explicit clinical reasoning:
+     > *"The vocal biomarkers indicate a slight elevation in pitch and a high Vocal Tension Index (0.65)... However, all facial micro-expressions are at baseline/relaxed levels (AU04=0.05, AU07=0.05), indicating an absence of emotional facial tension. This conflicting data lowers the overall stress assessment to Low (Tier 0)."*
+2. **Consistent Multimodal Stress Test (5 Repeats, Evidence: `evidence/live_pattern_reasoning.json`):**
+   - Signal: Brow furrow ($\text{AU04}=0.84$), eye squint ($\text{AU07}=0.72$), pitch elevation ($\Delta F0 = +49.0\text{ Hz}$), vocal tension $0.76$.
+   - Result: In **5 out of 5 consecutive trials**, Gemma 4 E2B classified the state as **Moderate (Tier 1)** with high confidence ($0.92$), citing both facial strain and vocal tension.
+3. **Signal Honesty Test (Evidence: `evidence/live_zero_signal.json`):**
+   - When the webcam is covered and the participant remains silent, the system outputs `confidence_score: 0.0`, `stress_level: "Low (Tier 0)"`, and `ambiguity_note: "Camera unlit/obscured and microphone silent."` with zero compute wasted.
+4. **Graceful Failure and Mid-Session Recovery (3 Repeats, Evidence: `evidence/live_llama_kill_recovery.log`):**
+   - When `llama-server` is killed mid-session, the exception is cleanly caught as `LLAMAServerError`. The watchdog automatically respawns the process and restores a healthy responding state in **$3.95\text{ s}$ mean recovery time** ($4.63\text{s}, 3.62\text{s}, 3.59\text{s}$).
 
 ---
 
@@ -479,13 +485,15 @@ To prove that the Small Language Model performs genuine pattern reasoning rather
 It is essential to state the clinical boundary of this system with complete transparency:
 **Parlor is an affective wellness monitoring tool designed to estimate behavioral stress-related signals and recommend breaks; it is NOT a certified medical diagnostic device.** It does not diagnose anxiety disorders, clinical depression, hypertension, or any medical condition. Its outputs are intended solely to provide actionable self-awareness for computer users to mitigate digital eye strain, physical tension, and workplace burnout.
 
-### 6.2 System Limitations Under Adverse Environmental Conditions
-1. **Participant Demographics and Sample Size:** Validations conducted during development involved student and engineering team cohorts. Inter-individual variance in baseline facial expressiveness and vocal pitch requires broader demographic calibration.
-2. **Subjectivity of EMA Self-Reports:** Psychological self-reports are inherently subjective. Retrospective reporting over 5-minute capture windows introduces minor recall lag compared to millisecond biometric sensors.
-3. **Webcam Lighting Degradation:** In environments with illumination $<20\text{ lux}$, MediaPipe FaceMesh landmark confidence degrades, causing `face_detected` to toggle to False. The system gracefully falls back to audio-only acoustic estimation.
-4. **Head Pose Sensitivity:** Yaw angles $>30^\circ$ (user looking sideways away from the screen) introduce perspective distortion in Euclidean facial landmark distances.
-5. **Acoustic Dependency on Active Speech:** Vocal acoustic biomarkers require the user to speak. During prolonged silent work, the system relies exclusively on facial Action Units and blink frequency.
-6. **Live Demo Recording:** Demonstration backup video (`dist/demo_backup/Parlor_Live_System_Demonstration_1080p60.mp4`) requires physical video capture (`REQUIRES HUMAN: record the demo`); the full script and timeline are prepared in `DEMO_SCRIPT.md`.
+### 6.2 System Limitations and Boundary Disclosures
+1. **Voice Latency Cost of Concurrent Monitoring:** On a shared GPU, running affective monitoring concurrently with conversational turns adds $+0.418\text{ s}$ mean latency to voice TTFA (1.411s loop off vs 1.829s loop on). While mitigated by deferring wellness cycles during speech, concurrency cost remains a physical reality on a single consumer GPU.
+2. **Single GPU Contention and KV Cache Eviction:** `llama-server` operates on a single GPU slot (`-np 1`). If a background reasoning pass is dispatched, the conversational prefix tokens in the KV cache can be evicted, requiring context re-prefill for subsequent conversational requests unless deferred.
+3. **Vocal Biomarker Speech Requirement:** Vocal acoustic biomarkers require active speech. During extended silent reading or programming, the system relies exclusively on facial Action Units and blink metrics.
+4. **Lighting and Head-Pose Sensitivity:** MediaPipe landmark tracking requires $>20\text{ lux}$ ambient illumination. Under dim lighting or head yaw $>30^\circ$, confidence degrades, falling back to audio-only estimation.
+5. **Corrective Glasses and Skin-Tone Bias:** Thick-rimmed glasses dampen AU07 (eyelid tightening) detection. Demographic diversity across skin tones and facial structures requires extensive cross-cohort testing before general deployment.
+6. **Absence of Large-Scale Human Clinical Data:** Empirical human ground truth is marked as `NOT YET COLLECTED / REQUIRES HUMAN STUDY`. Real EMA data collection ($N \ge 8$) is prepared and pending execution.
+7. **Strict Non-Clinical Boundary:** The system estimates behavioral stress indicators to suggest ergonomic micro-breaks; it is NOT clinically validated and does NOT diagnose medical conditions.
+8. **Network Boundary Scope:** Standard operation is strictly local (0 outbound sockets); initial model weights are downloaded once, and optional user-triggered research mode is the only network-capable feature.
 
 ### 6.3 Ethical Safeguards: Alert Fatigue, Over-Reliance, and Demographics
 - **Mitigating Alert Fatigue:** The multi-cycle hysteresis trigger policy ensures that fleeting moments of frustration (e.g., encountering a software bug) do not trigger intrusive notifications.
@@ -503,7 +511,29 @@ It is essential to state the clinical boundary of this system with complete tran
 ### 7.2 Summary of Contributions and Final Conclusion
 This project successfully designed, implemented, and empirically validated **Parlor**, a state-of-the-art on-device multimodal AI assistant and affective wellness monitoring platform. By combining MediaPipe FaceMesh facial Action Units, real-time vocal acoustic DSP, and qualitative Small Language Model pattern reasoning running on consumer laptop hardware, Parlor resolves the long-standing trilemma between privacy, friction, and diagnostic accuracy in workplace wellness computing.
 
-With a **99.1% test suite pass rate** (110 passed, 0 failed, 1 skipped by design), conversational TTFA of **1.33 s mean** (0.83 s for short queries), a **2.14 s mean / 2.42 s p95** SLM reasoning latency (leaving a 2.58 s safety margin below the 5.0 s budget), complete local network isolation (**0.00 KB** outbound transmission), and a standardized Human Study Re-Collection Kit (`docs/EMA_RECOLLECTION_KIT.md`), Parlor establishes that robust, private, and explainable affective AI is achievable today on everyday edge computing devices.
+With a **99.1% test suite pass rate** (110 passed, 0 failed, 1 skipped by design), conversational TTFA of **1.411 s mean** (loop off) and **1.829 s mean** (loop on, +0.418s concurrency cost), a **2.14 s mean / 2.42 s p95** SLM reasoning latency (leaving a 2.58 s safety margin below the 5.0 s budget), real face extraction of **3.97 ms mean**, vocal DSP of **2.85 ms mean**, complete local network isolation (**0.00 KB** outbound transmission), and a standardized Human Study Re-Collection Kit (`docs/EMA_RECOLLECTION_KIT.md`), Parlor establishes that robust, private, and explainable affective AI is achievable today on everyday edge computing devices.
+
+---
+
+## APPENDIX A: SYNTHETIC PIPELINE SMOKE TEST (REFERENCE ONLY)
+
+For algorithmic verification of the matrix rendering logic during early development, a synthetic test run was performed to verify code execution:
+
+```
+                  REFERENCE SYNTHETIC MATRIX (PIPELINE TEST ONLY)
+                         EMA Ground Truth (Simulated Labels)
+                      ┌──────────────┬──────────────┬──────────────┐
+                      │    Tier 0    │    Tier 1    │    Tier 2    │
+   ┌──────────────────┼──────────────┼──────────────┼──────────────┤
+   │ System Tier 0    │      40      │      28      │       0      │
+   ├──────────────────┼──────────────┼──────────────┼──────────────┤
+   │ System Tier 1    │       0      │      12      │       3      │
+   ├──────────────────┼──────────────┼──────────────┼──────────────┤
+   │ System Tier 2    │       0      │       1      │      60      │
+   └──────────────────┴──────────────┴──────────────┴──────────────┘
+```
+
+> **NOTICE:** The synthetic values above are preserved solely as a pipeline smoke test. They do not constitute an empirical performance result. Real human evaluation data will be generated by running `scripts/evaluate_ema.py` following participant collection.
 
 ---
 

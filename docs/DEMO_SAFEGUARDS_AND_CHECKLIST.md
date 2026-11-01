@@ -46,7 +46,7 @@ uv run python -c "import cv2, mediapipe, scipy, onnxruntime; print('OpenCV:', cv
 
 ### 1.3 Model & Engine Warm-Up Procedure
 
-On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **1.33s TTFA (0.83s for short queries)** immediately:
+On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **1.411s TTFA (loop off) / 1.829s (loop on)** immediately:
 
 1. Launch Parlor via the hardened launch script:
    ```powershell
@@ -67,7 +67,7 @@ Follow this 5-minute interactive walkthrough to demonstrate each technical miles
 ```
                   ┌──────────────────────────────────────────────┐
                   │   STEP 1: Conversational Turn-Taking (1m)   │
-                  │   TTFA = 0.78s | Smart-Turn | Kokoro Speech  │
+                  │   TTFA = 1.41s | Smart-Turn | Kokoro Speech  │
                   └──────────────────────┬───────────────────────┘
                                          │
                                          ▼
@@ -94,7 +94,7 @@ Follow this 5-minute interactive walkthrough to demonstrate each technical miles
 
 ### Step 1: Sub-Second Conversational Assistance (60 Seconds)
 - **Action:** Speak naturally: *"Parlor, can you explain what an Action Unit is in affective computing?"*
-- **Observation:** Notice the assistant responds within **0.78s TTFA**. Point out the audio streaming visualizer and zero-latency barge-in interruptibility by speaking mid-sentence.
+- **Observation:** Notice the assistant responds within **1.41s TTFA** (conversational turn latency). Point out the audio streaming visualizer and zero-latency barge-in interruptibility by speaking mid-sentence.
 - **Key Talking Point:** *"All acoustic turn-detection and speech synthesis run locally on-device. Zero audio packets leave this machine."*
 
 ### Step 2: Multimodal Stress Escalation & Empathic Micro-Break (120 Seconds)
@@ -131,8 +131,8 @@ If a catastrophic hardware failure occurs during the committee review (e.g. lapt
 
 | Timestamp | Scenario Title | On-Screen Visuals | Voiceover Commentary Track |
 | :---: | :--- | :--- | :--- |
-| **0:00 – 1:15** | Sub-Second Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 1.33s mean TTFA (0.83s short query) and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
-| **1:15 – 2:30** | Cognitive Stress Escalation | Live Stroop test execution; MediaPipe AU04 brow furrow heatmap overlays; transition from Tier 0 to Tier 2. | "Observing real-time facial AU extraction running at 1.75ms. The rolling temporal fusion buffer registers multi-cycle elevation." |
+| **0:00 – 1:15** | Sub-Second Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 1.41s mean TTFA and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
+| **1:15 – 2:30** | Cognitive Stress Escalation | Live Stroop test execution; MediaPipe AU04 brow furrow heatmap overlays; transition from Tier 0 to Tier 2. | "Observing real-time facial AU extraction running at 3.97ms on real face. The rolling temporal fusion buffer registers multi-cycle elevation." |
 | **2:30 – 3:35** | Cross-Modal Conflict Reasoning | Animated pitch jitter spike accompanied by facial smile; Gemma 4 SLM JSON reasoning displayed. | "Demonstrating SLM cross-modal reconciliation (2.14s reasoning). High vocal energy is disambiguated from psychological distress." |
 | **3:35 – 4:45** | Fault Injection & Offline Fallback | Terminal process kill; UI warning banner; camera covered showing zero-signal honest reporting. | "Injecting mid-session fault. Parlor reports honest null signals when camera is covered, rather than fabricating stress scores." |
 

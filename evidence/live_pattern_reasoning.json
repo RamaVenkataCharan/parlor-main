@@ -1,0 +1,163 @@
+{
+  "timestamp": 1793556256.9787762,
+  "model": "Gemma 4 E2B IT q4_0",
+  "cross_modal_conflict_trials": [
+    {
+      "iteration": 1,
+      "latency_s": 2.367,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Low (Tier 0)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+37.5 Hz\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.65\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate a slight elevation in pitch (F0 Delta=+37.5 Hz) and a high Vocal Tension Index (0.65), suggesting mild physiological arousal or increased effort. However, the facial Action Units are predominantly neutral, with no significant tension observed in the brow, jaw, or mouth, which keeps the overall stress level low.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding facial tension suggests the arousal is primarily vocal/respiratory rather than emotional distress.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Low (Tier 0)",
+        "primary_drivers": [
+          "Pitch Mean (F0) Delta=+37.5 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.65"
+        ],
+        "explainable_reasoning": "The vocal biomarkers indicate a slight elevation in pitch (F0 Delta=+37.5 Hz) and a high Vocal Tension Index (0.65), suggesting mild physiological arousal or increased effort. However, the facial Action Units are predominantly neutral, with no significant tension observed in the brow, jaw, or mouth, which keeps the overall stress level low.",
+        "confidence_score": 0.85,
+        "ambiguity_note": "The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding facial tension suggests the arousal is primarily vocal/respiratory rather than emotional distress."
+      }
+    },
+    {
+      "iteration": 2,
+      "latency_s": 2.354,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Low (Tier 0)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+37.5 Hz\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.65\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate a significant increase in pitch (F0 Delta=+37.5 Hz) and a high Vocal Tension Index (0.65), suggesting increased vocal effort or arousal. However, the facial expressions show minimal tension (AU04, AU07, AU15, AU20 are all near baseline), resulting in a low overall stress classification.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The high Vocal Tension Index suggests underlying physiological arousal, but the lack of corresponding strong facial muscle activation (AU04, AU20) keeps the stress level low.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Low (Tier 0)",
+        "primary_drivers": [
+          "Pitch Mean (F0) Delta=+37.5 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.65"
+        ],
+        "explainable_reasoning": "The vocal biomarkers indicate a significant increase in pitch (F0 Delta=+37.5 Hz) and a high Vocal Tension Index (0.65), suggesting increased vocal effort or arousal. However, the facial expressions show minimal tension (AU04, AU07, AU15, AU20 are all near baseline), resulting in a low overall stress classification.",
+        "confidence_score": 0.85,
+        "ambiguity_note": "The high Vocal Tension Index suggests underlying physiological arousal, but the lack of corresponding strong facial muscle activation (AU04, AU20) keeps the stress level low."
+      }
+    },
+    {
+      "iteration": 3,
+      "latency_s": 4.319,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Low (Tier 0)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+37.5 Hz\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.65\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate a slight elevation in pitch (Delta +37.5 Hz) and a moderate increase in vocal tension (Vocal Tension Index 0.65), suggesting mild arousal or engagement. However, the facial Action Units are predominantly neutral, with no significant indicators of distress or high cognitive load.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding high-tension facial AUs suggests the arousal is likely related to speaking effort rather than acute emotional distress.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Low (Tier 0)",
+        "primary_drivers": [
+          "Pitch Mean (F0) Delta=+37.5 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.65"
+        ],
+        "explainable_reasoning": "The vocal biomarkers indicate a slight elevation in pitch (Delta +37.5 Hz) and a moderate increase in vocal tension (Vocal Tension Index 0.65), suggesting mild arousal or engagement. However, the facial Action Units are predominantly neutral, with no significant indicators of distress or high cognitive load.",
+        "confidence_score": 0.85,
+        "ambiguity_note": "The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding high-tension facial AUs suggests the arousal is likely related to speaking effort rather than acute emotional distress."
+      }
+    },
+    {
+      "iteration": 4,
+      "latency_s": 2.488,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Low (Tier 0)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+37.5 Hz\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.65\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate a slight elevation in pitch (Delta +37.5 Hz) and a moderate increase in vocal tension (Vocal Tension Index 0.65), suggesting mild cognitive load or engagement. However, facial expressions show minimal tension across key Action Units (AU04, AU07, AU15, AU20 are all near baseline), resulting in a low overall stress assessment.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The Vocal Tension Index is at the upper threshold (0.65), which is typically associated with moderate stress, but the lack of corresponding facial tension suggests the stress is primarily vocal/cognitive rather than emotional.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Low (Tier 0)",
+        "primary_drivers": [
+          "Pitch Mean (F0) Delta=+37.5 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.65"
+        ],
+        "explainable_reasoning": "The vocal biomarkers indicate a slight elevation in pitch (Delta +37.5 Hz) and a moderate increase in vocal tension (Vocal Tension Index 0.65), suggesting mild cognitive load or engagement. However, facial expressions show minimal tension across key Action Units (AU04, AU07, AU15, AU20 are all near baseline), resulting in a low overall stress assessment.",
+        "confidence_score": 0.85,
+        "ambiguity_note": "The Vocal Tension Index is at the upper threshold (0.65), which is typically associated with moderate stress, but the lack of corresponding facial tension suggests the stress is primarily vocal/cognitive rather than emotional."
+      }
+    },
+    {
+      "iteration": 5,
+      "latency_s": 2.446,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Low (Tier 0)\",\n  \"primary_drivers\": [\n    \"Pitch Mean (F0) Delta=+37.5 Hz\",\n    \"Vocal Tension Index (HF Energy >1kHz Ratio)=0.65\"\n  ],\n  \"explainable_reasoning\": \"The vocal biomarkers indicate a slight elevation in pitch and a moderate increase in vocal tension, suggesting mild arousal or engagement. However, the facial micro-expressions show no significant tension (AU04, AU07, AU15, AU20 are all near baseline), and the overall RMS energy is low, pointing toward a calm, focused state rather than acute stress.\",\n  \"confidence_score\": 0.85,\n  \"ambiguity_note\": \"The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding facial tension (AU04=0.05) suggests the arousal is vocal/physiological rather than emotional distress.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Low (Tier 0)",
+        "primary_drivers": [
+          "Pitch Mean (F0) Delta=+37.5 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.65"
+        ],
+        "explainable_reasoning": "The vocal biomarkers indicate a slight elevation in pitch and a moderate increase in vocal tension, suggesting mild arousal or engagement. However, the facial micro-expressions show no significant tension (AU04, AU07, AU15, AU20 are all near baseline), and the overall RMS energy is low, pointing toward a calm, focused state rather than acute stress.",
+        "confidence_score": 0.85,
+        "ambiguity_note": "The Vocal Tension Index (0.65) is at the upper threshold for 'Moderate' stress, but the lack of corresponding facial tension (AU04=0.05) suggests the arousal is vocal/physiological rather than emotional distress."
+      }
+    }
+  ],
+  "consistent_stress_trials": [
+    {
+      "iteration": 1,
+      "latency_s": 2.012,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow (0.84)\",\n    \"Pitch Mean (F0 Delta=+49.0 Hz)\",\n    \"Vocal Tension Index (0.76)\"\n  ],\n  \"explainable_reasoning\": \"The high AU04 Brow Furrow and elevated Vocal Tension Index indicate significant emotional arousal and physical tension. This is compounded by a substantial increase in pitch (F0 Delta of +49.0 Hz) and increased vocal perturbation metrics (Jitter and Shimmer), suggesting heightened sympathetic nervous system activation.\",\n  \"confidence_score\": 0.92,\n  \"ambiguity_note\": \"None\"\n}\n```",
+      "parsed": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow (0.84)",
+          "Pitch Mean (F0 Delta=+49.0 Hz)",
+          "Vocal Tension Index (0.76)"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow and elevated Vocal Tension Index indicate significant emotional arousal and physical tension. This is compounded by a substantial increase in pitch (F0 Delta of +49.0 Hz) and increased vocal perturbation metrics (Jitter and Shimmer), suggesting heightened sympathetic nervous system activation.",
+        "confidence_score": 0.92,
+        "ambiguity_note": "None"
+      }
+    },
+    {
+      "iteration": 2,
+      "latency_s": 4.178,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow (0.84)\",\n    \"Pitch Mean (F0 Delta=+49.0 Hz)\",\n    \"Vocal Tension Index (0.76)\"\n  ],\n  \"explainable_reasoning\": \"The high AU04 Brow Furrow and elevated Vocal Tension Index indicate significant emotional arousal and physical tension in the upper face and vocal apparatus. The substantial positive shift in Pitch Mean (F0 Delta=+49.0 Hz) suggests increased vocal effort or excitement, consistent with a moderate stress response.\",\n  \"confidence_score\": 0.92,\n  \"ambiguity_note\": \"None\"\n}\n```",
+      "parsed": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow (0.84)",
+          "Pitch Mean (F0 Delta=+49.0 Hz)",
+          "Vocal Tension Index (0.76)"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow and elevated Vocal Tension Index indicate significant emotional arousal and physical tension in the upper face and vocal apparatus. The substantial positive shift in Pitch Mean (F0 Delta=+49.0 Hz) suggests increased vocal effort or excitement, consistent with a moderate stress response.",
+        "confidence_score": 0.92,
+        "ambiguity_note": "None"
+      }
+    },
+    {
+      "iteration": 3,
+      "latency_s": 1.884,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow (0.84)\",\n    \"Pitch Mean (F0 Delta=+49.0 Hz)\",\n    \"Vocal Tension Index (0.76)\"\n  ],\n  \"explainable_reasoning\": \"The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension. This is compounded by a substantial upward shift in Pitch Mean (+49.0 Hz), suggesting increased sympathetic nervous system activation and vocal strain.\",\n  \"confidence_score\": 0.92,\n  \"ambiguity_note\": \"None\"\n}\n```",
+      "parsed": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow (0.84)",
+          "Pitch Mean (F0 Delta=+49.0 Hz)",
+          "Vocal Tension Index (0.76)"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension. This is compounded by a substantial upward shift in Pitch Mean (+49.0 Hz), suggesting increased sympathetic nervous system activation and vocal strain.",
+        "confidence_score": 0.92,
+        "ambiguity_note": "None"
+      }
+    },
+    {
+      "iteration": 4,
+      "latency_s": 2.567,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow (0.84)\",\n    \"Pitch Mean (F0 Delta=+49.0 Hz)\",\n    \"Vocal Tension Index (0.76)\"\n  ],\n  \"explainable_reasoning\": \"The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension. This is compounded by a substantial positive shift in Pitch Mean (+49.0 Hz), suggesting increased vocal effort and sympathetic nervous system activation.\",\n  \"confidence_score\": 0.92,\n  \"ambiguity_note\": \"The low Eye Aspect Ratio (EAR=0.22) suggests the eyes are partially closed or squinting, which, combined with AU07, reinforces the presence of strain or focused attention, but the overall vocal metrics are the strongest indicators of current stress.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow (0.84)",
+          "Pitch Mean (F0 Delta=+49.0 Hz)",
+          "Vocal Tension Index (0.76)"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension. This is compounded by a substantial positive shift in Pitch Mean (+49.0 Hz), suggesting increased vocal effort and sympathetic nervous system activation.",
+        "confidence_score": 0.92,
+        "ambiguity_note": "The low Eye Aspect Ratio (EAR=0.22) suggests the eyes are partially closed or squinting, which, combined with AU07, reinforces the presence of strain or focused attention, but the overall vocal metrics are the strongest indicators of current stress."
+      }
+    },
+    {
+      "iteration": 5,
+      "latency_s": 2.537,
+      "raw_output": "```json\n{\n  \"stress_level\": \"Moderate (Tier 1)\",\n  \"primary_drivers\": [\n    \"AU04 Brow Furrow (0.84)\",\n    \"Pitch Mean (F0) Delta (+49.0 Hz)\",\n    \"Vocal Tension Index (0.76)\"\n  ],\n  \"explainable_reasoning\": \"The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension in the upper face and vocal apparatus. This is compounded by a substantial positive shift in Pitch Mean (+49.0 Hz), suggesting increased sympathetic nervous system activation.\",\n  \"confidence_score\": 0.92,\n  \"ambiguity_note\": \"The low Eye Aspect Ratio (0.22) suggests the eyes are partially closed or squinting, which, combined with the high AU07, reinforces the presence of strain or focused attention, but the overall state remains consistent with moderate arousal.\"\n}\n```",
+      "parsed": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow (0.84)",
+          "Pitch Mean (F0) Delta (+49.0 Hz)",
+          "Vocal Tension Index (0.76)"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow (0.84) and elevated Vocal Tension Index (0.76) indicate significant emotional arousal and physical tension in the upper face and vocal apparatus. This is compounded by a substantial positive shift in Pitch Mean (+49.0 Hz), suggesting increased sympathetic nervous system activation.",
+        "confidence_score": 0.92,
+        "ambiguity_note": "The low Eye Aspect Ratio (0.22) suggests the eyes are partially closed or squinting, which, combined with the high AU07, reinforces the presence of strain or focused attention, but the overall state remains consistent with moderate arousal."
+      }
+    }
+  ]
+}

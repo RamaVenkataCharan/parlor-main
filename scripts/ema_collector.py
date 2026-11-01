@@ -78,8 +78,20 @@ def run_interactive_collector():
     print("is sitting in front of the webcam/mic.")
     print("-" * 60)
 
-    participant_id = input("Enter Participant ID (e.g. P1, P2): ").strip() or "P_Anon"
-    
+    # Consent validation
+    consent_input = input("Has the participant signed informed consent for research data collection? [y/N]: ").strip().lower()
+    if consent_input not in ("y", "yes"):
+        print("[ABORTED] Informed consent is required. Cannot record data without participant consent.")
+        return
+
+    participant_id = input("Enter Participant ID (e.g. P01, P02): ").strip()
+    if not participant_id:
+        print("[ABORTED] Participant ID is mandatory for audit trail.")
+        return
+
+    is_dev_input = input("Is the participant a project developer / team member? [y/N]: ").strip().lower()
+    is_developer = is_dev_input in ("y", "yes")
+
     print("\nSelect Experimental Condition:")
     print("1) Quiet Focused Work (Baseline)")
     print("2) Active Speaking / Conversation")
@@ -132,10 +144,13 @@ def run_interactive_collector():
         "timestamp": prompt_time,
         "datetime": datetime.datetime.now().isoformat(),
         "participant_id": participant_id,
+        "consent_given": True,
+        "is_developer": is_developer,
         "condition": condition,
         "responses": {"q1": q1, "q2": q2, "q3": q3},
         "composite_score": composite,
         "ground_truth_tier": ground_truth_tier,
+        "system_window_id": system_match["id"] if system_match else None,
         "system_assessment": system_match,
         "exact_agreement": match_exact,
         "one_tier_tolerance": match_tol

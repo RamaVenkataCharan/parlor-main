@@ -63,6 +63,8 @@ class WellnessService:
         self._task: Optional[asyncio.Task] = None
         self._consecutive_slm_errors = 0
         self._history: List[Dict[str, Any]] = []
+        self._voice_active: bool = False
+        self._last_voice_turn_time: float = 0.0
 
         # Initialize SQLite DB
         db.init_db()
@@ -77,6 +79,16 @@ class WellnessService:
         """Enable or mute wellness interventions."""
         self.trigger_manager.enabled = not muted
         print(f"[WELLNESS] Wellness alerts {'MUTED' if muted else 'ACTIVE'}")
+
+    def set_voice_active(self, active: bool) -> None:
+        """Mark whether a conversational voice turn or user speech is in progress.
+        
+        When active, background wellness SLM reasoning calls are deferred to prevent
+        GPU contention and avoid evicting the conversational prompt KV cache.
+        """
+        self._voice_active = active
+        if active:
+            self._last_voice_turn_time = time.time()
 
     def snooze(self, minutes: float = 10.0) -> None:
         """Snooze interventions for a given number of minutes."""
@@ -119,7 +131,7 @@ class WellnessService:
 
             raw = llama.chat_blocking(
                 messages=messages,
-                max_tokens=220,
+                max_tokens=512,
                 temperature=0.1
             )
             return raw
@@ -190,6 +202,11 @@ class WellnessService:
             }
             self.trigger_manager.evaluate(honest_slm)
             db.log_assessment(honest_slm, intervention_fired=False, meta={"reason": "no_signals"})
+            return None
+
+        # Voice Turn Deferral: If conversational voice turn is active or recently active (< 5s),
+        # defer SLM reasoning to prevent GPU contention and avoid evicting conversational prompt KV cache.
+        if self._voice_active or (time.time() - self._last_voice_turn_time < 5.0):
             return None
 
         # Format prompt

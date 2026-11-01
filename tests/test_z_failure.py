@@ -18,7 +18,8 @@ def test_llama_death_fails_gracefully(server, session):
         out = subprocess.run(["powershell", "-NoProfile", "-Command", cmd],
                              capture_output=True, text=True).stdout.split()
         assert out, "could not find the spawned llama-server"
-        subprocess.run(["taskkill", "/F", "/PID", out[0]], capture_output=True)
+        for pid in out:
+            subprocess.run(["taskkill", "/F", "/PID", pid], capture_output=True)
     else:
         out = subprocess.run(["pgrep", "-P", str(server.proc.pid), "llama-server"],
                              capture_output=True, text=True).stdout.split()

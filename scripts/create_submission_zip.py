@@ -27,6 +27,11 @@ import zipfile
 from typing import List, Tuple
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if os.path.exists(os.path.join(BASE_DIR, "parlor-main-main")):
+    SOURCE_DIR = os.path.join(BASE_DIR, "parlor-main-main")
+else:
+    SOURCE_DIR = BASE_DIR
+
 OUTPUT_DIR = os.path.join(BASE_DIR, "dist")
 OUTPUT_ZIP = os.path.join(OUTPUT_DIR, "parlor_submission_batch14.zip")
 
@@ -60,6 +65,7 @@ EXCLUDED_FILES = {
     ".coverage",
     ".DS_Store",
     "Thumbs.db",
+    "ema_validation_trials.json",  # Exclude unverified synthetic participant trials
 }
 
 
@@ -75,11 +81,6 @@ def should_exclude(rel_path: str, filename: str) -> bool:
 
     ext = os.path.splitext(filename)[1].lower()
     if ext in EXCLUDED_EXTENSIONS:
-        # Note: allow vendored static assets in web/static/vad/ even if .onnx or .bin?
-        # Silero VAD is 1.8MB, but let's check if silero_vad.onnx should be vendored or excluded.
-        # User specified: "excluding bulky model weights (models/ or *.gguf, *.onnx, *.bin)".
-        # However, Silero VAD was vendored for offline operation. Let's allow vad assets if small (<5MB),
-        # or exclude models/ directory strictly.
         if "web" in parts and "static" in parts and "vad" in parts:
             return False  # Keep vendored offline VAD worklet
         return True
@@ -97,18 +98,17 @@ def create_archive() -> Tuple[int, int, int]:
     print("=" * 75)
     print("      PARLOR SUBMISSION PACKAGING (BATCH 14 - CSE)")
     print("=" * 75)
-    print(f" Source Root : {BASE_DIR}")
+    print(f" Source Root : {SOURCE_DIR}")
     print(f" Output Zip  : {OUTPUT_ZIP}")
     print("-" * 75)
 
     with zipfile.ZipFile(OUTPUT_ZIP, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as zipf:
-        for root, dirs, files in os.walk(BASE_DIR):
-            # Prune excluded directories in-place
+        for root, dirs, files in os.walk(SOURCE_DIR):
             dirs[:] = [d for d in dirs if d not in EXCLUDED_DIRS]
 
             for file in files:
                 abs_path = os.path.join(root, file)
-                rel_path = os.path.relpath(abs_path, BASE_DIR)
+                rel_path = os.path.relpath(abs_path, SOURCE_DIR)
 
                 if should_exclude(rel_path, file):
                     continue

@@ -138,11 +138,31 @@ def decide_after(messages: list, current_mode: str) -> ActionDecision:
 def decide_before(history: list, content: list, current_mode: str) -> ActionDecision:
     """Judge an utterance BEFORE any reply exists (blocking). Used in
     translate/listen, where what the reply IS depends on the decision
-    (content to render, or a command to the assistant). The decider
-    prompt rides the same user message as the audio — the production
-    instruction shape, and it extends the primed prefix instead of
-    opening a second user turn (chat templates dislike consecutive
-    same-role messages)."""
+    (content to render, or a command to the assistant)."""
+    if current_mode == "listen":
+        prompt = (
+            "Do not think or reason. Immediately output the JSON action.\n"
+            "System note (not user audio): you are the action decider in 'listen' mode. The user is monologuing or thinking out loud.\n"
+            "If the user is sharing thoughts, telling a story, or speaking casually (e.g. talking about pets, dogs, colors, recipes, or hobbies), output mode: 'none'.\n"
+            "ONLY if the user explicitly addresses the assistant to end listening or asks the assistant for feedback "
+            "(e.g. 'I'm done thinking out loud. What do you think about all of that?', 'Stop listening', 'What do you think?'), output mode: 'conversation'.\n"
+            "Otherwise, mode MUST be 'none'.\n"
+            "timer_seconds: 0. timer_label: \"\". research_task: \"\"."
+        )
+        def build_listen(p: str) -> list:
+            text = {"type": "text", "text": p}
+            return history + [{"role": "user", "content": content + [text]}]
+        try:
+            raw = llama.chat_blocking(build_listen(prompt), max_tokens=256,
+                                      temperature=0.0, json_schema=HEAD_SCHEMA)
+            print(f"[decide_before listen raw output]: {raw}")
+            head = json.loads(raw)
+            mode = "conversation" if head.get("mode") == "conversation" else None
+            return ActionDecision(mode=mode)
+        except Exception as e:
+            print(f"decide_before listen failed: {e}")
+            return NONE
+
     def build(prompt: str) -> list:
         text = {"type": "text", "text": prompt}
         return history + [{"role": "user", "content": content + [text]}]

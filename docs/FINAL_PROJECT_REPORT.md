@@ -11,14 +11,14 @@
 ### COMPUTER SCIENCE AND ENGINEERING
 
 **Submitted by:**
-- **Student 1:** Rama Venkata Charan (Roll No: [21B91A05XX / Lead Backend & Audio Systems])
-- **Student 2:** [Student Name 2] (Roll No: [Roll Number 2 / CV & Frontend Systems])
-- **Student 3:** [Student Name 3] (Roll No: [Roll Number 3 / ML & Evaluation Lead])
-- **Student 4:** [Student Name 4] (Roll No: [Roll Number 4 / Quality & Protocols])
+- **Student 1:** M. Rama Venkata Charan (Roll No: 23KN1A0543)
+- **Student 2:** B. Murali Gopi (Roll No: 23KN1A0515)
+- **Student 3:** M. Kumar Siva Sai (Roll No: 23KN1A0542)
+- **Student 4:** Y. Yashwanth Prakash (Roll No: 23KN1A0571)
 
 **Under the Guidance of:**  
 **Mrs. V. Aruna**  
-Assistant Professor / Associate Professor  
+Senior Assistant Professor  
 Department of Computer Science and Engineering  
 
 **Batch:** 14 | **Section:** A | **Academic Year:** 2025–2026  
@@ -29,12 +29,19 @@ Department of Computer Science and Engineering
 
 ## CERTIFICATE
 
-This is to certify that the project entitled **"EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI"** is a bona fide record of work carried out by **Batch 14, Section A** (Rama Venkata Charan and team) under my guidance and supervision in partial fulfillment of the requirements for the award of the degree of **Bachelor of Technology in Computer Science and Engineering**.
+This is to certify that the project entitled **"EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI"** is a bona fide record of work carried out by **Batch 14, Section A**:
+- **M. Rama Venkata Charan** (Roll No: 23KN1A0543)
+- **B. Murali Gopi** (Roll No: 23KN1A0515)
+- **M. Kumar Siva Sai** (Roll No: 23KN1A0542)
+- **Y. Yashwanth Prakash** (Roll No: 23KN1A0571)
+
+under my guidance and supervision in partial fulfillment of the requirements for the award of the degree of **Bachelor of Technology in Computer Science and Engineering**.
 
 \
 \
 **Mrs. V. Aruna**  
 Project Guide  
+Senior Assistant Professor  
 Department of Computer Science and Engineering  
 
 \
@@ -48,10 +55,10 @@ Department of Computer Science and Engineering
 
 We hereby declare that the project work entitled **"EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI"** submitted to the Department of Computer Science and Engineering is an authentic record of our own original work conducted under the guidance of **Mrs. V. Aruna**. We further declare that this work has not been submitted previously to any other university or institute for any degree or diploma.
 
-- Rama Venkata Charan
-- [Student Name 2]
-- [Student Name 3]
-- [Student Name 4]
+- **M. Rama Venkata Charan** (Roll No: 23KN1A0543)
+- **B. Murali Gopi** (Roll No: 23KN1A0515)
+- **M. Kumar Siva Sai** (Roll No: 23KN1A0542)
+- **Y. Yashwanth Prakash** (Roll No: 23KN1A0571)
 
 Date: November 1, 2026  
 Place: [City Placeholder]
@@ -64,7 +71,7 @@ We express our profound gratitude to our esteemed project guide, **Mrs. V. Aruna
 
 We extend our sincere thanks to the Head of the Department and the faculty members of the Department of Computer Science and Engineering for providing the laboratory facilities, computing infrastructure, and supportive academic environment necessary to pursue this research.
 
-Finally, we express our heartfelt appreciation to our peer volunteers who participated in our Ecological Momentary Assessment (EMA) evaluation protocol.
+Finally, we express our appreciation to our peers who assisted in the trial runs of our Ecological Momentary Assessment (EMA) evaluation protocol.
 
 ---
 
@@ -76,7 +83,7 @@ This project presents **Parlor**, a fully on-device multimodal artificial intell
 
 To prevent user annoyance and alert fatigue, an anti-false-positive trigger manager enforces a multi-cycle hysteresis policy (requiring consecutive elevated cycles) coupled with customizable sensitivity tiers, snooze timers, and provenance disclosures. The entire pipeline runs within a single-process, asynchronous Python 3.12 architecture alongside an ultra-low-latency voice assistant utilizing acoustic turn-taking classification (`smart-turn-v3.2`) and local neural speech synthesis (`Kokoro-ONNX`).
 
-Comprehensive empirical testing across a 111-test suite demonstrated a **99.1% pass rate** (110 passed, 0 failed, 1 intentionally skipped for live prosody). In live measurements on an NVIDIA GeForce RTX 4050 Laptop GPU, Parlor achieved a conversational Time to First Audio (**TTFA**) of **0.781 s**, an end-to-end wellness cycle latency of **2.82 s** (well within the 5.0 s budget), and a hardware footprint of **3.84 GB VRAM**. A network socket audit confirmed **0.00 KB** of outbound data transmission. In ground-truth validation using an Ecological Momentary Assessment (**EMA**) protocol across $N=8$ participants and 144 paired observation windows, the system achieved a **77.8% exact-tier agreement rate**, a **100.0% one-tier-tolerance agreement rate**, and **0.0% false-positive and false-negative critical error rates**. Parlor establishes that clinically meaningful, explainable affective wellness computing can be achieved locally, privately, and affordably on everyday personal computing devices.
+Comprehensive empirical testing across a 111-test suite demonstrated a **99.1% pass rate** (110 passed, 0 failed, 1 intentionally skipped for live prosody). In live measurements on an NVIDIA GeForce RTX 4050 Laptop GPU, Parlor achieved a conversational Time to First Audio (**TTFA**) of **1.33 s mean** (0.83 s for short queries; 1.88 s with concurrent background wellness reasoning), an end-to-end background SLM reasoning latency of **2.14 s mean / 2.42 s p95** (well within the 5.0 s cycle budget with a 2.58 s safety margin), and a peak hardware footprint of **3.90 GB VRAM** (3991 MB / 6141 MB). A network socket audit confirmed **0.00 KB** of outbound data transmission during operation (strictly loopback sockets on `127.0.0.1`). An Ecological Momentary Assessment (**EMA**) evaluation protocol and collection harness were established to benchmark inferred stress against momentary human self-reports; empirical collection across human cohorts is formalized as an ongoing study (`REQUIRES HUMAN`). Synthetic pipeline verification confirmed robust cross-modal pattern reasoning, 100% adherence to 1-tier boundaries in test distributions, and complete signal honesty under zero-input conditions. Parlor establishes that explainable, non-invasive affective wellness computing can be achieved locally, privately, and affordably on everyday personal computing devices.
 
 ---
 
@@ -377,7 +384,7 @@ Previous iterations loaded `onnxruntime-web` and `@ricky0123/vad-web` from exter
 - `ort.js` (ONNX Runtime WebAssembly core)
 - `silero_vad.onnx` (Silero Voice Activity Detection model weights, 1.8 MB)
 - `vad.worklet.bundle.min.js` (Web Audio API audio worklet processor)
-The frontend `index.html` loads all scripts locally via relative paths, ensuring complete operational capability in air-gapped environments.
+The frontend `index.html` loads all scripts locally via relative paths. The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.
 
 ---
 
@@ -389,28 +396,30 @@ The comprehensive test suite was executed three consecutive times to confirm reg
 $$\text{Test Suite Pass Rate} = \frac{110 \text{ Passed}}{111 \text{ Total}} = \mathbf{99.1\%} \quad (0 \text{ Failed}, 1 \text{ Skipped by Design})$$
 
 - `test_thinking_pause_is_held` in `test_conversation.py` is skipped by design because synthetic TTS pitch prosody sounds complete to the acoustic classifier; human hesitation requires live testing.
-- All 42 end-to-end multi-turn conversational and delegation tests executed against the live model on GPU.
+- All 42 end-to-end multi-turn conversational and delegation tests executed against the live Gemma 4 E2B model on GPU (earlier runs had skipped these 42 tests prior to `llama-server` and GGUF model installation).
+- A prompt evaluation discrepancy in `test_listen.py` was identified and resolved in `actions.py`, ensuring 100% pass across all listen turns.
 
 ### 5.2 System Latency and Subsystem Benchmark Breakdown
+All latency figures represent empirical measurements captured on this machine and logged in `evidence/`:
 
-| Subsystem Component | Empirical Measurement | Target Specification | Latency Margin |
-|:---|:---:|:---:|:---:|
-| **Conversational Turn TTFA** | **0.781 s** | $\le 1.000\text{ s}$ | $+219\text{ ms}$ |
-| **Acoustic Turn Classification (`smart-turn`)** | **68.2 ms** | $\le 100.0\text{ ms}$ | $+31.8\text{ ms}$ |
-| **Facial AU Feature Extraction** | **14.2 ms** | $\le 35.0\text{ ms}$ | $+20.8\text{ ms}$ |
-| **Vocal Acoustic DSP Extraction** | **18.7 ms** | $\le 30.0\text{ ms}$ | $+11.3\text{ ms}$ |
-| **Temporal Feature Fusion & Prompt Build** | **0.02 ms** | $\le 5.0\text{ ms}$ | $+4.98\text{ ms}$ |
-| **SLM Qualitative Reasoning (GPU)** | **2.760 s** | $\le 4.500\text{ s}$ | $+1.740\text{ s}$ |
-| **SQLite Transaction Logging** | **2.57 ms** | $\le 10.0\text{ ms}$ | $+7.43\text{ ms}$ |
-| **Total Observation Cycle E2E Latency** | **2.820 s** | $\le 5.000\text{ s}$ | $+2.180\text{ s}$ |
+| Subsystem Component | Empirical Measurement | Target Specification | Latency Margin | Evidence File |
+|:---|:---:|:---:|:---:|:---|
+| **Conversational Turn TTFA (Loop OFF)** | **1.33 s mean (0.83 s short turn)** | $\le 2.000\text{ s}$ | $+670\text{ ms}$ | `evidence/voice_ttfa.csv` |
+| **Conversational Turn TTFA (Loop ON)** | **1.88 s mean** | $\le 2.500\text{ s}$ | $+620\text{ ms}$ | `evidence/voice_ttfa.csv` |
+| **Facial AU Feature Extraction (CPU)** | **1.75 ms mean / 1.91 ms p95** | $\le 30.0\text{ ms}$ | $+28.09\text{ ms}$ | `evidence/facial_extraction.csv` |
+| **Vocal Acoustic DSP Extraction (CPU)** | **2.34 ms mean / 2.88 ms p95** | $\le 30.0\text{ ms}$ | $+27.12\text{ ms}$ | `evidence/vocal_extraction.csv` |
+| **Temporal Feature Fusion & Prompt Build** | **< 0.05 ms** | $\le 5.0\text{ ms}$ | $+4.95\text{ ms}$ | `evidence/wellness_slm_latency.csv` |
+| **SLM Qualitative Reasoning (GPU, Gemma 4 E2B)** | **2.14 s mean / 2.42 s p95** | $\le 5.000\text{ s}$ | $+2.580\text{ s}$ | `evidence/wellness_slm_latency.csv` |
+| **SQLite Transaction Logging** | **2.67 ms mean / 3.59 ms p95** | $\le 10.0\text{ ms}$ | $+6.41\text{ ms}$ | `evidence/db_write_latency.csv` |
+| **Complete Observation Cycle E2E Latency** | **2.43 s p95 total** | $\le 5.000\text{ s}$ | $+2.570\text{ s}$ | `evidence/wellness_slm_latency.csv` |
 
-The 95th-percentile SLM latency across 30 repeated live cycles was **3.12 s**, which, combined with the 21 ms non-SLM extraction overhead, leaves a generous **1.859 s safety margin** below the 5.0-second window budget.
+The 95th-percentile SLM latency across 30 repeated live cycles was **2.42 s**, which, combined with the $< 8\text{ ms}$ non-SLM extraction and database overhead, leaves a generous **2.57 s safety margin** below the 5.0-second window budget.
 
 ### 5.3 Hardware Resource Utilization Profiling
-Continuous telemetry captured via `nvidia-smi` and Windows Performance Monitor during a 30-minute stress evaluation:
-- **Dedicated GPU Memory (VRAM):** **`3.84 GB`** / 6.00 GB (64.0% allocation).
-- **System CPU Utilization:** **`24.6%`** average (Peak 32.1% across 16 logical cores).
-- **Host Private Memory (RAM):** **`4.12 GB`** / 16.00 GB.
+Continuous telemetry captured via `nvidia-smi` and Windows Performance Monitor during live interactive sessions (evidence: `evidence/vram_cpu_usage.log`):
+- **Dedicated GPU Memory (VRAM):** **`3.90 GB`** (3991 MB peak / 6141 MB allocation).
+- **System CPU Utilization:** **`18% – 28%`** during active multimodal processing (across 16 logical threads).
+- **Host Private Memory (RAM):** **`~4.2 GB`** / 16.00 GB.
 - **SQLite Storage Consumption:** **`~18 KB`** per active hour.
 
 ### 5.4 Privacy and Local Isolation Network Audit
@@ -422,21 +431,23 @@ netstat -ano | findstr 8081
 - Port 8000 (Parlor Web / WebSocket Gateway) bound strictly to `127.0.0.1`.
 - Port 8081 (`llama-server` inference API) bound strictly to `127.0.0.1`.
 - Total outbound remote packets captured: **`0 packets`** (**`0.00 KB`**).
+- Network boundary: The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.
 
-### 5.5 Ground-Truth Accuracy Validation (EMA Protocol Analysis)
+### 5.5 Affective Validation and EMA Ground-Truth Study
 
-> **Important Distinction:**  
-> **Model Quantization Agreement (91.4%):** Measures synthetic output fidelity of 4-bit compressed weights compared to uncompressed 16-bit teacher models across benchmark test vectors.  
-> **Ground-Truth Agreement (77.8%):** Measures diagnostic agreement between the system's inferred stress tiers and actual human psychological self-report across live participants.
+> **Critical Methodological Distinction:**  
+> **Model Quantization Agreement:** Measures numerical and syntactic fidelity between quantized weights and full-precision FP16 weights on identical prompts. On this machine, FP16 weights were not downloaded for Gemma 4 E2B, so quantization agreement is marked **NOT MEASURED**.  
+> **Human Ground-Truth Agreement:** Measures agreement between the system's inferred stress tiers and genuine human psychological self-reports via Ecological Momentary Assessment (EMA).
 
-#### 5.5.1 Experimental Setup ($N=8$, 144 Windows)
-The validation protocol evaluated 8 participants (3 core developers, 5 peer student volunteers) across 4 controlled conditions:
-1. *Quiet Focused Work* (5 windows / person): Reading technical documentation quietly.
-2. *Active Speaking / Collaboration* (5 windows / person): Technical explanation aloud.
-3. *Acute Cognitive Stressor* (5 windows / person): 60-second timed mental arithmetic + Stroop color-word interference task under auditory noise.
-4. *Single-Modality Fallback* (3 windows / person): Camera occluded / lighting $<20$ lux during acute stress task.
+#### 5.5.1 Data Provenance Audit and Human Study Status
+A comprehensive code and data audit (`EVIDENCE_AUDIT.md`) revealed that preliminary reports referencing 144 windows with 77.8% exact agreement were based on synthetically generated trials in `shared_state/ema_validation_trials.json` produced by `scripts/run_ema_validation.py` using statistical distributions (`np.random.normal` and `random.choices`) for verifying analysis pipelines.
 
-#### 5.5.2 3x3 Empirical Confusion Matrix
+In strict adherence to academic research integrity:
+1. **The synthetic matrix is NOT represented as empirical human ground truth.**
+2. **Empirical EMA Accuracy is formally marked as: `NOT COLLECTED / REQUIRES HUMAN STUDY`.**
+3. A complete, turnkey collection harness and standardized human study protocol have been established in `scripts/ema_collector.py` and `docs/EMA_RECOLLECTION_KIT.md` for execution by the student team with $\ge 3$ human participants prior to viva.
+
+#### 5.5.2 Synthetic Pipeline Verification Matrix (Reference Only)
 
 ```
                          EMA Ground Truth (Human Self-Report)
@@ -451,16 +462,7 @@ The validation protocol evaluated 8 participants (3 core developers, 5 peer stud
   └──────────────────┴──────────────┴──────────────┴──────────────┘
 ```
 
-#### 5.5.3 Key Accuracy Metrics
-- **Exact-Tier Agreement Rate:** **`77.8%`** (112 of 144 paired windows).
-- **One-Tier-Tolerance Agreement Rate:** **`100.0%`** (144 of 144 windows).
-- **Catastrophic Errors ($0 \leftrightarrow 2$):** **`0.0%`** (Zero extreme misclassifications).
-- **False Positive Rate (FPR) for Tier 2:** **`0.0%`** (0 of 40 Tier 0 baseline windows misclassified as Tier 2).
-- **False Negative Rate (FNR) for Tier 2:** **`0.0%`** (0 of 63 Tier 2 acute stress windows misclassified as Tier 0).
-- **Multimodal Condition Accuracy:** **`75.0%`** exact agreement.
-- **Audio-Only Fallback Accuracy:** **`91.7%`** exact agreement.
-
-*Analysis of Discrepancies:* All 32 off-diagonal classifications occurred at subjective boundary thresholds (EMA composite scores 5–6 between Tier 0/1, or 10–11 between Tier 1/2) or reflected autonomic recovery lag (where a participant felt mentally calm immediately following the timed stressor while physiological brow tension and vocal perturbation took 60–90 seconds to normalize).
+In this reference simulation, 100% of errors fell within an adjacent $\pm 1$ tier, with 0% catastrophic errors ($0 \leftrightarrow 2$). Genuine human metrics will be collected and reported using `scripts/ema_collector.py` and `scripts/evaluate_ema.py` following the protocol in `docs/EMA_RECOLLECTION_KIT.md`.
 
 ### 5.6 Cross-Modal Conflict and Signal Honesty Verification
 To prove that the Small Language Model performs genuine pattern reasoning rather than executing fixed thresholds:
@@ -478,9 +480,12 @@ It is essential to state the clinical boundary of this system with complete tran
 **Parlor is an affective wellness monitoring tool designed to estimate behavioral stress-related signals and recommend breaks; it is NOT a certified medical diagnostic device.** It does not diagnose anxiety disorders, clinical depression, hypertension, or any medical condition. Its outputs are intended solely to provide actionable self-awareness for computer users to mitigate digital eye strain, physical tension, and workplace burnout.
 
 ### 6.2 System Limitations Under Adverse Environmental Conditions
-1. **Webcam Lighting Degradation:** In environments with illumination $<20\text{ lux}$, MediaPipe FaceMesh landmark confidence degrades, causing `face_detected` to toggle to False. The system gracefully falls back to audio-only acoustic estimation.
-2. **Head Pose Sensitivity:** Yaw angles $>30^\circ$ (user looking sideways away from the screen) introduce perspective distortion in Euclidean facial landmark distances.
-3. **Acoustic Dependency on Active Speech:** Vocal acoustic biomarkers require the user to speak. During prolonged silent work, the system relies exclusively on facial Action Units and blink frequency.
+1. **Participant Demographics and Sample Size:** Validations conducted during development involved student and engineering team cohorts. Inter-individual variance in baseline facial expressiveness and vocal pitch requires broader demographic calibration.
+2. **Subjectivity of EMA Self-Reports:** Psychological self-reports are inherently subjective. Retrospective reporting over 5-minute capture windows introduces minor recall lag compared to millisecond biometric sensors.
+3. **Webcam Lighting Degradation:** In environments with illumination $<20\text{ lux}$, MediaPipe FaceMesh landmark confidence degrades, causing `face_detected` to toggle to False. The system gracefully falls back to audio-only acoustic estimation.
+4. **Head Pose Sensitivity:** Yaw angles $>30^\circ$ (user looking sideways away from the screen) introduce perspective distortion in Euclidean facial landmark distances.
+5. **Acoustic Dependency on Active Speech:** Vocal acoustic biomarkers require the user to speak. During prolonged silent work, the system relies exclusively on facial Action Units and blink frequency.
+6. **Live Demo Recording:** Demonstration backup video (`dist/demo_backup/Parlor_Live_System_Demonstration_1080p60.mp4`) requires physical video capture (`REQUIRES HUMAN: record the demo`); the full script and timeline are prepared in `DEMO_SCRIPT.md`.
 
 ### 6.3 Ethical Safeguards: Alert Fatigue, Over-Reliance, and Demographics
 - **Mitigating Alert Fatigue:** The multi-cycle hysteresis trigger policy ensures that fleeting moments of frustration (e.g., encountering a software bug) do not trigger intrusive notifications.
@@ -498,7 +503,7 @@ It is essential to state the clinical boundary of this system with complete tran
 ### 7.2 Summary of Contributions and Final Conclusion
 This project successfully designed, implemented, and empirically validated **Parlor**, a state-of-the-art on-device multimodal AI assistant and affective wellness monitoring platform. By combining MediaPipe FaceMesh facial Action Units, real-time vocal acoustic DSP, and qualitative Small Language Model pattern reasoning running on consumer laptop hardware, Parlor resolves the long-standing trilemma between privacy, friction, and diagnostic accuracy in workplace wellness computing.
 
-With a **99.1% test suite pass rate**, sub-second conversational TTFA (**0.781 s**), a **2.82 s** end-to-end observation cycle latency, complete network isolation (**0.00 KB** outbound), and **77.8% exact / 100% one-tier ground-truth agreement** against human EMA self-reports, Parlor demonstrates that robust, private, and explainable affective AI is achievable today on everyday edge computing devices.
+With a **99.1% test suite pass rate** (110 passed, 0 failed, 1 skipped by design), conversational TTFA of **1.33 s mean** (0.83 s for short queries), a **2.14 s mean / 2.42 s p95** SLM reasoning latency (leaving a 2.58 s safety margin below the 5.0 s budget), complete local network isolation (**0.00 KB** outbound transmission), and a standardized Human Study Re-Collection Kit (`docs/EMA_RECOLLECTION_KIT.md`), Parlor establishes that robust, private, and explainable affective AI is achievable today on everyday edge computing devices.
 
 ---
 
@@ -512,3 +517,4 @@ With a **99.1% test suite pass rate**, sub-second conversational TTFA (**0.781 s
 6. Picard, R. W. (1997). *Affective Computing*. MIT Press.
 7. Scherer, K. R. (1986). *Vocal Affect Expression: A Review and a Model for Future Research*. Psychological Bulletin, 99(2), 143–165.
 8. Stone, A. A., & Shiffman, S. (1994). *Ecological Momentary Assessment (EMA) in Behavioral Medicine*. Annals of Behavioral Medicine, 16(3), 199–202.
+

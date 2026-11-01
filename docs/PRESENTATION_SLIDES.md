@@ -2,8 +2,12 @@
 ## On-Device Multimodal Affective Wellness Monitoring & Conversational AI
 
 **Batch:** 14 | **Section:** A | **Branch:** Computer Science and Engineering  
-**Project Guide:** Mrs. V. Aruna  
-**Team Members:** Rama Venkata Charan & Team  
+**Project Guide:** Mrs. V. Aruna, Senior Assistant Professor  
+**Team Members:**
+- M. Rama Venkata Charan (Roll No: 23KN1A0543)
+- B. Murali Gopi (Roll No: 23KN1A0515)
+- M. Kumar Siva Sai (Roll No: 23KN1A0542)
+- Y. Yashwanth Prakash (Roll No: 23KN1A0571)
 
 ---
 
@@ -12,7 +16,7 @@
 - **Subtitle:** On-Device Multimodal Affective Wellness Monitoring and Real-Time Voice Assistant
 - **Domain:** Affective Computing, Edge AI, Multimodal Signal Processing, Human-Computer Interaction
 - **Academic Context:** Major Project — Department of Computer Science & Engineering (Batch 14, Section A)
-- **Project Guide:** Mrs. V. Aruna, Assistant Professor, Dept. of CSE
+- **Project Guide:** Mrs. V. Aruna, Senior Assistant Professor, Dept. of CSE
 
 ---
 
@@ -26,11 +30,11 @@
 ---
 
 ### Slide 3: The Proposed Solution: Parlor
-- **Passive & Sensorless:** Operates entirely through existing, commodity laptop webcams and USB microphones.
-- **Multimodal Perception:** Simultaneously tracks facial Action Units (MediaPipe FaceMesh) and vocal acoustic biomarkers (Librosa DSP).
+- **Passive & Sensorless:** Operates entirely through existing, commodity laptop webcams and built-in microphones.
+- **Multimodal Perception:** Simultaneously tracks facial Action Units (MediaPipe FaceMesh) and vocal acoustic biomarkers (DSP feature extraction).
 - **Cognitive SLM Reasoning:** Replaces brittle thresholds with an on-device Small Language Model (Gemma 4 E2B IT at Q4_0) performing qualitative pattern reasoning.
 - **Explainable Provenance:** Every intervention discloses the physiological signals that triggered it via a *"Why did this fire?"* interface.
-- **Strict Zero-Cloud Privacy:** 100% of audio, video, inference, and storage operations execute locally on loopback (`127.0.0.1`).
+- **Strict Local Isolation:** The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.
 
 ---
 
@@ -47,7 +51,7 @@
 ---
 
 ### Slide 5: Perception Layer: Facial Micro-Expression Extraction
-- **Landmarking Core:** Google MediaPipe FaceMesh tracking 478 3D landmarks in real time ($14.2\text{ ms}$ on laptop GPU).
+- **Landmarking Core:** Google MediaPipe FaceMesh tracking 478 3D landmarks in real time (**1.75 ms mean, 1.91 ms p95** on CPU).
 - **Target Action Units (FACS):**
   - **AU04 (Brow Lowerer):** Medial brow contraction normalized to nasal bridge (corrugator supercilii — cognitive strain).
   - **AU07 (Lid Tightener):** Palpebral fissure narrowing (orbicularis oculi — visual strain/fatigue).
@@ -58,7 +62,7 @@
 ---
 
 ### Slide 6: Perception Layer: Vocal Acoustic Biomarkers
-- **DSP Core:** Real-time Librosa and SciPy signal processing ($18.7\text{ ms}$ execution latency).
+- **DSP Core:** Real-time NumPy and SciPy signal processing (**2.34 ms mean, 2.88 ms p95** execution latency).
 - **Target Acoustic Indicators:**
   - **Pitch Delta ($\Delta F0$):** Parabolic interpolation over autocorrelation peaks; measures fundamental frequency rise against baseline.
   - **Jitter (%):** Cycle-to-cycle frequency perturbation reflecting vocal fold micro-tremors under autonomic arousal.
@@ -71,7 +75,7 @@
 ### Slide 7: Cognitive Layer: Qualitative SLM Pattern Reasoning
 - **Small Language Model:** Google Gemma 4 E2B IT quantized at `Q4_0` (3.35 GB GGUF) running locally via `llama-server`.
 - **Grammar-Forced Schema:** Response is constrained to deterministic JSON schema containing `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
-- **Thinking Token Elimination:** Configured with `thinking_budget: 0` to prevent token starvation, reducing decode latency from 4.5s to 2.76s on GPU.
+- **Inference Latency:** **2.14 s mean / 2.42 s p95** on NVIDIA RTX 4050 GPU (comfortably within the 5.0 s budget with 2.58 s safety margin).
 - **Temporal Fusion:** 8-second observation window buffer normalizes signals against the user's calibrated baseline before prompt generation.
 
 ---
@@ -99,7 +103,7 @@
 
 ### Slide 10: Conversational Engine & Acoustic Turn-Taking
 - **Real-Time Voice Assistant:** Built-in multimodal conversational agent sharing the same event loop.
-- **Sub-Second TTFA:** Achieves **0.781 s Time to First Audio** using speculative prompt prefix cache priming.
+- **Conversational TTFA:** **1.33 s mean** (0.83 s for short queries; 1.88 s with concurrent background wellness reasoning).
 - **Smart-Turn Classifier:** `smart-turn-v3.2` ONNX model classifies audio completeness in **68.2 ms**, eliminating awkward artificial turn pauses while holding incomplete thoughts.
 - **Local Speech Synthesis:** `Kokoro-ONNX` neural TTS synthesizes natural speech chunks streamed directly over WebSockets.
 
@@ -114,45 +118,41 @@
 - **Automated Test Suite:**
   - Full suite of **111 tests** covering end-to-end conversation, turn gating, delegation, facial/vocal extraction, fusion, and crash resilience.
   - **Results:** **110 Passed, 0 Failed, 1 Skipped by Design** (**99.1% Pass Rate**).
-  - Code Coverage: `fusion.py` 98%, `triggers.py` 90%, `interventions.py` 86%, `db.py` 81%, `vocal.py` 77%, `wellness.py` 64%.
+  - *Test Note:* 42 E2E tests that previously skipped now execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` due to synthetic falling TTS prosody.
 
 ---
 
 ### Slide 12: Empirical Performance & Latency Benchmarks
-*All figures measured live under concurrent dual-system load:*
+*All figures measured live on this machine and logged in `evidence/`:*
 
-| Benchmark Component | Measured Duration | Target Budget | Evaluation Status |
-|:---|:---:|:---:|:---:|
-| Conversational Turn TTFA | **0.781 s** | $\le 1.000\text{ s}$ | **PASS** |
-| Acoustic Turn Detection (`smart-turn`) | **68.2 ms** | $\le 100.0\text{ ms}$ | **PASS** |
-| Facial AU Landmark Extraction | **14.2 ms** | $\le 35.0\text{ ms}$ | **PASS** |
-| Vocal Acoustic DSP Extraction | **18.7 ms** | $\le 30.0\text{ ms}$ | **PASS** |
-| Temporal Fusion & Prompt Prep | **0.02 ms** | $\le 5.0\text{ ms}$ | **PASS** |
-| SLM Qualitative Reasoning (GPU) | **2.760 s** | $\le 4.500\text{ s}$ | **PASS** |
-| SQLite Logging Transaction | **2.57 ms** | $\le 10.0\text{ ms}$ | **PASS** |
-| Total Observation Window Latency | **2.820 s** | $\le 5.000\text{ s}$ | **PASS** |
+| Benchmark Component | Target Budget | Measured Empirical | Status | Evidence File |
+|:---|:---:|:---:|:---:|:---|
+| Facial AU Extraction (CPU, p95) | $< 30\text{ ms}$ | **1.91 ms** | **PASS** | `evidence/facial_extraction.csv` |
+| Vocal DSP Extraction (CPU, p95) | $< 30\text{ ms}$ | **2.88 ms** | **PASS** | `evidence/vocal_extraction.csv` |
+| Wellness SLM Latency (GPU, p95) | $< 5.0\text{ s}$ | **2.42 s** | **PASS** | `evidence/wellness_slm_latency.csv` |
+| Voice TTFA (Loop OFF, Mean) | $< 2.0\text{ s}$ | **1.33 s** | **PASS** | `evidence/voice_ttfa.csv` |
+| Voice TTFA (Loop ON, Mean) | $< 2.5\text{ s}$ | **1.88 s** | **PASS** | `evidence/voice_ttfa.csv` |
+| Test Suite Integration | $\ge 110$ | **110 / 111** | **PASS** | `evidence/pytest_full.log` |
+| Outbound Network Sockets | $0$ | **0 (0.00 KB)** | **PASS** | `evidence/netstat_outbound.txt` |
+| Peak VRAM (10-min Session) | $< 5.5\text{ GB}$ | **3.90 GB** | **PASS** | `evidence/vram_cpu_usage.log` |
 
-- **Hardware Footprint:** Peak 3.84 GB VRAM (on 6GB GPU), 24.6% CPU utilization, 4.12 GB Host RAM.
-
----
-
-### Slide 13: Ground-Truth Accuracy Validation (EMA Protocol)
-*Distinguishing Quantization Agreement (91.4% compression fidelity) from Ground-Truth Diagnostic Agreement:*
-
-- **Protocol:** Ecological Momentary Assessment (EMA) 3-item self-report (1–5 Likert mapped to Tier 0/1/2) collected across **$N=8$ participants** over **144 paired observation windows** (Quiet Focus, Active Speech, Stroop/Timed Arithmetic Stress, and Occluded Camera).
-- **Exact-Tier Agreement Rate:** **`77.8%`** (112 / 144 windows matched exactly).
-- **One-Tier-Tolerance Agreement Rate:** **`100.0%`** (144 / 144 windows; zero catastrophic two-tier errors).
-- **3x3 Empirical Confusion Matrix:**
-  - `System Tier 0`: 40 true Tier 0, 28 Tier 1, 0 Tier 2.
-  - `System Tier 1`: 0 Tier 0, 12 true Tier 1, 3 Tier 2.
-  - `System Tier 2`: 0 Tier 0, 1 Tier 1, 60 true Tier 2.
-- **Safety Profile:** **`0.0%` False Positive Rate** (no calm user interrupted) and **`0.0%` False Negative Rate** (no severe stress missed as calm).
+*Examiner Reproducibility:* `powershell -ExecutionPolicy Bypass -File scripts/reproduce_numbers.ps1`
 
 ---
 
-### Slide 14: Privacy Architecture & Zero-Cloud Security Audit
+### Slide 13: Affective Validation & EMA Ground-Truth Study
+*Distinguishing Quantization Agreement (Compression Fidelity) from Human Ground-Truth Agreement:*
+
+- **Model Quantization Agreement:** Measures prediction similarity between 4-bit and FP16 models. Unquantized FP16 weights were not stored locally for Gemma 4 E2B $\rightarrow$ **NOT MEASURED**.
+- **Human Ground-Truth Agreement:** Evaluates inferred stress against human self-reports. Preliminary reports used synthetic distributions for analysis smoke testing. Empirical human data is formally marked: **`NOT COLLECTED / REQUIRES HUMAN STUDY`**.
+- **Turnkey Human Re-Collection Kit:** Packaged in `docs/EMA_RECOLLECTION_KIT.md` with interactive tool `scripts/ema_collector.py` and evaluation harness `scripts/evaluate_ema.py` for execution with $\ge 3$ human participants prior to viva.
+- **Algorithmic Simulation (Reference):** Validated 100% adherence to adjacent 1-tier boundaries with 0% catastrophic errors ($0 \leftrightarrow 2$).
+
+---
+
+### Slide 14: Privacy Architecture & Local Network Audit
 - **Zero Outbound Data Transmission:** Socket inspection confirmed **0.00 KB** outbound network traffic during live operation.
-- **Complete Local Loopback:** Binds strictly to `127.0.0.1:8000` (FastAPI) and `127.0.0.1:8081` (`llama-server`).
+- **Strict Local Loopback:** Binds strictly to `127.0.0.1:8000` (FastAPI) and `127.0.0.1:8081` (`llama-server`).
 - **Vendored Offline VAD:** Local Silero VAD (`ort.js`, `silero_vad.onnx`, `vad.worklet.bundle.min.js`) completely removes external CDN dependencies (`cdn.jsdelivr.net` removed).
 - **Data Ephemerality:** Raw video frames and audio buffers are processed in volatile memory and immediately discarded. Only anonymized scalar feature vectors and clinical reasoning strings are stored in local SQLite.
 
@@ -160,9 +160,9 @@
 
 ### Slide 15: Limitations, Future Work & Conclusion
 - **Clinical Role Boundary:** Parlor estimates behavioral stress signals and suggests micro-breaks; it is an occupational wellness tool, **NOT a medical diagnostic device**.
-- **Environmental Limitations:** Camera performance degrades in low light ($<20\text{ lux}$) and extreme head yaw ($>30^\circ$); system automatically falls back to acoustic DSP.
+- **Limitations:** Student/developer participant cohorts, subjectivity of EMA self-report, camera performance in low light ($<20\text{ lux}$), and live demo recording (`REQUIRES HUMAN: record the demo`).
 - **Future Directions:**
-  - Quantize for dedicated edge NPUs (Intel NPU, Qualcomm Snapdragon X Elite, Apple Neural Engine) to operate at $<5\text{ Watts}$.
+  - Dedicated NPU offload (Intel NPU, Snapdragon X Elite, Apple Neural Engine) to operate at $<5\text{ Watts}$.
   - Multi-day circadian baseline adaptation in local SQLite.
   - On-device parameter-efficient fine-tuning (LoRA) for user voice personalization.
-- **Conclusion:** Parlor proves that high-accuracy, explainable, and zero-cloud multimodal affective computing can run entirely on commodity consumer laptops.
+- **Conclusion:** Parlor proves that explainable, non-invasive, and zero-cloud multimodal affective computing can run entirely on commodity consumer laptops.

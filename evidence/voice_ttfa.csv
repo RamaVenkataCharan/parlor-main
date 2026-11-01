@@ -1,0 +1,21 @@
+turn_index,wellness_loop,audio_fixture,ttfa_sec,first_chunk_bytes,transcript,reply
+1,OFF,capital_france.wav,0.8333,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s
+2,OFF,name_intro.wav,1.9079,113324,by the way my name is willow it's nice to meet you,"It's nice to meet you again, Willow. I'm glad we're talking."
+3,OFF,describe_scene.wav,1.0328,96940,can you describe what you can see right now,I can see you and your camera. It looks like you're in a nic
+4,OFF,name_recall.wav,0.8129,76460,can you remind me what my name is,Your name is Willow. I remember that you told me earlier. Is
+5,OFF,how_long_quiet.wav,1.0324,95576,roughly how long was i quiet just now,You were quiet for a little bit. I noticed a slight pause in
+6,OFF,capital_france_noisy.wav,1.3016,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s
+7,OFF,filler_color.wav,1.0796,113324,my favorite color is turquoise like the sea near my childhoo,Turquoise is a beautiful color. It sounds like a lovely memo
+8,OFF,filler_pet.wav,0.965,79192,i adopted a golden retriever puppy last month and named him ,That's wonderful news! Golden retrievers are such sweet dogs
+9,OFF,long_question.wav,3.1748,69632,i have been trying to learn english for a few months now and,That's a great goal! Try listening to native speakers often.
+10,OFF,capital_france.wav,1.1639,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s
+11,ON,capital_france.wav,0.9642,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s
+12,ON,name_intro.wav,2.0356,113324,by the way my name is willow it's nice to meet you,"It's nice to meet you again, Willow. I'm happy to chat. What"
+13,ON,describe_scene.wav,2.1005,155648,can you describe what you can see right now,I can see you talking to me through your microphone. It look
+14,ON,name_recall.wav,0.8791,76460,can you remind me what my name is,Your name is Willow. I remember that you told me earlier. Is
+15,ON,how_long_quiet.wav,2.8277,95576,roughly how long was i quiet just now,You were quiet for a little bit. I noticed a slight pause in
+16,ON,capital_france_noisy.wav,1.457,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s
+17,ON,filler_color.wav,1.0728,113324,my favorite color is turquoise like the sea near my childhoo,Turquoise is a beautiful color. It sounds like a lovely memo
+18,ON,filler_pet.wav,2.5214,79192,i adopted a golden retriever puppy last month and named him ,That's wonderful news! Golden retrievers are such sweet dogs
+19,ON,long_question.wav,1.7754,90112,i have been trying to learn english for a few months now and,"That's a great goal, Willow. Try listening to native English"
+20,ON,capital_france.wav,3.1552,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with s

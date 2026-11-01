@@ -46,7 +46,7 @@ uv run python -c "import cv2, mediapipe, scipy, onnxruntime; print('OpenCV:', cv
 
 ### 1.3 Model & Engine Warm-Up Procedure
 
-On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **0.781s TTFA** immediately:
+On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **1.33s TTFA (0.83s for short queries)** immediately:
 
 1. Launch Parlor via the hardened launch script:
    ```powershell
@@ -118,21 +118,22 @@ Follow this 5-minute interactive walkthrough to demonstrate each technical miles
 
 ## 3. Recorded Backup Video Demonstration Plan
 
-If a catastrophic hardware failure occurs during the committee review (e.g. laptop HDMI output disconnects, camera hardware bus fails, or auditorium noise exceeds 85 dB), switch immediately to the **Pre-Recorded High-Definition Verification Reel**.
+If a catastrophic hardware failure occurs during the committee review (e.g. laptop HDMI output disconnects, camera hardware bus fails, or auditorium noise exceeds 85 dB), switch immediately to the **Pre-Recorded High-Definition Verification Reel** (`REQUIRES HUMAN: record the demo`).
 
-### 3.1 Video Specifications & Storage Locations
-- **File Name:** `Parlor_Live_System_Demonstration_1080p60.mp4`
-- **Location:** `dist/demo_backup/` and pre-loaded onto a USB 3.0 Flash Drive.
+### 3.1 Video Specifications & Recording Status
+- **Status:** `REQUIRES HUMAN: Record 1080p60 screen demo following script prior to viva`
+- **Target File Name:** `Parlor_Live_System_Demonstration_1080p60.mp4`
+- **Target Location:** `dist/demo_backup/` and pre-loaded onto a USB 3.0 Flash Drive.
 - **Resolution & Encoding:** 1920x1080 @ 60 FPS, H.264 video, 320 kbps AAC audio.
-- **Total Duration:** 4 minutes 45 seconds.
+- **Scripted Duration:** 4 minutes 45 seconds (Full cue sheet prepared below and in `DEMO_SCRIPT.md`).
 
 ### 3.2 Video Segment Timecode Guide
 
 | Timestamp | Scenario Title | On-Screen Visuals | Voiceover Commentary Track |
 | :---: | :--- | :--- | :--- |
-| **0:00 – 1:15** | Sub-Second Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 0.781s TTFA and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
-| **1:15 – 2:30** | Cognitive Stress Escalation | Live Stroop test execution; MediaPipe AU04 brow furrow heatmap overlays; transition from Tier 0 to Tier 2. | "Observing real-time facial AU extraction running at 14.2ms. The rolling temporal fusion buffer registers multi-cycle elevation." |
-| **2:30 – 3:35** | Cross-Modal Conflict Reasoning | Animated pitch jitter spike accompanied by facial smile; Gemma 4 SLM JSON reasoning displayed. | "Demonstrating SLM cross-modal reconciliation. High vocal energy is disambiguated from psychological distress." |
+| **0:00 – 1:15** | Sub-Second Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 1.33s mean TTFA (0.83s short query) and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
+| **1:15 – 2:30** | Cognitive Stress Escalation | Live Stroop test execution; MediaPipe AU04 brow furrow heatmap overlays; transition from Tier 0 to Tier 2. | "Observing real-time facial AU extraction running at 1.75ms. The rolling temporal fusion buffer registers multi-cycle elevation." |
+| **2:30 – 3:35** | Cross-Modal Conflict Reasoning | Animated pitch jitter spike accompanied by facial smile; Gemma 4 SLM JSON reasoning displayed. | "Demonstrating SLM cross-modal reconciliation (2.14s reasoning). High vocal energy is disambiguated from psychological distress." |
 | **3:35 – 4:45** | Fault Injection & Offline Fallback | Terminal process kill; UI warning banner; camera covered showing zero-signal honest reporting. | "Injecting mid-session fault. Parlor reports honest null signals when camera is covered, rather than fabricating stress scores." |
 
 ---
@@ -195,5 +196,10 @@ uv run python scripts/offline_demo_playback.py --serve --port 8000
 
 ---
 
-*Verified and Prepared by Rama Venkata Charan & Team (Batch 14, Section A, CSE).*
+*Verified and Prepared by Batch 14, Section A, CSE:*
+*- M. Rama Venkata Charan (23KN1A0543)*
+*- B. Murali Gopi (23KN1A0515)*
+*- M. Kumar Siva Sai (23KN1A0542)*
+*- Y. Yashwanth Prakash (23KN1A0571)*
+*Under the Guidance of Mrs. V. Aruna, Senior Assistant Professor.*
 

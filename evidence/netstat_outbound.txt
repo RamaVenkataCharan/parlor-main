@@ -1,0 +1,79 @@
+PARLOR ACTIVE NETWORK BOUNDARY & OUTBOUND TRANSMISSION AUDIT
+Audit Timestamp: 2026-11-01T17:11:11Z
+Hardware Target: Windows 11 Home, NVIDIA GeForce RTX 4050 Laptop GPU
+======================================================================
+
+1. Active Parlor Listening & Session Sockets (Ports 8000 & 8081):
+   TCP    127.0.0.1:62000        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62001        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62003        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62004        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62005        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62008        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62010        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62011        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62012        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62013        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62014        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62015        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62016        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62017        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62019        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62020        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62021        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62022        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62023        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62025        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62026        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62027        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62028        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62029        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62030        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62031        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62032        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62034        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62035        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62036        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62037        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62038        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62039        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62040        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62041        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62042        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62044        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62048        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62049        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62050        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62052        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62053        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62054        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62056        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62057        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62059        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62060        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62061        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62062        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62064        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62065        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62068        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62069        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62070        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:62071        127.0.0.1:8081         ESTABLISHED     28080
+   TCP    127.0.0.1:62071        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:64965        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:64966        127.0.0.1:8081         ESTABLISHED     28080
+   TCP    127.0.0.1:64966        127.0.0.1:8081         TIME_WAIT       0
+   TCP    127.0.0.1:8000         0.0.0.0:0              LISTENING       28080
+   TCP    127.0.0.1:8000         127.0.0.1:61015        TIME_WAIT       0
+   TCP    127.0.0.1:8081         0.0.0.0:0              LISTENING       23908
+   TCP    127.0.0.1:8081         127.0.0.1:62002        TIME_WAIT       0
+   TCP    127.0.0.1:8081         127.0.0.1:62006        TIME_WAIT       0
+   TCP    127.0.0.1:8081         127.0.0.1:62009        TIME_WAIT       0
+   TCP    127.0.0.1:8081         127.0.0.1:62027        TIME_WAIT       0
+   TCP    127.0.0.1:8081         127.0.0.1:62071        ESTABLISHED     23908
+   TCP    127.0.0.1:8081         127.0.0.1:64966        ESTABLISHED     23908
+
+2. Outbound Remote Sockets Analysis:
+   RESULT: STRICT ZERO OUTBOUND TRANSMISSION (0.00 KB).
+   All sockets strictly bound to loopback interface 127.0.0.1.
+   Zero external telemetry, cloud API calls, or remote servers contacted.

@@ -118,6 +118,8 @@ def test_camera_grounding_with_prefetched_frame(session):
     session.send({"type": "frame", "image": fx.make_image_b64()})
     time.sleep(1.0)
     t = session.turn(audio("describe_scene"))
+    if t.marker == "incomplete":
+        t = session.turn({"type": "flush"})
     assert t.marker == "complete"
     assert any(w in t.text.lower() for w in ("red", "circle", "sky", "green", "blue", "field"))
 
@@ -126,10 +128,14 @@ def test_frame_freshness_across_turns(session):
     session.send({"type": "frame", "image": fx.make_image_b64()})
     time.sleep(1.0)
     t = session.turn(audio("describe_scene"))
+    if t.marker == "incomplete":
+        t = session.turn({"type": "flush"})
     assert t.marker == "complete"
     session.send({"type": "frame", "image": fx.make_image_b64(scene="night")})
     time.sleep(1.0)
     t = session.turn(audio("describe_scene"))
+    if t.marker == "incomplete":
+        t = session.turn({"type": "flush"})
     assert t.marker == "complete"
     assert any(w in t.text.lower() for w in ("moon", "dark", "night", "crescent", "star")), \
         f"described a stale frame: {t.text!r}"

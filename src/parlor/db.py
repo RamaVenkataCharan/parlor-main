@@ -106,7 +106,7 @@ def get_recent_history(limit: int = 50, db_path: Optional[str] = None) -> List[D
                 SELECT id, timestamp, stress_level, numeric_score, primary_drivers,
                        reasoning, confidence, intervention_fired, intervention_type, metadata
                 FROM stress_assessments
-                ORDER BY timestamp DESC
+                ORDER BY timestamp DESC, id DESC
                 LIMIT ?
             """, (limit,))
             rows = cursor.fetchall()

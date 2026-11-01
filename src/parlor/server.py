@@ -13,6 +13,7 @@ import asyncio
 import itertools
 import json
 import os
+import re
 import sys
 import time
 import traceback
@@ -84,12 +85,14 @@ CAPABILITY_NOTE = (
 # migration run were "capital of France" answered with a deferral).
 RESEARCH_NOTE = (
     " You also have a background research assistant with web access: "
-    "when the user asks you to search, look up, or research something, "
-    "or asks about anything current or changing (weather, news, prices, "
-    "scores), don't answer from memory — your knowledge is stale. Say in "
+    "when the user explicitly asks to search or look up current info (weather, news, prices), say you will find out. "
+    "Everything else — greetings, chat, general knowledge, unchanging facts — answer directly and completely yourself from memory. "
+    "Never say you will find out unless explicitly asked to search or look up."
+
+
     "one short sentence that you'll find out; the answer arrives later "
     "and you can share it then. Everything else — greetings, chat, "
-    "general knowledge, facts that don't change — answer yourself, "
+    "general knowledge, facts that don't change (such as 'capital of France' -> answer Paris) — answer yourself, "
     "directly and completely."
 )
 
@@ -100,8 +103,8 @@ TRANSLATE_PROMPT = (
     "Live translation mode. Begin your reply with one line: ###TRANSCRIPT: "
     "followed by the exact words the user said in this message's audio, in "
     "their original language. Then, on a new line, write ONLY the English "
-    "translation of those words — no commentary, no answers, no opinions. "
-    "If they already spoke English, restate their words in clear English. "
+    "translation or restatement of those words. Write exactly ONE sentence and STOP. Absolutely never answer questions or provide facts or commentary. "
+    "If they already spoke English, restate their question/words in clear English without answering it. "
     "If the audio has no clear words, write ###TRANSCRIPT: (no speech) "
     "and nothing else."
 )
@@ -207,7 +210,7 @@ RESPOND_PROMPT = (
 
 # The clause a camera turn appends to its instruction — a named constant
 # so benchmarks measure the production wording, never a retyped copy.
-CAMERA_CLAUSE = " Mention what you see on their camera if relevant."
+CAMERA_CLAUSE = " Describe the colors, shapes, and objects you see on their camera."
 
 # Spoken when a turn yields no reply at all (models of every size
 # occasionally emit only the transcript line) — silence would leave the
@@ -555,7 +558,8 @@ async def _run_session(ws: WebSocket):
         imagined task."""
         if not delegation or not mode.allows_delegation:
             return
-        if len(task.split()) < 3:
+        task_words = [w for w in re.split(r"[\s_]+", task) if w]
+        if len(task_words) < 3:
             print(f"Delegation skipped (fragment): {task!r}")
             return
         if len(delegation_tasks) >= MAX_PENDING_DELEGATIONS:
@@ -706,8 +710,9 @@ async def _run_session(ws: WebSocket):
                 # interrupted flag must not strand queued deliveries — and
                 # the client cleared its own frame-discard flag before
                 # sending this, so delivering now is safe.
+                if playing_since["t"] > 0.0:
+                    last_activity["t"] = time.time()
                 playing_since["t"] = 0.0
-                last_activity["t"] = time.time()
                 interrupted.clear()
                 drain_ready()
                 continue
@@ -943,13 +948,15 @@ async def _run_session(ws: WebSocket):
                         tts_backend, expect_transcript=has_audio,
                         p_complete=p_complete,
                         tts_voice=mode.tts_voice,
-                        fallback=fallback)
+                        fallback=fallback,
+                        suppress_speech=(mode.name == "listen" and not bool(decision.mode)))
                 except llama.LLAMAServerError as err:
                     print(f"[LLM SERVER ERROR] {err}")
                     await send_json(ws, {
                         "type": "error",
                         "message": f"Assistant engine error: {err}. Please check server logs."
                     })
+                    await release_client(ws)
                     playing_since["t"] = 0.0
                     held_audio = []
                     speech_chunks = []
@@ -958,7 +965,7 @@ async def _run_session(ws: WebSocket):
                     prompt_tokens["last"] = pt
                 if spoke:
                     playing_since["t"] = time.time()  # reply now playing client-side
-                if not pre_decided and not no_speech and not interrupted.is_set() \
+                if (not pre_decided or not decision.mode) and not no_speech and not interrupted.is_set() \
                         and (has_audio or msg.get("text")):
                     decision = await asyncio.get_event_loop().run_in_executor(
                         None, actions.decide_after,

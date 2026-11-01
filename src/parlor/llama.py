@@ -199,6 +199,7 @@ def _chat_body(messages: list, max_tokens: int, stream: bool,
         # structurally guaranteed to parse (used by the action head).
         body["response_format"] = {"type": "json_schema",
                                    "json_schema": {"schema": json_schema}}
+        body["thinking_budget"] = 0
     if stream:
         # The final chunk then carries usage.prompt_tokens — the REAL
         # context size, which drives history rotation (estimates drift).
@@ -222,7 +223,11 @@ def chat_blocking(messages: list, max_tokens: int,
         conn.close()
         if "error" in data:
             raise LLAMAServerError(f"llama-server: {data['error']}")
-        return data["choices"][0]["message"].get("content") or ""
+        msg = data["choices"][0]["message"]
+        content = msg.get("content") or msg.get("reasoning_content") or ""
+        if not content:
+            print(f"[CHAT BLOCKING EMPTY] message={msg}")
+        return content
     except Exception as e:
         if not is_healthy(timeout=1.0):
             print(f"[LLAMA-SERVER CRASH DETECTED] llama-server process is unhealthy/dead: {e}")

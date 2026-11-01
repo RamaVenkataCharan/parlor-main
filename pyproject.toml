@@ -31,9 +31,14 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
+    "bandit>=1.9.4",
+    "mypy>=2.4.1",
+    "pip-audit>=2.10.1",
     "playwright>=1.62.0",
     "pytest>=8.4",
+    "pytest-cov>=7.1.0",
     "pytest-playwright>=0.8.0",
+    "ruff>=0.17.3",
 ]
 
 [tool.pytest.ini_options]

@@ -253,11 +253,16 @@ def echoes_instruction(transcript: str, instruction: str, n: int = 5) -> bool:
 
 
 def _instruction_text(messages: list) -> str:
-    content = messages[-1].get("content", "")
-    if isinstance(content, str):
-        return content
-    return " ".join(p.get("text", "") for p in content
-                    if isinstance(p, dict) and p.get("type") == "text")
+    texts = []
+    for m in messages:
+        if m.get("role") in ("system", "user"):
+            content = m.get("content", "")
+            if isinstance(content, str):
+                texts.append(content)
+            elif isinstance(content, list):
+                texts.extend(p.get("text", "") for p in content
+                             if isinstance(p, dict) and p.get("type") == "text")
+    return " ".join(texts)
 
 
 async def run_turn(ws, messages: list, interrupted: asyncio.Event,
@@ -265,7 +270,8 @@ async def run_turn(ws, messages: list, interrupted: asyncio.Event,
                    p_complete: float | None = None,
                    tts_voice: str = "af_heart",
                    proactive: bool = False,
-                   fallback: str | None = None
+                   fallback: str | None = None,
+                   suppress_speech: bool = False
                    ) -> tuple[str, int | None, bool, bool]:
     """Stream one model turn: decode → sentences → TTS, all pipelined. The
     transcript line is pushed to the client the moment it completes, while
@@ -350,15 +356,17 @@ async def run_turn(ws, messages: list, interrupted: asyncio.Event,
         if NO_SPEECH_RE.match(text):
             print(f"Transcript is a no-speech report: {text!r}")
             return None
-        if echoes_instruction(text, instruction):
+        if echoes_instruction(text, instruction, n=4):
             print(f"Transcript suppressed (instruction echo): {text!r}")
             return None
         return text
 
     async def dispatch(sentences: list[str]):
+        if suppress_speech:
+            return
         nonlocal tts_started_at
         for sentence in sentences:
-            if not proactive and echoes_instruction(sentence, instruction, n=6):
+            if not proactive and expect_transcript and echoes_instruction(sentence, instruction, n=6):
                 print(f"Sentence suppressed (instruction echo): {sentence!r}")
                 continue
             if NO_SPEECH_RE.match(sentence):

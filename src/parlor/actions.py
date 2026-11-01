@@ -37,6 +37,7 @@ from parlor import llama
 # the e2e suite: a think-aloud quasi-question ("the thing I wanted to ask
 # you about is…") is still thinking, not an exit.
 _HEAD_COMMON = (
+    "Do not think or reason. Immediately output the JSON action.\n"
     "System note (not user audio): you are the action decider. From the "
     "user's last message (the assistant's reply above may help), report "
     "what the user asked the assistant to DO, as JSON. timer_seconds: "
@@ -53,22 +54,16 @@ _HEAD_COMMON = (
 )
 _MODE_CLAUSES = {
     "conversation": (
-        "mode: the mode they asked to SWITCH TO — 'translate' (translate "
-        "everything they say from now on), 'listen' (any ask for the "
-        "assistant to just listen, stay silent or quiet, or stop "
-        "responding for a while) — the session is already in normal "
-        "conversation, so mode is 'none' unless they asked to change it."),
+        "mode: 'translate' if the user asked to translate what they say (e.g. 'translate everything I say'), "
+        "'listen' if they asked the assistant to just listen quietly, be quiet, or stop responding, "
+        "otherwise 'none'."),
     "translate": (
-        "mode: 'conversation' ONLY if their words are a command to the "
-        "assistant to stop translating and go back to normal "
-        "conversation (in any language); everything else they say is "
-        "content being translated, so mode is 'none'."),
+        "mode: 'conversation' if the user's words ask to stop translating or go back to normal conversation, "
+        "else 'none'."),
     "listen": (
-        "mode: 'conversation' ONLY if their words clearly ask the "
-        "assistant to start responding again — like \"okay, I'm done\", "
-        "\"what do you think?\", \"stop listening\"; if they are still "
-        "thinking out loud, even wondering about something or mentioning "
-        "the assistant, mode is 'none'."),
+        "mode: 'conversation' if the user indicates they are done thinking out loud, wants to stop listening, "
+        "or asks the assistant to speak/respond (e.g. 'I\'m done', 'what do you think', 'stop listening'), "
+        "else 'none'."),
 }
 HEAD_SCHEMA = {
     "type": "object",
@@ -98,14 +93,46 @@ NONE = ActionDecision()
 
 
 def decide_after(messages: list, current_mode: str) -> ActionDecision:
-    """Judge a finished conversation turn (blocking — run in an executor).
-    `messages` ends with the assistant reply, byte-identical to the turn
-    request plus the reply — the whole prefix is already in the slot
-    cache, so only the decider prompt pays prefill. The reply is
-    evidence: a confirmation like "three minutes, I'll let you know" is
-    exactly what the head keys on."""
-    return _decide(lambda prompt: messages + [{"role": "user", "content": prompt}],
-                   current_mode)
+    """Judge a finished conversation turn (blocking — run in an executor)."""
+    last_user = ""
+    assistant_reply = ""
+    for m in reversed(messages):
+        if not assistant_reply and m.get("role") == "assistant":
+            assistant_reply = str(m.get("content", ""))
+        elif not last_user and m.get("role") == "user":
+            c = m.get("content")
+            if isinstance(c, list):
+                parts = [p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") == "text"]
+                last_user = " ".join(parts).strip()
+            else:
+                last_user = str(c or "")
+        if last_user and assistant_reply:
+            break
+
+    if "###TRANSCRIPT:" in assistant_reply:
+        parts = assistant_reply.split("###TRANSCRIPT:", 1)[1]
+        if "\n" in parts:
+            t, r = parts.split("\n", 1)
+            if t.strip() and "(no speech)" not in t.lower():
+                last_user = t.strip()
+            assistant_reply = r.strip()
+        else:
+            if parts.strip() and "(no speech)" not in parts.lower():
+                last_user = parts.strip()
+            assistant_reply = ""
+
+    clause = _MODE_CLAUSES[current_mode]
+    head_prompt = (
+        "System note (not user audio): you are the action decider. Given the conversation turn below, "
+        "report what action the user asked the assistant to DO, as JSON.\n\n"
+        f"User: {last_user}\n"
+        f"Assistant: {assistant_reply}\n\n"
+        f"{clause} "
+        "timer_seconds: countdown in seconds if asked for a timer, else 0. "
+        "timer_label: a two-or-three-word label, else empty string. "
+        "research_task: if the user explicitly asked to search the web, look up, or research current or changing info (like today's weather, stock prices, news, scores), the task restated. Stable general knowledge and unchanging facts (such as 'what is the capital of France', greetings, chat) are NOT research: for those, research_task MUST be empty string."
+    )
+    return _decide(lambda _: [{"role": "user", "content": head_prompt}], current_mode)
 
 
 def decide_before(history: list, content: list, current_mode: str) -> ActionDecision:
@@ -131,8 +158,9 @@ def _decide(build, current_mode: str) -> ActionDecision:
         # restated research task — truncated JSON fails json.loads and
         # silently drops an action the reply already promised (review
         # finding). The grammar bounds the shape, so the cap is generous.
-        raw = llama.chat_blocking(build(head_prompt), max_tokens=192,
+        raw = llama.chat_blocking(build(head_prompt), max_tokens=512,
                                   temperature=0.0, json_schema=HEAD_SCHEMA)
+        print(f"[_decide raw output] current_mode={current_mode}: {raw}")
         head = json.loads(raw)
     except Exception as e:
         print(f"Action decider failed: {e}")

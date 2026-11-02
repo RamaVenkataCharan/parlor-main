@@ -1,0 +1,131 @@
+===========================================================================
+   LIVE BROWSER INTERVENTION CARD FIRING AUDIT -- BALANCED MODE
+===========================================================================
+Mode                 : Balanced (3 consecutive cycles, 300s cooldown)
+WebSocket Status     : CONNECTED (ws://127.0.0.1:8000/ws)
+Card Visible in DOM  : True
+Card Title           : Guided 4-7-8 Breathing Exercise
+Card Category        : Guided Breathing
+Card Personalized    : Observed triggers: AU04 Brow Furrow=0.95, Vocal Tension=0.88, Pitch Delta=+68Hz.
+Card Reasoning       : Severe sustained brow furrow and high vocal acoustic tension indicating acute stress. (Stress Level: High (Tier 2), Confidence: 0.95)
+Screenshot Evidence  : evidence\intervention_card_browser.png
+---------------------------------------------------------------------------
+WebSocket Intervention Messages Received in Browser:
+[
+  {
+    "type": "test_wellness_cycle_result",
+    "consecutive_count": 1,
+    "should_fire": false,
+    "intervention_fired": false,
+    "metadata": {
+      "consecutive_count": 1,
+      "ema_score": 1.3,
+      "cooldown_remaining_sec": 0.0,
+      "reason": "below_threshold"
+    }
+  },
+  {
+    "type": "intervention_triggered",
+    "intervention": {
+      "title": "Guided 4-7-8 Breathing Exercise",
+      "category": "Guided Breathing",
+      "icon": "\ud83e\udec1",
+      "action_label": "Start 1-Min Breathing",
+      "steps": [
+        "Inhale deeply through your nose for 4 seconds.",
+        "Hold your breath gently for 7 seconds.",
+        "Exhale slowly and completely through your mouth for 8 seconds.",
+        "Repeat this cycle 4 times to relax your nervous system."
+      ],
+      "personalized_note": "Observed triggers: AU04 Brow Furrow=0.95, Vocal Tension=0.88, Pitch Delta=+68Hz.",
+      "slm_reasoning": "Severe sustained brow furrow and high vocal acoustic tension indicating acute stress.",
+      "slm_drivers": [
+        "AU04 Brow Furrow=0.95",
+        "Vocal Tension=0.88",
+        "Pitch Delta=+68Hz"
+      ],
+      "stress_level": "High (Tier 2)",
+      "confidence_score": 0.95,
+      "ambiguity_note": null
+    }
+  },
+  {
+    "type": "test_wellness_cycle_result",
+    "consecutive_count": 0,
+    "should_fire": true,
+    "intervention_fired": true,
+    "metadata": {
+      "consecutive_count": 2,
+      "ema_score": 1.51,
+      "cooldown_remaining_sec": 0.0,
+      "reason": "pattern_matched (3_consecutive_cycles)"
+    }
+  },
+  {
+    "type": "test_wellness_cycle_result",
+    "consecutive_count": 1,
+    "should_fire": false,
+    "intervention_fired": false,
+    "metadata": {
+      "consecutive_count": 1,
+      "ema_score": 1.66,
+      "cooldown_remaining_sec": 298.5,
+      "reason": "cooldown_active (298s left)"
+    }
+  }
+]
+---------------------------------------------------------------------------
+Browser Console Messages:
+[log] [MIC DEVICE] Label: "Fake Default Audio Input", Enabled: true, Muted: false, State: live {autoGainControl: true, channelCount: 1, deviceId: default, echoCancellation: true, groupId: efc762c30499e6e28e3ec23c56e23084a52deca8fc33bd650e6672006862786b}
+[log] [STATE] loading -> listening
+[log] VAD | debug > initializing vad
+[log] [STATE] listening -> listening
+[log] VAD | debug > vad is initialized
+[log] VAD | debug > initializing micVAD
+[log] VAD | debug > started micVAD
+[log] [STATE] listening -> listening
+[log] VAD initialized
+[log] [MIC METER] Frame #3 | RMS Vol: 0.2205 | SpeechProb: 0.107 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #4 | RMS Vol: 0.0055 | SpeechProb: 0.040 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #8 | RMS Vol: 0.2125 | SpeechProb: 0.044 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #9 | RMS Vol: 0.0079 | SpeechProb: 0.017 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #13 | RMS Vol: 0.2146 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #14 | RMS Vol: 0.0121 | SpeechProb: 0.008 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #18 | RMS Vol: 0.2136 | SpeechProb: 0.014 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #19 | RMS Vol: 0.0250 | SpeechProb: 0.008 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #23 | RMS Vol: 0.1725 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #24 | RMS Vol: 0.1282 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [STAGE 1] [WS SEND] set_wellness_sensitivity payload size: 53
+[log] [WS RECV] wellness_sensitivity_changed {type: wellness_sensitivity_changed, sensitivity: balanced}
+[log] [MIC METER] Frame #29 | RMS Vol: 0.2147 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #30 | RMS Vol: 0.0062 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #34 | RMS Vol: 0.2145 | SpeechProb: 0.015 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #35 | RMS Vol: 0.0086 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+[log] [STAGE 1] [WS SEND] test_wellness_cycle payload size: 319
+[log] [WS RECV] test_wellness_cycle_result {type: test_wellness_cycle_result, consecutive_count: 1, should_fire: false, intervention_fired: false, metadata: Object}
+[log] [MIC METER] Frame #39 | RMS Vol: 0.2142 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #40 | RMS Vol: 0.0134 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #44 | RMS Vol: 0.2127 | SpeechProb: 0.014 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #45 | RMS Vol: 0.0288 | SpeechProb: 0.008 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #49 | RMS Vol: 0.1454 | SpeechProb: 0.008 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #50 | RMS Vol: 0.1578 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[log] [STAGE 1] [WS SEND] test_wellness_cycle payload size: 319
+[log] [WS RECV] intervention_triggered {type: intervention_triggered, intervention: Object}
+[log] [WS RECV] test_wellness_cycle_result {type: test_wellness_cycle_result, consecutive_count: 0, should_fire: true, intervention_fired: true, metadata: Object}
+[log] [MIC METER] Frame #55 | RMS Vol: 0.2145 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #56 | RMS Vol: 0.0054 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #60 | RMS Vol: 0.2144 | SpeechProb: 0.013 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #61 | RMS Vol: 0.0086 | SpeechProb: 0.007 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #65 | RMS Vol: 0.2140 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #66 | RMS Vol: 0.0143 | SpeechProb: 0.007 | Thresh: 0.5 | State: listening
+[log] [STAGE 1] [WS SEND] test_wellness_cycle payload size: 319
+[log] [WS RECV] test_wellness_cycle_result {type: test_wellness_cycle_result, consecutive_count: 1, should_fire: false, intervention_fired: false, metadata: Object}
+[log] [MIC METER] Frame #70 | RMS Vol: 0.2109 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #71 | RMS Vol: 0.0388 | SpeechProb: 0.007 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #76 | RMS Vol: 0.2134 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[log] [STAGE 1] [WS SEND] wellness_telemetry payload size: 3932
+[log] [MIC METER] Frame #81 | RMS Vol: 0.2116 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #82 | RMS Vol: 0.0051 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #86 | RMS Vol: 0.2115 | SpeechProb: 0.021 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #87 | RMS Vol: 0.0078 | SpeechProb: 0.008 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #90 | RMS Vol: 0.0000 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening

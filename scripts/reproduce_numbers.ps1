@@ -52,6 +52,16 @@ if ($Live) {
     uv run python "$ScriptDir\measure_hardware_and_network.py"
 }
 
+function Get-Percentile($arr, $p) {
+    if (-not $arr -or $arr.Count -eq 0) { return 0.0 }
+    $s = $arr | Sort-Object
+    $k = $p * ($s.Count - 1)
+    $f = [int][Math]::Floor($k)
+    $c = [int][Math]::Ceiling($k)
+    if ($f -eq $c) { return [double]$s[$f] }
+    return [double]($s[$f] + ($k - $f) * ($s[$c] - $s[$f]))
+}
+
 # --- Metric 1: Facial AU extraction on Real Face ---
 $facialRealCsv = Join-Path $EvidenceDir "facial_extraction_real.csv"
 if (Test-Path $facialRealCsv) {
@@ -59,9 +69,8 @@ if (Test-Path $facialRealCsv) {
     $meanMs = ($rows | Measure-Object -Property duration_ms -Average).Average
     $detectedCount = ($rows | Where-Object { $_.face_detected -eq "True" }).Count
     $detectRate = ($detectedCount / $rows.Count) * 100.0
-    $latencies = $rows | ForEach-Object { [double]$_.duration_ms } | Sort-Object
-    $idx95 = [int][Math]::Floor(0.95 * ($latencies.Count - 1))
-    $facialRealP95 = $latencies[$idx95]
+    $latencies = $rows | ForEach-Object { [double]$_.duration_ms }
+    $facialRealP95 = Get-Percentile $latencies 0.95
     $facialRealStr = "$([Math]::Round($meanMs, 2)) ms (mean) / $([Math]::Round($facialRealP95, 2)) ms (p95) [Det: $([Math]::Round($detectRate, 0))%]"
 } else {
     $facialRealStr = "3.97 ms (mean) / 4.81 ms (p95) [Det: 100%]"
@@ -72,9 +81,8 @@ $facialBlankCsv = Join-Path $EvidenceDir "facial_extraction_blank.csv"
 if (Test-Path $facialBlankCsv) {
     $rows = Import-Csv $facialBlankCsv
     $meanMs = ($rows | Measure-Object -Property duration_ms -Average).Average
-    $latencies = $rows | ForEach-Object { [double]$_.duration_ms } | Sort-Object
-    $idx95 = [int][Math]::Floor(0.95 * ($latencies.Count - 1))
-    $facialBlankP95 = $latencies[$idx95]
+    $latencies = $rows | ForEach-Object { [double]$_.duration_ms }
+    $facialBlankP95 = Get-Percentile $latencies 0.95
     $facialBlankStr = "$([Math]::Round($meanMs, 2)) ms (mean) / $([Math]::Round($facialBlankP95, 2)) ms (p95) [Det: 0% early exit]"
 } else {
     $facialBlankStr = "1.92 ms (mean) / 2.45 ms (p95) [Det: 0% early exit]"
@@ -85,9 +93,8 @@ $vocalCsv = Join-Path $EvidenceDir "vocal_extraction.csv"
 if (Test-Path $vocalCsv) {
     $rows = Import-Csv $vocalCsv
     $meanMs = ($rows | Measure-Object -Property duration_ms -Average).Average
-    $latencies = $rows | ForEach-Object { [double]$_.duration_ms } | Sort-Object
-    $idx95 = [int][Math]::Floor(0.95 * ($latencies.Count - 1))
-    $vocalP95 = $latencies[$idx95]
+    $latencies = $rows | ForEach-Object { [double]$_.duration_ms }
+    $vocalP95 = Get-Percentile $latencies 0.95
     $vocalStr = "$([Math]::Round($meanMs, 2)) ms (mean) / $([Math]::Round($vocalP95, 2)) ms (p95)"
 } else {
     $vocalStr = "2.85 ms (mean) / 3.73 ms (p95)"
@@ -98,9 +105,8 @@ $slmCsv = Join-Path $EvidenceDir "wellness_slm_latency.csv"
 if (Test-Path $slmCsv) {
     $rows = Import-Csv $slmCsv
     $meanS = ($rows | Measure-Object -Property duration_sec -Average).Average
-    $latencies = $rows | ForEach-Object { [double]$_.duration_sec } | Sort-Object
-    $idx95 = [int][Math]::Floor(0.95 * ($latencies.Count - 1))
-    $slmP95 = $latencies[$idx95]
+    $latencies = $rows | ForEach-Object { [double]$_.duration_sec }
+    $slmP95 = Get-Percentile $latencies 0.95
     $slmStr = "$([Math]::Round($meanS, 2)) s (mean) / $([Math]::Round($slmP95, 2)) s (p95) [Margin: +$([Math]::Round(5.0 - $slmP95, 2))s]"
     $slmPass = if ($slmP95 -le 5.0) { "PASS" } else { "FAIL" }
 } else {

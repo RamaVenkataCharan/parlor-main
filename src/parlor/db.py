@@ -56,7 +56,9 @@ def log_assessment(
     now = time.time()
 
     stress_level = slm_output.get("stress_level", "Low (Tier 0)")
-    if "tier 2" in stress_level.lower() or "high" in stress_level.lower():
+    if "insufficient" in stress_level.lower():
+        numeric_score = -1.0
+    elif "tier 2" in stress_level.lower() or "high" in stress_level.lower():
         numeric_score = 2.0
     elif "tier 1" in stress_level.lower() or "moderate" in stress_level.lower():
         numeric_score = 1.0

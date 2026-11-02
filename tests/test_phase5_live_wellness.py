@@ -34,7 +34,8 @@ def test_insufficient_signal_honesty(tmp_path):
             records = db.get_recent_history(limit=5, db_path=test_db)
             assert len(records) >= 1
             latest = records[0]
-            assert latest["stress_level"] == "Low (Tier 0)"
+            assert latest["stress_level"] == "insufficient signal"
+            assert latest["numeric_score"] == -1.0
             assert latest["confidence"] == 0.0
             assert "no_signals" in str(latest["metadata"])
 

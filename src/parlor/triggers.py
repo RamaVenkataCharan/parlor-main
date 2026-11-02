@@ -43,6 +43,8 @@ class TriggerManager:
             self.consecutive_required = 3
             self.cooldown_sec = 300.0
         self.sensitivity_mode = mode
+        self.last_intervention_time = 0.0
+        self.consecutive_high_stress_count = 0
 
     def evaluate(self, slm_output: Dict[str, Any]) -> Tuple[bool, str, Dict[str, Any]]:
         """Evaluate SLM reasoning output and determine whether to fire an intervention.
@@ -63,17 +65,20 @@ class TriggerManager:
             meta["reason"] = "system_muted"
             return False, "none", meta
 
-        # Map stress tier to numeric score (0=Low, 1=Moderate, 2=High)
+        # Map stress tier to numeric score (0=Low, 1=Moderate, 2=High, -1=Insufficient Signal)
         stress_level_str = slm_output.get("stress_level", "Low (Tier 0)").lower()
-        if "tier 2" in stress_level_str or "high" in stress_level_str:
+        if "insufficient" in stress_level_str:
+            numeric_score = -1.0
+        elif "tier 2" in stress_level_str or "high" in stress_level_str:
             numeric_score = 2.0
         elif "tier 1" in stress_level_str or "moderate" in stress_level_str:
             numeric_score = 1.0
         else:
             numeric_score = 0.0
 
-        # Update Exponential Moving Average (EMA)
-        self.ema_stress_score = (self.ema_alpha * numeric_score) + ((1.0 - self.ema_alpha) * self.ema_stress_score)
+        # Update Exponential Moving Average (EMA) only for valid signal evaluations
+        if numeric_score >= 0.0:
+            self.ema_stress_score = (self.ema_alpha * numeric_score) + ((1.0 - self.ema_alpha) * self.ema_stress_score)
 
         # Pattern Tracking: Increment if Tier 1 or Tier 2
         if numeric_score >= 1.0:
@@ -81,7 +86,7 @@ class TriggerManager:
             if numeric_score >= 2.0:
                 self.total_high_stress_cycles += 1
         else:
-            # Reset consecutive count on low stress / baseline cycle
+            # Reset consecutive count on low stress / baseline or insufficient signal
             self.consecutive_high_stress_count = 0
 
         meta["consecutive_count"] = self.consecutive_high_stress_count

@@ -799,6 +799,36 @@ async def _run_session(ws: WebSocket):
                 await send_json(ws, {"type": "wellness_snoozed", "minutes": mins})
                 continue
 
+            if msg.get("type") == "set_concurrency_mitigation":
+                mitigated = bool(msg.get("enabled", True))
+                if wellness_service:
+                    wellness_service.concurrency_mitigation_enabled = mitigated
+                await send_json(ws, {"type": "concurrency_mitigation_changed", "enabled": mitigated})
+                continue
+
+            if msg.get("type") == "test_wellness_cycle":
+                slm_input = msg.get("slm_output", {
+                    "stress_level": "High (Tier 2)",
+                    "primary_drivers": ["AU04 Brow Furrow=0.92", "Pitch Delta=+65Hz"],
+                    "explainable_reasoning": "Sustained high facial strain and severe acoustic frequency perturbation.",
+                    "confidence_score": 0.95,
+                    "ambiguity_note": None
+                })
+                if wellness_service:
+                    should_fire, category, meta = wellness_service.trigger_manager.evaluate(slm_input)
+                    intervention_pkg = None
+                    if should_fire:
+                        intervention_pkg = wellness_service.intervention_generator.generate(category, slm_input)
+                        await dispatch_wellness_intervention(intervention_pkg)
+                    await send_json(ws, {
+                        "type": "test_wellness_cycle_result",
+                        "consecutive_count": wellness_service.trigger_manager.consecutive_high_stress_count,
+                        "should_fire": should_fire,
+                        "intervention_fired": intervention_pkg is not None,
+                        "metadata": meta
+                    })
+                continue
+
             if msg.get("type") == "wellness_telemetry":
                 if msg.get("image") and wellness_service:
                     wellness_service.feed_frame(msg["image"])

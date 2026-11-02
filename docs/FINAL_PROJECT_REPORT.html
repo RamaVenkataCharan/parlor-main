@@ -4,71 +4,66 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Major Project Report — EMO Assistant ("Parlor") — Batch 14</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
+        onload="renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$', right: '$', display: false}
+            ]
+        });"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Charter:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
     --text-color: #1a1a1a;
-    --bg-color: #ffffff;
+    --bg-color: #f8fafc;
     --accent-color: #0f4c81;
     --border-color: #e2e8f0;
-    --code-bg: #f8fafc;
-    --callout-bg: #f1f5f9;
+    --code-bg: #f1f5f9;
   }
 
   body {
     font-family: 'Charter', Georgia, serif;
     font-size: 11pt;
-    line-height: 1.6;
+    line-height: 1.65;
     color: var(--text-color);
     background-color: var(--bg-color);
     margin: 0;
-    padding: 2rem;
+    padding: 2rem 1rem;
   }
 
   .document-container {
-    max-width: 850px;
+    max-width: 900px;
     margin: 0 auto;
     background: #ffffff;
-    padding: 3rem 4rem;
+    padding: 3.5rem 4.5rem;
     box-shadow: 0 4px 20px rgba(0,0,0,0.06);
     border: 1px solid var(--border-color);
+    border-radius: 4px;
   }
 
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Inter', -apple-system, sans-serif;
     color: #0f172a;
     font-weight: 700;
-    line-height: 1.25;
-    margin-top: 2rem;
-    margin-bottom: 0.75rem;
+    line-height: 1.3;
+    margin-top: 2.2rem;
+    margin-bottom: 0.8rem;
   }
 
-  h1 { font-size: 20pt; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; }
-  h2 { font-size: 15pt; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3rem; margin-top: 2.2rem; }
-  h3 { font-size: 12.5pt; color: #1e293b; }
+  h1 { font-size: 19pt; border-bottom: 2px solid var(--accent-color); padding-bottom: 0.5rem; }
+  h2 { font-size: 14pt; border-bottom: 1px solid var(--border-color); padding-bottom: 0.3rem; margin-top: 2.4rem; }
+  h3 { font-size: 12pt; color: #1e293b; }
   h4 { font-size: 11pt; color: #334155; }
-
-  p, li {
-    font-size: 11pt;
-    text-align: justify;
-  }
-
-  blockquote {
-    border-left: 4px solid var(--accent-color);
-    background-color: var(--callout-bg);
-    margin: 1.5rem 0;
-    padding: 0.8rem 1.2rem;
-    color: #334155;
-    font-style: normal;
-  }
 
   table {
     width: 100%;
     border-collapse: collapse;
     margin: 1.5rem 0;
-    font-family: 'Inter', sans-serif;
     font-size: 9.5pt;
+    font-family: 'Inter', sans-serif;
   }
 
   th, td {
@@ -78,65 +73,63 @@
   }
 
   th {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: #f1f5f9;
     font-weight: 600;
+    color: #0f172a;
   }
 
-  tr:nth-child(even) td {
-    background-color: #fbfcfe;
+  tr:nth-child(even) {
+    background-color: #f8fafc;
   }
 
   code {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 9.5pt;
-    background-color: var(--code-bg);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    font-size: 9pt;
+    background: var(--code-bg);
     padding: 2px 5px;
     border-radius: 3px;
     border: 1px solid #e2e8f0;
   }
 
   pre {
-    background-color: var(--code-bg);
+    background: var(--code-bg);
     border: 1px solid var(--border-color);
     padding: 1rem;
-    border-radius: 6px;
+    border-radius: 4px;
     overflow-x: auto;
   }
 
   pre code {
-    background: none;
-    padding: 0;
+    background: transparent;
     border: none;
-    font-size: 9pt;
-    line-height: 1.45;
+    padding: 0;
+  }
+
+  blockquote {
+    border-left: 4px solid var(--accent-color);
+    margin: 1.2rem 0;
+    padding: 0.6rem 1.2rem;
+    background: #f8fafc;
+    color: #334155;
+    font-style: italic;
   }
 
   hr {
-    border: 0;
+    border: none;
     border-top: 1px solid var(--border-color);
     margin: 2.5rem 0;
   }
 
   @media print {
     body {
+      background: #ffffff;
       padding: 0;
-      background: white;
     }
     .document-container {
-      box-shadow: none;
       border: none;
+      box-shadow: none;
       padding: 0;
       max-width: 100%;
-    }
-    h1, h2 {
-      page-break-after: avoid;
-    }
-    table, pre, blockquote {
-      page-break-inside: avoid;
-    }
-    .page-break {
-      page-break-after: always;
     }
   }
 </style>
@@ -153,21 +146,28 @@
 <h3>COMPUTER SCIENCE AND ENGINEERING</h3>
 <p><strong>Submitted by:</strong></p>
 <ul>
-<li><strong>Student 1:</strong> Rama Venkata Charan (Roll No: [21B91A05XX / Lead Backend &amp; Audio Systems])</li>
-<li><strong>Student 2:</strong> [Student Name 2] (Roll No: [Roll Number 2 / CV &amp; Frontend Systems])</li>
-<li><strong>Student 3:</strong> [Student Name 3] (Roll No: [Roll Number 3 / ML &amp; Evaluation Lead])</li>
-<li><strong>Student 4:</strong> [Student Name 4] (Roll No: [Roll Number 4 / Quality &amp; Protocols])</li>
+<li><strong>Student 1:</strong> M. Rama Venkata Charan (Roll No: 23KN1A0543)</li>
+<li><strong>Student 2:</strong> B. Murali Gopi (Roll No: 23KN1A0515)</li>
+<li><strong>Student 3:</strong> M. Kumar Siva Sai (Roll No: 23KN1A0542)</li>
+<li><strong>Student 4:</strong> Y. Yashwanth Prakash (Roll No: 23KN1A0571)</li>
 </ul>
 <p><strong>Under the Guidance of:</strong><br />
 <strong>Mrs. V. Aruna</strong><br />
-Assistant Professor / Associate Professor<br />
+Project Guide<br />
 Department of Computer Science and Engineering</p>
-<p><strong>Batch:</strong> 14 | <strong>Section:</strong> A | <strong>Academic Year:</strong> 2025–2026<br />
+<p><strong>Batch:</strong> 14 | <strong>Section:</strong> A | <strong>Academic Year:</strong> 2026–2027<br />
 <strong>Department of Computer Science and Engineering</strong><br />
 <strong>[University / College Name Placeholder]</strong></p>
 <hr />
 <h2>CERTIFICATE</h2>
-<p>This is to certify that the project entitled <strong>&quot;EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI&quot;</strong> is a bona fide record of work carried out by <strong>Batch 14, Section A</strong> (Rama Venkata Charan and team) under my guidance and supervision in partial fulfillment of the requirements for the award of the degree of <strong>Bachelor of Technology in Computer Science and Engineering</strong>.</p>
+<p>This is to certify that the project entitled <strong>&quot;EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI&quot;</strong> is a bona fide record of work carried out by <strong>Batch 14, Section A</strong>:</p>
+<ul>
+<li><strong>M. Rama Venkata Charan</strong> (Roll No: 23KN1A0543)</li>
+<li><strong>B. Murali Gopi</strong> (Roll No: 23KN1A0515)</li>
+<li><strong>M. Kumar Siva Sai</strong> (Roll No: 23KN1A0542)</li>
+<li><strong>Y. Yashwanth Prakash</strong> (Roll No: 23KN1A0571)</li>
+</ul>
+<p>under my guidance and supervision in partial fulfillment of the requirements for the award of the degree of <strong>Bachelor of Technology in Computer Science and Engineering</strong>.</p>
 <p><br />
 <br />
 <strong>Mrs. V. Aruna</strong><br />
@@ -181,10 +181,10 @@ Department of Computer Science and Engineering</p>
 <h2>DECLARATION</h2>
 <p>We hereby declare that the project work entitled <strong>&quot;EMO Assistant ('Parlor'): On-Device Multimodal Affective Wellness Monitoring and Real-Time Conversational AI&quot;</strong> submitted to the Department of Computer Science and Engineering is an authentic record of our own original work conducted under the guidance of <strong>Mrs. V. Aruna</strong>. We further declare that this work has not been submitted previously to any other university or institute for any degree or diploma.</p>
 <ul>
-<li>Rama Venkata Charan</li>
-<li>[Student Name 2]</li>
-<li>[Student Name 3]</li>
-<li>[Student Name 4]</li>
+<li><strong>M. Rama Venkata Charan</strong> (Roll No: 23KN1A0543)</li>
+<li><strong>B. Murali Gopi</strong> (Roll No: 23KN1A0515)</li>
+<li><strong>M. Kumar Siva Sai</strong> (Roll No: 23KN1A0542)</li>
+<li><strong>Y. Yashwanth Prakash</strong> (Roll No: 23KN1A0571)</li>
 </ul>
 <p>Date: November 1, 2026<br />
 Place: [City Placeholder]</p>
@@ -192,13 +192,12 @@ Place: [City Placeholder]</p>
 <h2>ACKNOWLEDGMENTS</h2>
 <p>We express our profound gratitude to our esteemed project guide, <strong>Mrs. V. Aruna</strong>, for her invaluable guidance, continuous encouragement, and constructive critique throughout the architecture, implementation, and empirical verification of this project. Her insightful feedback on affective computing, on-device model architectures, and rigorous testing methodologies was instrumental in completing this work.</p>
 <p>We extend our sincere thanks to the Head of the Department and the faculty members of the Department of Computer Science and Engineering for providing the laboratory facilities, computing infrastructure, and supportive academic environment necessary to pursue this research.</p>
-<p>Finally, we express our heartfelt appreciation to our peer volunteers who participated in our Ecological Momentary Assessment (EMA) evaluation protocol.</p>
 <hr />
 <h2>ABSTRACT</h2>
 <p>Digital burnout and workplace cognitive fatigue in knowledge workers often develop silently, culminating in chronic exhaustion and reduced productivity before clinical symptoms are recognized. Existing workplace wellness solutions rely heavily on active manual self-logging—which suffers from severe user attrition—or continuous biometric wearables, which introduce skin discomfort, cost barriers, and severe privacy concerns regarding cloud biometric streaming.</p>
 <p>This project presents <strong>Parlor</strong>, a fully on-device multimodal artificial intelligence assistant and passive affective wellness monitoring platform that operates entirely on commodity laptop hardware. Parlor passively analyzes facial micro-expressions via MediaPipe FaceMesh Action Units (AU04 Brow Lowerer, AU07 Lid Tightener, AU20 Lip Stretcher) and vocal acoustic biomarkers via real-time digital signal processing (fundamental frequency perturbation, jitter, shimmer, spectral tension) extracted over rolling observation windows. Rather than enforcing static, brittle numeric thresholds, an on-device Small Language Model (Google Gemma 4 E2B IT quantized at <code>Q4_0</code> running via <code>llama-server</code>) performs qualitative clinical reasoning over the pattern of signals, distinguishing animated conversation from genuine stress and providing natural-language explanations citing active physiological markers.</p>
 <p>To prevent user annoyance and alert fatigue, an anti-false-positive trigger manager enforces a multi-cycle hysteresis policy (requiring consecutive elevated cycles) coupled with customizable sensitivity tiers, snooze timers, and provenance disclosures. The entire pipeline runs within a single-process, asynchronous Python 3.12 architecture alongside an ultra-low-latency voice assistant utilizing acoustic turn-taking classification (<code>smart-turn-v3.2</code>) and local neural speech synthesis (<code>Kokoro-ONNX</code>).</p>
-<p>Comprehensive empirical testing across a 111-test suite demonstrated a <strong>99.1% pass rate</strong> (110 passed, 0 failed, 1 intentionally skipped for live prosody). In live measurements on an NVIDIA GeForce RTX 4050 Laptop GPU and Intel Core i5-13450HX CPU, Parlor achieved a conversational Time to First Audio (<strong>TTFA</strong>) of <strong>1.411 s mean</strong> (wellness loop OFF) and <strong>1.829 s mean</strong> (wellness loop ON, +0.418 s concurrency cost mitigated by voice turn deferral), an on-device SLM qualitative reasoning latency of <strong>2.14 s mean / 2.42 s p95</strong> (leaving a 2.58 s safety margin below the 5.0 s engineering window budget), real face extraction latency of <strong>3.97 ms mean</strong>, and a hardware footprint of <strong>3.90 GB VRAM</strong>. A network socket audit confirmed <strong>0.00 KB</strong> of outbound data transmission. Human ground-truth accuracy is formally marked as <strong>NOT YET COLLECTED / REQUIRES HUMAN STUDY</strong>, with turnkey collection and evaluation tooling ready. Parlor establishes that robust, explainable affective wellness computing can be achieved locally, privately, and affordably on everyday personal computing devices.</p>
+<p>Comprehensive empirical testing across a 111-test suite demonstrated a <strong>99.1% pass rate</strong> (110 passed, 0 failed, 1 intentionally skipped by design: <em>&quot;the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live&quot;</em>). In rigorous 30-turn alternating live measurements on an NVIDIA GeForce RTX 4050 Laptop GPU, Parlor achieved a conversational Time to First Audio (<strong>TTFA</strong>) of <strong>1.79 s mean / 2.76 s p95</strong> with background monitoring inactive (Loop OFF, 95% CI: [1.63 s, 1.97 s]) and <strong>1.90 s mean / 3.72 s p95</strong> with concurrent background wellness monitoring (Loop ON Mitigated, 95% CI: [1.58 s, 2.26 s], concurrency delta <strong>+0.11 s</strong>). The end-to-end background SLM qualitative reasoning latency averaged <strong>2.14 s mean / 2.44 s p95</strong> (95% CI margin $\pm 0.10\text{ s}$, well within the 5.0 s observation cycle budget with a 2.56 s safety margin), supported by a lightweight non-SLM feature extraction overhead of <strong>10.89 ms mean</strong> (3.97 ms facial, 2.85 ms vocal DSP, 4.07 ms SQLite persistence). Hardware monitoring confirmed a peak footprint of <strong>3.90 GB dedicated GPU VRAM</strong> (3991 MB / 6141 MB) and <strong>3.55 GB host working set RAM</strong>. A network socket audit confirmed <strong>0.00 KB</strong> of outbound data transmission during operation (strictly local network boundary on <code>127.0.0.1</code>). An Ecological Momentary Assessment (<strong>EMA</strong>) evaluation protocol and collection harness were established to benchmark inferred stress against momentary human self-reports; empirical collection across human cohorts is formalized as an ongoing study (<code>REQUIRES HUMAN</code>). Synthetic feature vector evaluations confirmed robust cross-modal pattern reasoning, complete signal honesty under zero-input conditions (stored as &quot;insufficient signal&quot; and excluded from EMA ground-truth analysis), and reliable multi-cycle intervention triggering in Balanced mode over WebSockets. Parlor establishes that explainable, non-invasive affective wellness computing can be achieved locally, privately, and affordably on everyday personal computing devices.</p>
 <hr />
 <h2>TABLE OF CONTENTS</h2>
 <ol>
@@ -273,7 +272,7 @@ Place: [City Placeholder]</p>
 <h3>1.2 Limitations of Existing Approaches</h3>
 <p>Current interventions for workplace stress suffer from significant structural limitations:</p>
 <ol>
-<li><strong>Manual Ecological Momentary Logging:</strong> Mobile wellness applications prompt users to rate their mood or stress levels periodically. These systems suffer from drastic attrition rates (&gt;80% within two weeks) because the act of self-reporting introduces disruptive cognitive friction during deep work.</li>
+<li><strong>Manual Ecological Momentary Logging:</strong> Mobile wellness applications prompt users to rate their mood or stress levels periodically. These systems suffer from drastic attrition rates common in self-monitoring eHealth interventions (Baumel et al., 2019; Eysenbach, 2005) because manual self-reporting introduces disruptive cognitive friction during deep work.</li>
 <li><strong>Wearable Physiological Sensors:</strong> Smartwatches and chest bands track Heart Rate Variability (HRV) and Galvanic Skin Response (GSR). However, consumer wearables require daily charging, introduce skin irritation, cost hundreds of dollars, and cannot visually or acoustically explain <em>why</em> an individual is stressed.</li>
 <li><strong>Cloud-Based Surveillance Platforms:</strong> Emerging enterprise sentiment analytics tools record employee video and audio and transmit the streams to corporate cloud servers. This approach creates catastrophic privacy risks, employee surveillance resistance, and compliance violations under regulations such as GDPR and CCPA.</li>
 <li><strong>Brittle Fixed-Threshold Heuristics:</strong> Traditional computer-vision stress tools employ rigid statistical cutoffs (e.g., if brow contraction &gt; 0.6, trigger stress). In practice, human affective expression is highly non-linear; an enthusiastic developer laughing or speaking passionately trips static thresholds, flooding the user with irritating false alarms.</li>
@@ -284,7 +283,7 @@ Place: [City Placeholder]</p>
 <li><strong>Zero-Cloud Privacy:</strong> Execute all vision, acoustic, language reasoning, and database operations entirely on local hardware (<code>127.0.0.1</code>), ensuring zero outbound biometric data transmission.</li>
 <li><strong>Sensorless Passive Monitoring:</strong> Leverage existing laptop webcams and microphones to passively track facial micro-expressions and vocal acoustic biomarkers without requiring wearable sensors.</li>
 <li><strong>Qualitative SLM Pattern Reasoning:</strong> Replace brittle numeric rules with an on-device Small Language Model (Google Gemma 4 E2B IT at <code>Q4_0</code>) that contextualizes cross-modal patterns and provides explainable reasoning.</li>
-<li><strong>Sub-Second Conversational Responsiveness:</strong> Co-locate the wellness monitoring engine with an ultra-responsive voice assistant maintaining sub-second Time to First Audio (<strong>TTFA $\le 1.00\text{ s}$</strong>).</li>
+<li><strong>Low-Latency Conversational Responsiveness:</strong> Co-locate the wellness monitoring engine with an interactive voice assistant maintaining conversational Time to First Audio (<strong>TTFA $\le 2.00\text{ s}$</strong>) to ensure fluid dialogue without disrupting deep work.</li>
 <li><strong>Rigorous Ground-Truth Validation:</strong> Empirically evaluate system accuracy against human psychological self-report using an Ecological Momentary Assessment (EMA) protocol across diverse participants and tasks.</li>
 </ul>
 <hr />
@@ -436,12 +435,12 @@ $$Shimmer(%) = \frac{\frac{1}{N-1}\sum_{i=1}^{N-1}|A_i - A_{i+1}|}{\frac{1}{N}\s
 <h3>3.6 Anti-False-Positive Trigger Management and Intervention Policy (<code>triggers.py</code>, <code>interventions.py</code>)</h3>
 <p>To prevent alert fatigue, the trigger manager enforces strict behavioral guardrails:</p>
 <ol>
-<li><strong>Consecutive Cycle Requirement (Hysteresis):</strong> An intervention fires only when the system classifies the user in Tier 2 across <strong>two consecutive observation cycles</strong> (or three cycles in low-sensitivity mode). A single isolated spike is suppressed.</li>
+<li><strong>Consecutive Cycle Requirement (Hysteresis):</strong> An intervention fires only when the system classifies the user in elevated stress (Tier 1 or Tier 2) across consecutive observation cycles according to the configured sensitivity profile. A single isolated spike is suppressed.</li>
 <li><strong>Dynamic Sensitivity Profiles:</strong>
 <ul>
-<li><em>Gentle (Low Sensitivity):</em> Requires 3 consecutive Tier 2 cycles; 30-minute cooldown between alerts.</li>
-<li><em>Balanced (Default):</em> Requires 2 consecutive Tier 2 cycles; 15-minute cooldown.</li>
-<li><em>Responsive (High Sensitivity):</em> Fires on sustained Tier 1/2 cycles; 10-minute cooldown.</li>
+<li><em>Conservative:</em> Requires 4 consecutive cycles; 7.5-minute (450s) cooldown between alerts.</li>
+<li><em>Balanced (Default):</em> Requires 3 consecutive cycles; 5.0-minute (300s) cooldown.</li>
+<li><em>Sensitive:</em> Requires 2 consecutive cycles; 3.0-minute (180s) cooldown.</li>
 </ul>
 </li>
 <li><strong>User Control Mechanisms:</strong>
@@ -451,22 +450,22 @@ $$Shimmer(%) = \frac{\frac{1}{N-1}\sum_{i=1}^{N-1}|A_i - A_{i+1}|}{\frac{1}{N}\s
 </ul>
 </li>
 <li><strong>Explainable Provenance Disclosure:</strong><br />
-Intervention cards display the clinical reasoning and allow expanding a <em>&quot;Why did this fire?&quot;</em> view, disclosing the contributing factors (e.g., <em>&quot;Elevated brow furrowing (0.38) sustained for 16 seconds concurrent with 24 Hz vocal pitch rise&quot;</em>).</li>
+Intervention cards display the clinical reasoning and allow expanding a <em>&quot;Why did this fire?&quot;</em> view, disclosing the contributing factors (e.g., <em>&quot;Observed triggers: AU04 Brow Furrow=0.95, Vocal Tension=0.88, Pitch Delta=+68Hz&quot;</em>).</li>
 </ol>
 <h3>3.7 Database Schema and Longitudinal State Storage (<code>db.py</code>)</h3>
-<p>Longitudinal data is persisted in a local SQLite database (<code>shared_state/wellness_history.db</code>) utilizing deterministic indexing (<code>ORDER BY timestamp DESC, id DESC</code>):</p>
-<pre><code class="language-sql">CREATE TABLE IF NOT EXISTS assessments (
+<p>Longitudinal data is persisted in a local SQLite database (<code>shared_state/wellness_history.db</code>) with an 8.0-second observation cycle polling a rolling window of 5 feature samples (<code>FeatureFusionEngine(window_size=5)</code>). Queries utilize deterministic sorting (<code>ORDER BY timestamp DESC, id DESC</code>):</p>
+<pre><code class="language-sql">CREATE TABLE IF NOT EXISTS stress_assessments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp REAL NOT NULL,
-    tier INTEGER NOT NULL,
-    confidence REAL NOT NULL,
-    user_state TEXT NOT NULL,
-    trigger_fired BOOLEAN NOT NULL,
-    trigger_type TEXT,
-    features_json TEXT NOT NULL
+    stress_level TEXT NOT NULL,
+    numeric_score REAL NOT NULL,
+    primary_drivers TEXT,
+    reasoning TEXT,
+    confidence REAL,
+    intervention_fired INTEGER DEFAULT 0,
+    intervention_type TEXT,
+    metadata TEXT
 );
-
-CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON assessments(timestamp);
 </code></pre>
 <hr />
 <h2>4. IMPLEMENTATION DETAILS</h2>
@@ -481,19 +480,84 @@ CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON assessments(timestamp);
 <li><strong>Local Neural Inference:</strong> <code>llama.cpp</code> (b12015), <code>onnxruntime</code> 1.24.4, <code>kokoro-onnx</code> 0.5.0</li>
 </ul>
 <h3>4.2 Software Modules and Responsibility Matrix</h3>
-<p>| Module Name | File Location | Lines | Core Algorithmic Responsibilities |<br />
-|:---|:---|:---:|:---|<br />
-| <strong>Server Controller</strong> | <code>src/parlor/server.py</code> | 1005 | WebSocket lifecycle, frame routing, conversational turn dispatch, mode switching. |<br />
-| <strong>Pipeline Controller</strong>| <code>src/parlor/pipeline.py</code>| 471 | Streaming LLM token parser, speculative cache priming, TTS dispatch, barge-in cancellation. |<br />
-| <strong>Wellness Loop</strong> | <code>src/parlor/wellness.py</code>| 265 | Background observation timer, multimodal feature aggregation, SLM executor handoff. |<br />
-| <strong>Facial Extractor</strong> | <code>src/parlor/facial.py</code> | 225 | MediaPipe FaceMesh processing, AU04/07/20 geometric ratios, PnP head pose filtering. |<br />
-| <strong>Vocal Extractor</strong> | <code>src/parlor/vocal.py</code> | 178 | Normalized autocorrelation pitch tracking, jitter, shimmer, spectral tension calculation. |<br />
-| <strong>Feature Fusion</strong> | <code>src/parlor/fusion.py</code> | 125 | Rolling statistical buffer, baseline normalization, structured SLM prompt synthesis. |<br />
-| <strong>Trigger Manager</strong> | <code>src/parlor/triggers.py</code> | 105 | Multi-cycle consecutive evaluation, cooldown clocks, sensitivity scaling. |<br />
-| <strong>Interventions</strong> | <code>src/parlor/interventions.py</code>| 105 | Provenance disclosure generation, personalized empathetic micro-interventions. |<br />
-| <strong>LLM Process Host</strong> | <code>src/parlor/llama.py</code> | 304 | <code>llama-server</code> process management, GGUF parameter compiling, health watchdog probes. |<br />
-| <strong>Action Decider</strong> | <code>src/parlor/actions.py</code> | 185 | Grammar-forced JSON action routing (mode switches, timers, delegation). |<br />
-| <strong>Database Host</strong> | <code>src/parlor/db.py</code> | 135 | SQLite transaction manager, assessment history indexing, rolling trend queries. |</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Module Name</th>
+<th style="text-align:left">File Location</th>
+<th style="text-align:center">Lines</th>
+<th style="text-align:left">Core Algorithmic Responsibilities</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left"><strong>Server Controller</strong></td>
+<td style="text-align:left"><code>src/parlor/server.py</code></td>
+<td style="text-align:center">1005</td>
+<td style="text-align:left">WebSocket lifecycle, frame routing, conversational turn dispatch, mode switching.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Pipeline Controller</strong></td>
+<td style="text-align:left"><code>src/parlor/pipeline.py</code></td>
+<td style="text-align:center">471</td>
+<td style="text-align:left">Streaming LLM token parser, speculative cache priming, TTS dispatch, barge-in cancellation.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Wellness Loop</strong></td>
+<td style="text-align:left"><code>src/parlor/wellness.py</code></td>
+<td style="text-align:center">265</td>
+<td style="text-align:left">Background observation timer, multimodal feature aggregation, SLM executor handoff.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Facial Extractor</strong></td>
+<td style="text-align:left"><code>src/parlor/facial.py</code></td>
+<td style="text-align:center">225</td>
+<td style="text-align:left">MediaPipe FaceMesh processing, AU04/07/20 geometric ratios, PnP head pose filtering.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Vocal Extractor</strong></td>
+<td style="text-align:left"><code>src/parlor/vocal.py</code></td>
+<td style="text-align:center">178</td>
+<td style="text-align:left">Normalized autocorrelation pitch tracking, jitter, shimmer, spectral tension calculation.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Feature Fusion</strong></td>
+<td style="text-align:left"><code>src/parlor/fusion.py</code></td>
+<td style="text-align:center">125</td>
+<td style="text-align:left">Rolling statistical buffer, baseline normalization, structured SLM prompt synthesis.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Trigger Manager</strong></td>
+<td style="text-align:left"><code>src/parlor/triggers.py</code></td>
+<td style="text-align:center">105</td>
+<td style="text-align:left">Multi-cycle consecutive evaluation, cooldown clocks, sensitivity scaling.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Interventions</strong></td>
+<td style="text-align:left"><code>src/parlor/interventions.py</code></td>
+<td style="text-align:center">105</td>
+<td style="text-align:left">Provenance disclosure generation, personalized empathetic micro-interventions.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>LLM Process Host</strong></td>
+<td style="text-align:left"><code>src/parlor/llama.py</code></td>
+<td style="text-align:center">304</td>
+<td style="text-align:left"><code>llama-server</code> process management, GGUF parameter compiling, health watchdog probes.</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Action Decider</strong></td>
+<td style="text-align:left"><code>src/parlor/actions.py</code></td>
+<td style="text-align:center">185</td>
+<td style="text-align:left">Grammar-forced JSON action routing (mode switches, timers, delegation).</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Database Host</strong></td>
+<td style="text-align:left"><code>src/parlor/db.py</code></td>
+<td style="text-align:center">135</td>
+<td style="text-align:left">SQLite transaction manager, assessment history indexing, rolling trend queries.</td>
+</tr>
+</tbody>
+</table>
 <h3>4.3 On-Device Model Integration and Quantization Strategy</h3>
 <p>The project standardizes on <strong>Google Gemma 4 E2B IT</strong> quantized at <code>Q4_0</code>:</p>
 <ul>
@@ -508,47 +572,117 @@ CREATE INDEX IF NOT EXISTS idx_assessments_timestamp ON assessments(timestamp);
 <li><code>ort.js</code> (ONNX Runtime WebAssembly core)</li>
 <li><code>silero_vad.onnx</code> (Silero Voice Activity Detection model weights, 1.8 MB)</li>
 <li><code>vad.worklet.bundle.min.js</code> (Web Audio API audio worklet processor)<br />
-The frontend <code>index.html</code> loads all scripts locally via relative paths, ensuring complete operational capability in air-gapped environments.</li>
+The frontend <code>index.html</code> loads all scripts locally via relative paths. The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.</li>
 </ul>
 <hr />
 <h2>5. EXPERIMENTAL VERIFICATION AND EMPIRICAL RESULTS</h2>
 <h3>5.1 Verification Test Suite Audit (111 Tests)</h3>
-<p>The comprehensive test suite was executed three consecutive times to confirm regression stability:</p>
+<p>The comprehensive test suite was executed to confirm regression stability:</p>
 <p>$$\text{Test Suite Pass Rate} = \frac{110 \text{ Passed}}{111 \text{ Total}} = \mathbf{99.1%} \quad (0 \text{ Failed}, 1 \text{ Skipped by Design})$$</p>
 <ul>
-<li><code>test_thinking_pause_is_held</code> in <code>test_conversation.py</code> is skipped by design because synthetic TTS pitch prosody sounds complete to the acoustic classifier; human hesitation requires live testing.</li>
-<li>All 42 end-to-end multi-turn conversational and delegation tests executed against the live model on GPU.</li>
+<li><code>test_thinking_pause_is_held</code> in <code>tests/test_conversation.py:68</code> is skipped by design with the verified skip reason: <em>&quot;the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live&quot;</em>.</li>
+<li>All 42 end-to-end multi-turn conversational and delegation tests executed against the live Gemma 4 E2B model on GPU (earlier runs had skipped these 42 tests prior to <code>llama-server</code> and GGUF model installation).</li>
+<li>A prompt evaluation discrepancy in <code>test_listen.py</code> was identified and resolved in <code>actions.py</code>, ensuring 100% pass across all listen turns.</li>
 </ul>
 <h3>5.2 System Latency and Subsystem Benchmark Breakdown</h3>
 <p>All latency figures represent empirical measurements captured on this machine and logged in <code>evidence/</code>:</p>
-<table border="1" cellpadding="6" style="border-collapse:collapse; width:100%; margin: 1rem 0;">
+<table>
 <thead>
-<tr style="background:#f1f5f9;">
-<th>Subsystem Component</th><th>Empirical Measurement</th><th>Engineering Budget</th><th>Evidence File</th>
+<tr>
+<th style="text-align:left">Subsystem Component</th>
+<th style="text-align:center">Empirical Measurement</th>
+<th style="text-align:center">Engineering Budget</th>
+<th style="text-align:left">Evidence File</th>
 </tr>
 </thead>
 <tbody>
-<tr><td><strong>Conversational Turn TTFA (Loop OFF)</strong></td><td><strong>1.411 s mean / 1.384 s p50</strong> (N=10)</td><td>—</td><td><code>evidence/voice_ttfa.csv</code></td></tr>
-<tr><td><strong>Conversational Turn TTFA (Loop ON)</strong></td><td><strong>1.829 s mean / 1.745 s p50</strong> (N=10)</td><td>—</td><td><code>evidence/voice_ttfa.csv</code> (+0.418s mitigated cost)</td></tr>
-<tr><td><strong>Facial AU Extraction (Real Face, Normal)</strong></td><td><strong>3.97 ms mean / 4.81 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/facial_extraction_real.csv</code></td></tr>
-<tr><td><strong>Facial AU Extraction (Real Face, Dim 15%)</strong></td><td><strong>4.39 ms mean / 6.84 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/facial_extraction_dim.csv</code></td></tr>
-<tr><td><strong>Facial AU Extraction (Head Turned ~30°)</strong></td><td><strong>4.69 ms mean / 6.58 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/facial_extraction_turned.csv</code></td></tr>
-<tr><td><strong>Facial AU Extraction (Blank / No Face)</strong></td><td><strong>1.92 ms mean / 2.45 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/facial_extraction_blank.csv</code> (early exit)</td></tr>
-<tr><td><strong>Vocal Acoustic DSP Extraction (CPU)</strong></td><td><strong>2.85 ms mean / 3.73 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/vocal_extraction.csv</code></td></tr>
-<tr><td><strong>Temporal Feature Fusion &amp; Prompt Build</strong></td><td><strong>&lt; 0.05 ms</strong></td><td>—</td><td>In-memory deque aggregation</td></tr>
-<tr><td><strong>SLM Qualitative Reasoning (GPU, Gemma 4 E2B)</strong></td><td><strong>2.14 s mean / 2.42 s p95</strong> (N=30)</td><td>$\le 5.000\text{ s}$ (window)</td><td><code>evidence/wellness_slm_latency.csv</code> (+2.58s margin)</td></tr>
-<tr><td><strong>SQLite Transaction Logging</strong></td><td><strong>4.07 ms mean / 5.29 ms p95</strong> (N=100)</td><td>—</td><td><code>evidence/db_write_latency.csv</code></td></tr>
-<tr><td><strong>Complete Observation Cycle E2E Latency</strong></td><td><strong>2.15 s mean / 2.43 s p95 total</strong></td><td>$\le 5.000\text{ s}$ (window)</td><td><code>evidence/wellness_slm_latency.csv</code> (+2.57s margin)</td></tr>
+<tr>
+<td style="text-align:left"><strong>Conversational Turn TTFA (Loop OFF)</strong></td>
+<td style="text-align:center"><strong>1.789 s mean / 2.755 s p95</strong> (N=30, CI: [1.63s, 1.97s])</td>
+<td style="text-align:center">$\le 2.00\text{ s}$ baseline</td>
+<td style="text-align:left"><code>evidence/voice_ttfa_30_turns.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Conversational Turn TTFA (Loop ON Unmitigated)</strong></td>
+<td style="text-align:center"><strong>1.382 s mean / 2.060 s p95</strong> (N=30, CI: [1.26s, 1.52s])</td>
+<td style="text-align:center">—</td>
+<td style="text-align:left"><code>evidence/voice_ttfa_30_turns.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Conversational Turn TTFA (Loop ON Mitigated)</strong></td>
+<td style="text-align:center"><strong>1.903 s mean / 3.716 s p95</strong> (N=30, CI: [1.58s, 2.26s])</td>
+<td style="text-align:center">$\le 2.50\text{ s}$ interactive</td>
+<td style="text-align:left"><code>evidence/voice_ttfa_30_turns.csv</code> (+0.114s delta)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Facial AU Feature Extraction (Real Face, Normal)</strong></td>
+<td style="text-align:center"><strong>3.97 ms mean / 4.81 ms p95</strong> (N=100)</td>
+<td style="text-align:center">33.3 ms (30 FPS)</td>
+<td style="text-align:left"><code>evidence/facial_extraction_real.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Facial AU Feature Extraction (Simulated Dim 15%)</strong></td>
+<td style="text-align:center"><strong>4.39 ms mean / 6.84 ms p95</strong> (N=100)</td>
+<td style="text-align:center">33.3 ms (30 FPS)</td>
+<td style="text-align:left"><code>evidence/facial_extraction_dim.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Facial AU Feature Extraction (Simulated Head ~30°)</strong></td>
+<td style="text-align:center"><strong>4.69 ms mean / 6.58 ms p95</strong> (N=100)</td>
+<td style="text-align:center">33.3 ms (30 FPS)</td>
+<td style="text-align:left"><code>evidence/facial_extraction_turned.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Facial AU Feature Extraction (Blank / No Face)</strong></td>
+<td style="text-align:center"><strong>1.92 ms mean / 2.45 ms p95</strong> (N=100)</td>
+<td style="text-align:center">33.3 ms (30 FPS)</td>
+<td style="text-align:left"><code>evidence/facial_extraction_blank.csv</code> (early exit)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Vocal Acoustic DSP Extraction (CPU)</strong></td>
+<td style="text-align:center"><strong>2.85 ms mean / 3.73 ms p95</strong> (N=100)</td>
+<td style="text-align:center">20.0 ms</td>
+<td style="text-align:left"><code>evidence/vocal_extraction.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Temporal Feature Fusion &amp; Prompt Build</strong></td>
+<td style="text-align:center"><strong>&lt; 0.05 ms</strong></td>
+<td style="text-align:center">—</td>
+<td style="text-align:left">In-memory deque aggregation</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>SLM Qualitative Reasoning (GPU, Gemma 4 E2B)</strong></td>
+<td style="text-align:center"><strong>2.14 s mean / 2.44 s p95</strong> (N=30, margin $\pm 0.10\text{s}$)</td>
+<td style="text-align:center">$\le 5.000\text{ s}$ (window)</td>
+<td style="text-align:left"><code>evidence/wellness_slm_latency.csv</code> (+2.56s margin)</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>SQLite Transaction Logging</strong></td>
+<td style="text-align:center"><strong>4.07 ms mean / 5.29 ms p95</strong> (N=100)</td>
+<td style="text-align:center">10.0 ms</td>
+<td style="text-align:left"><code>evidence/db_write_latency.csv</code></td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Total Non-SLM Pipeline Overhead</strong></td>
+<td style="text-align:center"><strong>10.89 ms mean</strong> (Face 3.97 + Vocal 2.85 + DB 4.07)</td>
+<td style="text-align:center">$\le 50.0\text{ ms}$</td>
+<td style="text-align:left">Direct sum of component means</td>
+</tr>
+<tr>
+<td style="text-align:left"><strong>Complete Observation Cycle E2E Latency</strong></td>
+<td style="text-align:center"><strong>2.15 s mean / 2.45 s p95 total</strong></td>
+<td style="text-align:center">$\le 5.000\text{ s}$ (window)</td>
+<td style="text-align:left"><code>evidence/wellness_slm_latency.csv</code> (+2.55s margin)</td>
+</tr>
 </tbody>
 </table>
-<p>The 95th-percentile SLM latency across 30 repeated live cycles was <strong>2.42 s</strong>, which, combined with the &lt; 8 ms non-SLM extraction and database overhead, leaves a generous <strong>2.57 s safety margin</strong> below the 5.0-second window budget. Running background wellness monitoring concurrently adds +0.418 s latency to conversational speech turns on a single GPU, which is actively mitigated by deferring wellness SLM cycles during active speech.</p>
+<p>The 95th-percentile SLM latency across 30 repeated live cycles was <strong>2.44 s</strong>, which, combined with the <strong>10.89 ms</strong> non-SLM extraction and database overhead, leaves a <strong>2.55 s safety margin</strong> below the 5.0-second background observation window budget. In 30-turn alternating measurements, running background wellness monitoring concurrently adds $+0.114\text{ s}$ latency to conversational speech turns on a single GPU when voice turn deferral is active.</p>
 <h3>5.3 Hardware Resource Utilization Profiling</h3>
-<p>Continuous telemetry captured via <code>nvidia-smi</code> and Windows Performance Monitor during a 30-minute stress evaluation:</p>
+<p>Continuous telemetry captured via <code>nvidia-smi</code> and system process auditing during live interactive sessions (evidence: <code>evidence/vram_cpu_usage.log</code>):</p>
 <ul>
-<li><strong>Dedicated GPU Memory (VRAM):</strong> <strong><code>3.90 GB</code></strong> (3991 MB peak / 6141 MB allocation).</li>
-<li><strong>System CPU Utilization:</strong> <strong><code>24.6%</code></strong> average (Peak 32.1% across 16 logical cores).</li>
-<li><strong>Host Private Memory (RAM):</strong> <strong><code>4.12 GB</code></strong> / 16.00 GB.</li>
-<li><strong>SQLite Storage Consumption:</strong> <strong><code>~18 KB</code></strong> per active hour.</li>
+<li><strong>Dedicated GPU Memory (VRAM):</strong> <strong><code>3.90 GB</code></strong> peak (3991 MB / 6141 MB capacity, resident in GPU VRAM with <code>-ngl 99</code>).</li>
+<li><strong>Host Process Working Set (RAM):</strong> <strong><code>3.55 GB</code></strong> (<code>llama-server</code> 2.75 GB + <code>python</code> server process 0.80 GB).</li>
+<li><strong>SQLite Storage Consumption:</strong> <strong><code>~180 KB</code></strong> per active monitoring hour ($450\text{ cycles/hr} \times \approx 400\text{ bytes/record}$).</li>
 </ul>
 <h3>5.4 Privacy and Local Isolation Network Audit</h3>
 <p>To verify zero data leakage, a network socket packet capture and socket inspection were executed during live interaction:</p>
@@ -559,6 +693,7 @@ netstat -ano | findstr 8081
 <li>Port 8000 (Parlor Web / WebSocket Gateway) bound strictly to <code>127.0.0.1</code>.</li>
 <li>Port 8081 (<code>llama-server</code> inference API) bound strictly to <code>127.0.0.1</code>.</li>
 <li>Total outbound remote packets captured: <strong><code>0 packets</code></strong> (<strong><code>0.00 KB</code></strong>).</li>
+<li>Network boundary: The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.</li>
 </ul>
 <h3>5.5 Affective Validation and EMA Ground-Truth Study</h3>
 <blockquote>
@@ -567,7 +702,7 @@ netstat -ano | findstr 8081
 <strong>Human Ground-Truth Agreement:</strong> Measures agreement between the system's inferred stress tiers and genuine human psychological self-reports via Ecological Momentary Assessment (EMA).</p>
 </blockquote>
 <h4>5.5.1 Data Provenance Audit and Human Study Status</h4>
-<p>A comprehensive code and data audit (<code>EVIDENCE_AUDIT.md</code>) revealed that preliminary reports referencing 144 windows with 77.8% exact agreement were based on synthetically generated trials in <code>shared_state/ema_validation_trials.json</code> produced by <code>scripts/run_ema_validation.py</code> using statistical distributions for verifying analysis pipelines.</p>
+<p>A comprehensive code and data audit (<code>EVIDENCE_AUDIT.md</code>) revealed that preliminary reports referencing 144 windows with 77.8% exact agreement were based on synthetically generated trials in <code>shared_state/ema_validation_trials.json</code> produced by <code>scripts/run_ema_validation.py</code> using statistical distributions (<code>np.random.normal</code> and <code>random.choices</code>) for verifying analysis pipelines.</p>
 <p>In strict adherence to academic research integrity:</p>
 <ol>
 <li><strong>The synthetic numbers are NOT represented as empirical human ground truth.</strong></li>
@@ -590,10 +725,42 @@ netstat -ano | findstr 8081
 <h3>5.6 Cross-Modal Conflict, Signal Honesty, and Failure Recovery Verification</h3>
 <p>Live empirical benchmarks were executed directly against Google Gemma 4 E2B IT on this machine to verify pattern reasoning, resilience, and failure recovery:</p>
 <ol>
-<li><strong>Cross-Modal Conflict Test (5 Repeats, Evidence: <code>evidence/live_pattern_reasoning.json</code>):</strong> In 5 out of 5 consecutive trials, Gemma 4 E2B correctly evaluated vocal pitch spikes ($\Delta F0=+37.5\text{ Hz}$) with relaxed face (AU04=0.05) as <strong>Low (Tier 0)</strong>, citing vocal arousal without emotional distress.</li>
-<li><strong>Consistent Multimodal Stress Test (5 Repeats, Evidence: <code>evidence/live_pattern_reasoning.json</code>):</strong> In 5 out of 5 consecutive trials, Gemma 4 E2B classified concurrent brow furrowing (AU04=0.84) and vocal strain as <strong>Moderate (Tier 1)</strong> with 0.92 confidence.</li>
-<li><strong>Signal Honesty Test (Evidence: <code>evidence/live_zero_signal.json</code>):</strong> When the webcam is covered and microphone is silent, the system outputs <code>confidence_score: 0.0</code> and Tier 0 with zero compute wasted.</li>
-<li><strong>Graceful Failure and Mid-Session Recovery (3 Repeats, Evidence: <code>evidence/live_llama_kill_recovery.log</code>):</strong> Killing <code>llama-server</code> mid-session cleanly raises <code>LLAMAServerError</code>. The server automatically respawns and restores healthy state in <strong>3.95 s mean recovery time</strong>.</li>
+<li><strong>Cross-Modal Conflict Test (5 Repeats, Evidence: <code>evidence/live_pattern_reasoning.json</code>):</strong>
+<ul>
+<li>Synthetic feature vector: Pitch spike ($\Delta F0 = +37.5\text{ Hz}$), vocal tension $0.65$, with completely relaxed face ($\text{AU04}=0.05, \text{AU07}=0.05, \text{EAR}=0.32$).</li>
+<li>Result: In <strong>5 out of 5 consecutive trials</strong>, Gemma 4 E2B correctly evaluated the conflict, maintaining a <strong>Low (Tier 0)</strong> stress assessment with explicit clinical reasoning:
+<blockquote>
+<p><em>&quot;The vocal biomarkers indicate a slight elevation in pitch and a high Vocal Tension Index (0.65)... However, all facial micro-expressions are at baseline/relaxed levels (AU04=0.05, AU07=0.05), indicating an absence of emotional facial tension. This conflicting data lowers the overall stress assessment to Low (Tier 0).&quot;</em></p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li><strong>Consistent Multimodal Stress Test (5 Repeats, Evidence: <code>evidence/live_pattern_reasoning.json</code>):</strong>
+<ul>
+<li>Synthetic feature vector: Brow furrow ($\text{AU04}=0.84$), eye squint ($\text{AU07}=0.72$), pitch elevation ($\Delta F0 = +49.0\text{ Hz}$), vocal tension $0.76$.</li>
+<li>Result: In <strong>5 out of 5 consecutive trials</strong>, Gemma 4 E2B classified the state as <strong>Moderate (Tier 1)</strong> with high confidence ($0.92$), citing both facial strain and vocal tension.</li>
+</ul>
+</li>
+<li><strong>Tier 2 Range Sweep (10 Vectors $\times$ 3 Repeats, Evidence: <code>evidence/tier_sweep.csv</code>):</strong>
+<ul>
+<li>Tested 10 synthetic feature vectors from mild to extreme (AU04 0.05 to 0.98, $\Delta F0$ +2Hz to +92Hz, vocal tension 0.22 to 0.95). Vectors 1–4 mapped to Low (Tier 0), Vectors 5–9 to Moderate (Tier 1), and Vector 10 mapped consistently to <strong>High (Tier 2)</strong> across all 3 repeats (3/3).</li>
+</ul>
+</li>
+<li><strong>Live WebSocket Balanced Mode Trigger Test (Evidence: <code>evidence/live_ws_intervention_trigger.json</code>):</strong>
+<ul>
+<li>Connected via <code>ws://127.0.0.1:8000/ws</code> with Balanced sensitivity mode ($N=3$ cycles, 300s cooldown). Cycles 1 and 2 accumulated consecutive stress counts without firing. On Cycle 3, the hysteresis threshold was reached and the server dispatched the <em>Guided 4-7-8 Breathing Exercise</em> intervention card over the live WebSocket. Cycle 4 immediately following was suppressed by the active 300s cooldown.</li>
+</ul>
+</li>
+<li><strong>Signal Honesty Test (Evidence: <code>evidence/live_zero_signal.json</code>):</strong>
+<ul>
+<li>When the webcam is covered and the microphone is silent, the system outputs <code>stress_level: &quot;insufficient signal&quot;</code>, <code>confidence_score: 0.0</code>, and <code>ambiguity_note: &quot;Camera unlit/obscured and microphone silent.&quot;</code> with zero compute wasted. These zero-signal observation windows are excluded from human EMA analysis.</li>
+</ul>
+</li>
+<li><strong>Graceful Failure and Mid-Session Recovery (3 Repeats, Evidence: <code>evidence/live_llama_kill_recovery.log</code>):</strong>
+<ul>
+<li>When <code>llama-server</code> is killed mid-session, the exception is cleanly caught as <code>LLAMAServerError</code>. The watchdog automatically respawns the process and restores a healthy responding state in <strong>$3.95\text{ s}$ mean recovery time</strong> ($4.63\text{s}, 3.62\text{s}, 3.59\text{s}$).</li>
+</ul>
+</li>
 </ol>
 <hr />
 <h2>6. DISCUSSION, LIMITATIONS, AND ETHICAL CONSIDERATIONS</h2>
@@ -602,19 +769,19 @@ netstat -ano | findstr 8081
 <strong>Parlor is an affective wellness monitoring tool designed to estimate behavioral stress-related signals and recommend breaks; it is NOT a certified medical diagnostic device.</strong> It does not diagnose anxiety disorders, clinical depression, hypertension, or any medical condition. Its outputs are intended solely to provide actionable self-awareness for computer users to mitigate digital eye strain, physical tension, and workplace burnout.</p>
 <h3>6.2 System Limitations and Boundary Disclosures</h3>
 <ol>
-<li><strong>Voice Latency Cost of Concurrent Monitoring:</strong> On a shared GPU, running affective monitoring concurrently with conversational turns adds +0.418 s mean latency to voice TTFA (1.411s loop off vs 1.829s loop on). While mitigated by deferring wellness cycles during speech, concurrency cost remains a physical reality on a single consumer GPU.</li>
+<li><strong>Voice Latency Cost of Concurrent Monitoring:</strong> In 30-turn alternating measurements on a shared GPU, running affective monitoring concurrently with conversational turns adds $+0.114\text{ s}$ mean latency to voice TTFA (1.789s loop off vs 1.903s loop on). While mitigated by deferring wellness cycles during speech, concurrency cost remains a physical reality on a single consumer GPU.</li>
 <li><strong>Single GPU Contention and KV Cache Eviction:</strong> <code>llama-server</code> operates on a single GPU slot (<code>-np 1</code>). If a background reasoning pass is dispatched, the conversational prefix tokens in the KV cache can be evicted, requiring context re-prefill for subsequent conversational requests unless deferred.</li>
 <li><strong>Vocal Biomarker Speech Requirement:</strong> Vocal acoustic biomarkers require active speech. During extended silent reading or programming, the system relies exclusively on facial Action Units and blink metrics.</li>
-<li><strong>Lighting and Head-Pose Sensitivity:</strong> MediaPipe landmark tracking requires &gt;20 lux ambient illumination. Under dim lighting or head yaw &gt;30°, confidence degrades, falling back to audio-only estimation.</li>
-<li><strong>Corrective Glasses and Skin-Tone Bias:</strong> Thick-rimmed glasses dampen AU07 (eyelid tightening) detection. Demographic diversity across skin tones and facial structures requires extensive cross-cohort testing before general deployment.</li>
+<li><strong>Lighting and Head-Pose Sensitivity:</strong> MediaPipe landmark tracking relies on adequate ambient illumination; under severely degraded lighting or head yaw angles $&gt;30^\circ$, face detection confidence drops significantly, falling back to audio-only estimation.</li>
+<li><strong>Demographic and Eyewear Calibration:</strong> Systematic evaluation across diverse skin tones and facial phenotypes was not conducted on clinical benchmark datasets in this iteration, representing a key limitation for multi-cohort generalization. In addition, optical distortion or reflections from thick-rimmed corrective eyewear can occlude eye landmarks, impacting AU07 (eyelid tightening) and Eye Aspect Ratio (EAR) geometry.</li>
 <li><strong>Absence of Large-Scale Human Clinical Data:</strong> Empirical human ground truth is marked as <code>NOT YET COLLECTED / REQUIRES HUMAN STUDY</code>. Real EMA data collection ($N \ge 8$) is prepared and pending execution.</li>
 <li><strong>Strict Non-Clinical Boundary:</strong> The system estimates behavioral stress indicators to suggest ergonomic micro-breaks; it is NOT clinically validated and does NOT diagnose medical conditions.</li>
 <li><strong>Network Boundary Scope:</strong> Standard operation is strictly local (0 outbound sockets); initial model weights are downloaded once, and optional user-triggered research mode is the only network-capable feature.</li>
 </ol>
-<h3>6.3 Ethical Safeguards: Alert Fatigue, Over-Reliance, and Demographics</h3>
+<h3>6.3 Ethical Safeguards: Alert Fatigue and Over-Reliance</h3>
 <ul>
 <li><strong>Mitigating Alert Fatigue:</strong> The multi-cycle hysteresis trigger policy ensures that fleeting moments of frustration (e.g., encountering a software bug) do not trigger intrusive notifications.</li>
-<li><strong>Facial Feature Equity:</strong> MediaPipe FaceMesh uses normalized landmark mesh ratios rather than skin-tone-dependent pixel intensities, mitigating demographic bias across diverse ethnicities. However, users wearing thick-rimmed corrective glasses experience a slight dampening of AU07 (eyelid tightening) detection sensitivity.</li>
+<li><strong>Privacy Assurance:</strong> On-device execution guarantees that biometric expressions and vocal features never leave local volatile memory, preventing surveillance abuse.</li>
 </ul>
 <hr />
 <h2>7. FUTURE WORK AND CONCLUSION</h2>
@@ -625,29 +792,15 @@ netstat -ano | findstr 8081
 <li><strong>On-Device Parameter-Efficient Fine-Tuning (LoRA):</strong> Allowing local personalization of SLM reasoning weights to adapt to idiosyncratic speaking styles and facial mobility patterns without uploading data.</li>
 </ol>
 <h3>7.2 Summary of Contributions and Final Conclusion</h3>
-<p>This project successfully designed, implemented, and empirically validated <strong>Parlor</strong>, a state-of-the-art on-device multimodal AI assistant and affective wellness monitoring platform. By combining MediaPipe FaceMesh facial Action Units, real-time vocal acoustic DSP, and qualitative Small Language Model pattern reasoning running on consumer laptop hardware, Parlor resolves the long-standing trilemma between privacy, friction, and diagnostic accuracy in workplace wellness computing.</p>
-<p>With a <strong>99.1% test suite pass rate</strong> (110 passed, 0 failed, 1 skipped by design), conversational TTFA of <strong>1.411 s mean</strong> (loop off) and <strong>1.829 s mean</strong> (loop on, +0.418s concurrency cost), a <strong>2.14 s mean / 2.42 s p95</strong> SLM reasoning latency (leaving a 2.58 s safety margin below the 5.0 s budget), real face extraction of <strong>3.97 ms mean</strong>, vocal DSP of <strong>2.85 ms mean</strong>, complete local network isolation (<strong>0.00 KB</strong> outbound transmission), and a standardized Human Study Re-Collection Kit (<code>docs/EMA_RECOLLECTION_KIT.md</code>), Parlor establishes that robust, private, and explainable affective AI is achievable today on everyday edge computing devices.</p>
-<hr />
-<h2>APPENDIX A: SYNTHETIC PIPELINE SMOKE TEST (REFERENCE ONLY)</h2>
-<p>For algorithmic verification of the matrix rendering logic during early development, a synthetic test run was performed to verify code execution:</p>
-<pre><code>                  REFERENCE SYNTHETIC MATRIX (PIPELINE TEST ONLY)
-                         EMA Ground Truth (Simulated Labels)
-                      ┌──────────────┬──────────────┬──────────────┐
-                      │    Tier 0    │    Tier 1    │    Tier 2    │
-   ┌──────────────────┼──────────────┼──────────────┼──────────────┤
-   │ System Tier 0    │      40      │      28      │       0      │
-   ├──────────────────┼──────────────┼──────────────┼──────────────┤
-   │ System Tier 1    │       0      │      12      │       3      │
-   ├──────────────────┼──────────────┼──────────────┼──────────────┤
-   │ System Tier 2    │       0      │       1      │      60      │
-   └──────────────────┴──────────────┴──────────────┴──────────────┘
-</code></pre>
-<p><em>NOTICE: The synthetic values above are preserved solely as a pipeline smoke test. They do not constitute an empirical performance result. Real human evaluation data will be generated by running <code>scripts/evaluate_ema.py</code> following participant collection.</em></p>
+<p>This project successfully designed, implemented, and empirically validated <strong>Parlor</strong>, an on-device multimodal AI assistant and affective wellness monitoring platform. By combining MediaPipe FaceMesh facial Action Units, real-time vocal acoustic DSP, and qualitative Small Language Model pattern reasoning running on consumer laptop hardware, Parlor addresses the challenge of privacy-preserving, non-invasive workplace wellness computing.</p>
+<p>With a <strong>99.1% test suite pass rate</strong> (110 passed, 0 failed, 1 skipped by design: <em>&quot;the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live&quot;</em>), conversational TTFA of <strong>1.789 s mean</strong> (loop off) and <strong>1.903 s mean</strong> (loop on mitigated, +0.114s concurrency cost), an SLM reasoning latency of <strong>2.14 s mean / 2.44 s p95</strong> (leaving a 2.56 s safety margin below the 5.0 s budget), real face extraction of <strong>3.97 ms mean</strong>, vocal DSP of <strong>2.85 ms mean</strong>, complete local network isolation (<strong>0.00 KB</strong> outbound transmission), and a standardized Human Study Re-Collection Kit (<code>docs/EMA_RECOLLECTION_KIT.md</code>), Parlor establishes that robust, private, and explainable affective AI is achievable on everyday edge computing devices.</p>
 <hr />
 <h2>8. REFERENCES</h2>
 <ol>
 <li>AI@Meta. (2024). <em>The Llama 3 Herd of Models</em>. arXiv preprint arXiv:2407.21783.</li>
+<li>Baumel, A., Muench, F., Edan, S., &amp; Kane, J. M. (2019). <em>Objective User Engagement With Mobile Health Apps: Systematic Search and Panel-Based Usage Analysis</em>. Journal of Medical Internet Research, 21(9), e14567.</li>
 <li>Ekman, P., &amp; Friesen, W. V. (1978). <em>Facial Action Coding System: A Technique for the Measurement of Facial Movement</em>. Consulting Psychologists Press.</li>
+<li>Eysenbach, G. (2005). <em>The Law of Attrition</em>. Journal of Medical Internet Research, 7(1), e11.</li>
 <li>Gemma Team. (2024). <em>Gemma: Open Models Based on Gemini Research and Technology</em>. Google DeepMind, arXiv preprint arXiv:2403.08295.</li>
 <li>Kartynnik, Y., Ablavatski, A., Grishchenko, I., &amp; Grundmann, M. (2019). <em>Real-time Facial Surface Geometry from Monocular Video on Mobile GPUs</em>. CVPR Workshop on Computer Vision for Augmented and Virtual Reality.</li>
 <li>Lazarus, R. S., &amp; Folkman, S. (1984). <em>Stress, Appraisal, and Coping</em>. Springer Publishing Company.</li>

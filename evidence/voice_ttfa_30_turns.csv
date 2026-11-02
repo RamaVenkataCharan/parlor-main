@@ -1,0 +1,91 @@
+turn_index,cycle,condition,audio_fixture,ttfa_sec,first_chunk_bytes,transcript,reply
+1,1,LOOP_OFF,capital_france.wav,1.1468,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+2,1,LOOP_ON_UNMITIGATED,capital_france.wav,0.9927,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+3,1,LOOP_ON_MITIGATED,capital_france.wav,1.0262,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+4,2,LOOP_OFF,name_intro.wav,1.684,106496,"by the way, my name is willow, it's nice to meet you","It's nice to meet you too, Willow. How are you doing today?"
+5,2,LOOP_ON_UNMITIGATED,name_intro.wav,1.3165,106496,"by the way, my name is willow, it's nice to meet you","It's nice to meet you too, Willow. What would you like to ta"
+6,2,LOOP_ON_MITIGATED,name_intro.wav,3.5148,106496,"by the way, my name is willow, it's nice to meet you","It's nice to meet you too, Willow. How can I make your day a"
+7,3,LOOP_OFF,describe_scene.wav,1.9126,155648,can you describe what you can see right now,I can see you're having a great conversation with me. It's a
+8,3,LOOP_ON_UNMITIGATED,describe_scene.wav,1.582,155648,can you describe what you can see right now,I can see you're having a great conversation with me. It's a
+9,3,LOOP_ON_MITIGATED,describe_scene.wav,1.6904,155648,can you describe what you can see right now,I can see you're having a great conversation with me. It's a
+10,4,LOOP_OFF,name_recall.wav,1.4755,76460,can you remind me what my name is,Your name is Willow. I remember that from our conversation e
+11,4,LOOP_ON_UNMITIGATED,name_recall.wav,1.0382,76460,can you remind me what my name is,Your name is Willow. I remember that from our conversation e
+12,4,LOOP_ON_MITIGATED,name_recall.wav,1.0157,76460,can you remind me what my name is,Your name is Willow. I remember that from our conversation e
+13,5,LOOP_OFF,how_long_quiet.wav,1.8588,102400,roughly how long was i quiet just now,You were quiet for a few moments. I'm here whenever you're r
+14,5,LOOP_ON_UNMITIGATED,how_long_quiet.wav,2.0631,102400,roughly how long was i quiet just now,You were quiet for a few moments. I'm here whenever you're r
+15,5,LOOP_ON_MITIGATED,how_long_quiet.wav,1.28,102400,roughly how long was i quiet just now,You were quiet for a few moments. I'm here whenever you're r
+16,6,LOOP_OFF,capital_france_noisy.wav,1.3081,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+17,6,LOOP_ON_UNMITIGATED,capital_france_noisy.wav,1.7464,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+18,6,LOOP_ON_MITIGATED,capital_france_noisy.wav,1.0812,103768,what is the capital of france,The capital of France is Paris. It's a beautiful city with a
+19,7,LOOP_OFF,filler_color.wav,1.4487,113324,my favorite color is turquoise like the sea near my childhoo,Turquoise is a beautiful color. It reminds me of the clear w
+20,7,LOOP_ON_UNMITIGATED,filler_color.wav,1.2269,113324,my favorite color is turquoise like the sea near my childhoo,Turquoise is a beautiful color. It reminds me of the clear w
+21,7,LOOP_ON_MITIGATED,filler_color.wav,1.9302,113324,my favorite color is turquoise like the sea near my childhoo,Turquoise is a beautiful color. It reminds me of the clear w
+22,8,LOOP_OFF,filler_pet.wav,1.4188,80556,i adopted a golden retriever puppy last month and named him ,That sounds so sweet! Golden retrievers are wonderful dogs. 
+23,8,LOOP_ON_UNMITIGATED,filler_pet.wav,1.1646,80556,i adopted a golden retriever puppy last month and named him ,That sounds so sweet! Golden retrievers are wonderful dogs. 
+24,8,LOOP_ON_MITIGATED,filler_pet.wav,1.0318,80556,i adopted a golden retriever puppy last month and named him ,That sounds so sweet! Golden retrievers are wonderful dogs. 
+25,9,LOOP_OFF,long_question.wav,2.8874,166572,i have been trying to learn english for a few months now and,One great way to improve is by listening a lot. Try to liste
+26,9,LOOP_ON_UNMITIGATED,long_question.wav,1.8972,166572,,One great way to improve is by listening a lot. Try to liste
+27,9,LOOP_ON_MITIGATED,long_question.wav,2.6701,166572,,One great way to improve is by listening a lot. Try to liste
+28,10,LOOP_OFF,capital_france.wav,2.2154,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+29,10,LOOP_ON_UNMITIGATED,capital_france.wav,1.0876,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+30,10,LOOP_ON_MITIGATED,capital_france.wav,1.1499,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+31,11,LOOP_OFF,capital_france.wav,1.2837,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+32,11,LOOP_ON_UNMITIGATED,capital_france.wav,1.1443,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+33,11,LOOP_ON_MITIGATED,capital_france.wav,1.6631,103768,what is the capital of france,The capital of France is Paris. It's a beautiful and histori
+34,12,LOOP_OFF,name_intro.wav,1.5622,106496,by the way my name is willow it's nice to meet you,"It's nice to meet you too, Willow. How can I help you today?"
+35,12,LOOP_ON_UNMITIGATED,name_intro.wav,1.1257,106496,,"It's nice to meet you too, Willow. How can I help you today?"
+36,12,LOOP_ON_MITIGATED,name_intro.wav,1.2368,106496,,"It's nice to meet you too, Willow. What would you like to ta"
+37,13,LOOP_OFF,describe_scene.wav,2.2656,95576,,I can see you're talking to me. I'm here and ready to listen
+38,13,LOOP_ON_UNMITIGATED,describe_scene.wav,1.412,95576,,I can see you're talking to me. I'm here and ready to listen
+39,13,LOOP_ON_MITIGATED,describe_scene.wav,1.3441,95576,,I can see you're talking to me. I'm here and ready to listen
+40,14,LOOP_OFF,name_recall.wav,1.432,76460,,Your name is Willow. I'm happy to remember that for you. Is 
+41,14,LOOP_ON_UNMITIGATED,name_recall.wav,1.1912,76460,,Your name is Willow. I'm happy to remember that for you. Is 
+42,14,LOOP_ON_MITIGATED,name_recall.wav,3.5537,76460,,Your name is Willow. I'm happy to remember that for you. Is 
+43,15,LOOP_OFF,how_long_quiet.wav,1.9502,106496,,You have been quiet for a little bit. I'm here when you're r
+44,15,LOOP_ON_UNMITIGATED,how_long_quiet.wav,2.1706,106496,,You have been quiet for a little bit. I'm here when you're r
+45,15,LOOP_ON_MITIGATED,how_long_quiet.wav,1.512,106496,,You have been quiet for a little bit. I'm here when you're r
+46,16,LOOP_OFF,capital_france_noisy.wav,1.4935,103768,,The capital of France is Paris. It's a beautiful and histori
+47,16,LOOP_ON_UNMITIGATED,capital_france_noisy.wav,1.8009,103768,,The capital of France is Paris. It's a beautiful and histori
+48,16,LOOP_ON_MITIGATED,capital_france_noisy.wav,1.1573,103768,,The capital of France is Paris. It's a beautiful and histori
+49,17,LOOP_OFF,filler_color.wav,1.6316,107864,,Turquoise is a lovely color. It sounds like a beautiful shad
+50,17,LOOP_ON_UNMITIGATED,filler_color.wav,1.1487,107864,,Turquoise is a lovely color. It sounds like a beautiful shad
+51,17,LOOP_ON_MITIGATED,filler_color.wav,4.0177,107864,,Turquoise is a lovely color. It sounds like a beautiful shad
+52,18,LOOP_OFF,filler_pet.wav,1.3426,61440,,That's wonderful! Golden retrievers are such sweet dogs. Bis
+53,18,LOOP_ON_UNMITIGATED,filler_pet.wav,1.0827,61440,,That's wonderful! Golden retrievers are such sweet dogs. Bis
+54,18,LOOP_ON_MITIGATED,filler_pet.wav,1.1345,61440,,That's wonderful! Golden retrievers are such sweet dogs. Bis
+55,19,LOOP_OFF,long_question.wav,2.5648,96940,,I can certainly help with that. Practice speaking out loud i
+56,19,LOOP_ON_UNMITIGATED,long_question.wav,1.4739,96940,,I can certainly help with that. Practice speaking out loud i
+57,19,LOOP_ON_MITIGATED,long_question.wav,2.0713,96940,,I can certainly help with that. Practice speaking out loud i
+58,20,LOOP_OFF,capital_france.wav,2.2496,103768,,The capital of France is Paris. It's a very famous and beaut
+59,20,LOOP_ON_UNMITIGATED,capital_france.wav,1.132,103768,,The capital of France is Paris. It's a very famous and beaut
+60,20,LOOP_ON_MITIGATED,capital_france.wav,1.1407,103768,,The capital of France is Paris. It's a very famous and beaut
+61,21,LOOP_OFF,capital_france.wav,1.5633,103768,,The capital of France is Paris. It's a very famous and beaut
+62,21,LOOP_ON_UNMITIGATED,capital_france.wav,1.1797,103768,,The capital of France is Paris. It's a very famous and beaut
+63,21,LOOP_ON_MITIGATED,capital_france.wav,1.7942,103768,,The capital of France is Paris. It's a very famous and beaut
+64,22,LOOP_OFF,name_intro.wav,1.6227,106496,,"It's nice to meet you too, Willow. I'm glad to chat with you"
+65,22,LOOP_ON_UNMITIGATED,name_intro.wav,1.2802,106496,,"It's nice to meet you too, Willow. I'm glad to chat with you"
+66,22,LOOP_ON_MITIGATED,name_intro.wav,1.2461,106496,,"It's nice to meet you too, Willow. I'm glad to chat with you"
+67,23,LOOP_OFF,describe_scene.wav,2.7827,185688,,I can see you're using a microphone and perhaps a camera. I'
+68,23,LOOP_ON_UNMITIGATED,describe_scene.wav,2.0285,185688,,I can see you're using a microphone and perhaps a camera. I'
+69,23,LOOP_ON_MITIGATED,describe_scene.wav,1.8404,185688,,I can see you're using a microphone and perhaps a camera. I'
+70,24,LOOP_OFF,name_recall.wav,1.2874,76460,,Your name is Willow. It's nice to know your name.
+71,24,LOOP_ON_UNMITIGATED,name_recall.wav,1.0314,76460,,Your name is Willow. It's nice to know your name.
+72,24,LOOP_ON_MITIGATED,name_recall.wav,3.4447,76460,,Your name is Willow. It's nice to know your name.
+73,25,LOOP_OFF,how_long_quiet.wav,1.9226,87384,,You were quiet for a moment. I'm ready to talk whenever you 
+74,25,LOOP_ON_UNMITIGATED,how_long_quiet.wav,2.056,87384,,You were quiet for a moment. I'm ready to talk whenever you 
+75,25,LOOP_ON_MITIGATED,how_long_quiet.wav,3.5568,87384,,You were quiet for a moment. I'm ready to talk whenever you 
+76,26,LOOP_OFF,capital_france_noisy.wav,1.4753,103768,,The capital of France is Paris. It's a very famous and beaut
+77,26,LOOP_ON_UNMITIGATED,capital_france_noisy.wav,1.1364,103768,,The capital of France is Paris. It's a very famous and beaut
+78,26,LOOP_ON_MITIGATED,capital_france_noisy.wav,1.8388,103768,,The capital of France is Paris. It's a very famous and beaut
+79,27,LOOP_OFF,filler_color.wav,1.5129,113324,,Turquoise is a beautiful color. It sounds like a lovely shad
+80,27,LOOP_ON_UNMITIGATED,filler_color.wav,1.2257,113324,,Turquoise is a beautiful color. It sounds like a lovely shad
+81,27,LOOP_ON_MITIGATED,filler_color.wav,3.8472,113324,,Turquoise is a beautiful color. It sounds like a lovely shad
+82,28,LOOP_OFF,filler_pet.wav,1.4261,68268,,That is wonderful! Golden retrievers are such sweet dogs. Bi
+83,28,LOOP_ON_UNMITIGATED,filler_pet.wav,1.0246,68268,,That is wonderful! Golden retrievers are such sweet dogs. Bi
+84,28,LOOP_ON_MITIGATED,filler_pet.wav,1.0757,68268,,That is wonderful! Golden retrievers are such sweet dogs. Bi
+85,29,LOOP_OFF,long_question.wav,2.7214,109228,,I can certainly offer some tips. Try to listen to native spe
+86,29,LOOP_ON_UNMITIGATED,long_question.wav,1.5738,109228,,I can certainly offer some tips. Try to listen to native spe
+87,29,LOOP_ON_MITIGATED,long_question.wav,1.9832,109228,,I can certainly offer some tips. Try to listen to native spe
+88,30,LOOP_OFF,capital_france.wav,2.2323,103768,,The capital of France is Paris. It's a beautiful city with a
+89,30,LOOP_ON_UNMITIGATED,capital_france.wav,1.13,103768,,The capital of France is Paris. It's a beautiful city with a
+90,30,LOOP_ON_MITIGATED,capital_france.wav,1.2403,103768,,The capital of France is Paris. It's a beautiful city with a

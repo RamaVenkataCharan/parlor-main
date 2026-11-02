@@ -1,7 +1,8 @@
 # Parlor Demonstration Safeguards, Rehearsal Checklist & Fallback Guide
 
 > **Project:** EMO Assistant ("Parlor") — Fully On-Device Multimodal AI & Affective Wellness Monitoring  
-> **Target Audience:** Project Team (Batch 14, Section A), Technical Guide (Mrs. V. Aruna), External Reviewers & Defense Committee  
+> **Academic Year:** 2026–2027  
+> **Target Audience:** Project Team (Batch 14, Section A), Technical Guide (Mrs. V. Aruna, Project Guide), External Reviewers & Defense Committee  
 > **Primary Document Purpose:** Mission-critical operational safeguards to guarantee 100% demonstration reliability during final university project viva-voce and committee examinations.
 
 ---
@@ -46,7 +47,7 @@ uv run python -c "import cv2, mediapipe, scipy, onnxruntime; print('OpenCV:', cv
 
 ### 1.3 Model & Engine Warm-Up Procedure
 
-On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **1.411s TTFA (loop off) / 1.829s (loop on)** immediately:
+On-device SLMs incur a cold-start overhead (~1.8s) during the initial KV cache initialization. To ensure the committee witnesses the verified **1.789s TTFA (loop off) / 1.903s (loop on mitigated)** immediately:
 
 1. Launch Parlor via the hardened launch script:
    ```powershell
@@ -67,7 +68,7 @@ Follow this 5-minute interactive walkthrough to demonstrate each technical miles
 ```
                   ┌──────────────────────────────────────────────┐
                   │   STEP 1: Conversational Turn-Taking (1m)   │
-                  │   TTFA = 1.41s | Smart-Turn | Kokoro Speech  │
+                  │   TTFA = 1.79s | Smart-Turn | Kokoro Speech  │
                   └──────────────────────┬───────────────────────┘
                                          │
                                          ▼
@@ -94,12 +95,12 @@ Follow this 5-minute interactive walkthrough to demonstrate each technical miles
 
 ### Step 1: Sub-Second Conversational Assistance (60 Seconds)
 - **Action:** Speak naturally: *"Parlor, can you explain what an Action Unit is in affective computing?"*
-- **Observation:** Notice the assistant responds within **1.41s TTFA** (conversational turn latency). Point out the audio streaming visualizer and zero-latency barge-in interruptibility by speaking mid-sentence.
+- **Observation:** Notice the assistant responds within **1.79s–1.90s TTFA** (conversational turn latency). Point out the audio streaming visualizer and zero-latency barge-in interruptibility by speaking mid-sentence.
 - **Key Talking Point:** *"All acoustic turn-detection and speech synthesis run locally on-device. Zero audio packets leave this machine."*
 
 ### Step 2: Multimodal Stress Escalation & Empathic Micro-Break (120 Seconds)
 - **Action:** Engage in a live cognitive arithmetic challenge (e.g. subtracting 7s backward from 1000 rapidly: *"1000, 993, 986, 979..."*) while furrowing the brow (AU04) and clenching facial muscles.
-- **Observation:** Within 2 consecutive observation windows (10 seconds), the telemetry widget transitions from **Tier 0 (Green)** $\rightarrow$ **Tier 1 (Yellow)** $\rightarrow$ **Tier 2 (Red)**. The assistant triggers a gentle, non-intrusive micro-break prompt: *"I noticed your brow tension and vocal strain rising over the last few minutes. Would you like to pause for 60 seconds?"*
+- **Observation:** Within 3 consecutive observation windows in default Balanced mode (or 2 in Sensitive mode), the telemetry widget transitions from **Tier 0 (Green)** $\rightarrow$ **Tier 1 (Yellow)** $\rightarrow$ **Tier 2 (Red)**. The assistant triggers a gentle, non-intrusive micro-break prompt: *"I noticed your brow tension and vocal strain rising over the last few minutes. Would you like to pause for 60 seconds?"*
 - **Key Talking Point:** *"The intervention engine requires consecutive elevated cycles to prevent jarring, erratic notifications. Provenance disclosure explains exactly why the intervention fired."*
 
 ### Step 3: Cross-Modal Contradiction / Honest Disconfirmation (60 Seconds)
@@ -131,7 +132,7 @@ If a catastrophic hardware failure occurs during the committee review (e.g. lapt
 
 | Timestamp | Scenario Title | On-Screen Visuals | Voiceover Commentary Track |
 | :---: | :--- | :--- | :--- |
-| **0:00 – 1:15** | Sub-Second Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 1.41s mean TTFA and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
+| **0:00 – 1:15** | Conversational Voice Interaction | Live side-by-side terminal logs and Chrome UI showing 1.79s mean TTFA and Kokoro TTS waveform. | "Demonstrating fully local multimodal inference. Notice the Smart-Turn V3.2 acoustic endpointing firing at 68ms." |
 | **1:15 – 2:30** | Cognitive Stress Escalation | Live Stroop test execution; MediaPipe AU04 brow furrow heatmap overlays; transition from Tier 0 to Tier 2. | "Observing real-time facial AU extraction running at 3.97ms on real face. The rolling temporal fusion buffer registers multi-cycle elevation." |
 | **2:30 – 3:35** | Cross-Modal Conflict Reasoning | Animated pitch jitter spike accompanied by facial smile; Gemma 4 SLM JSON reasoning displayed. | "Demonstrating SLM cross-modal reconciliation (2.14s reasoning). High vocal energy is disambiguated from psychological distress." |
 | **3:35 – 4:45** | Fault Injection & Offline Fallback | Terminal process kill; UI warning banner; camera covered showing zero-signal honest reporting. | "Injecting mid-session fault. Parlor reports honest null signals when camera is covered, rather than fabricating stress scores." |
@@ -192,7 +193,7 @@ uv run python scripts/offline_demo_playback.py --serve --port 8000
 | **Camera displays black square in UI** | Another application (Teams, Zoom, Camera app) has an exclusive DirectShow lock on webcam. | Close background communication tools: `Get-Process Teams, Zoom | Stop-Process`. Refresh browser. |
 | **Microphone does not pick up audio** | Browser permissions revoked or wrong default input in Windows. | Click padlock icon in Chrome address bar $\rightarrow$ Ensure Microphone is set to "Allow". |
 | **Response latency feels sluggish (>3s TTFA)** | Model loaded on CPU instead of NVIDIA CUDA GPU due to driver misconfiguration. | Check `start.ps1` output. Confirm `-ngl 99` flag is passed and `llama.cpp` reports `BLAS = 1 / CUDA`. |
-| **Intervention modal does not pop up** | Interventions require 2 consecutive Tier 2 cycles and respect an 80-second cooldown. | Check database metadata; if cooldown is active, click "Trigger Test Intervention" in UI debug drawer. |
+| **Intervention modal does not pop up** | Interventions require consecutive Tier 2 cycles (3 in Balanced, 2 in Sensitive, 4 in Conservative) and respect the configured cooldown (300s Balanced, 180s Sensitive, 450s Conservative). | Check database metadata; if cooldown is active, click "Trigger Test Intervention" in UI debug drawer or adjust sensitivity. |
 
 ---
 
@@ -201,5 +202,5 @@ uv run python scripts/offline_demo_playback.py --serve --port 8000
 *- B. Murali Gopi (23KN1A0515)*
 *- M. Kumar Siva Sai (23KN1A0542)*
 *- Y. Yashwanth Prakash (23KN1A0571)*
-*Under the Guidance of Mrs. V. Aruna, Senior Assistant Professor.*
+*Under the Guidance of Mrs. V. Aruna, Project Guide, Dept. of CSE.*
 

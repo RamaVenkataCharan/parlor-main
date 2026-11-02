@@ -1,0 +1,45 @@
+{
+  "timestamp": 1793624111.166387,
+  "n_turns_per_condition": 30,
+  "total_turns": 90,
+  "ordering": "alternating_round_robin",
+  "loop_off": {
+    "mean": 1.789,
+    "p50": 1.593,
+    "p95": 2.755,
+    "max": 2.887,
+    "std": 0.489,
+    "ci_95": [
+      1.626,
+      1.968
+    ],
+    "margin": 0.171
+  },
+  "loop_on_unmitigated": {
+    "mean": 1.382,
+    "p50": 1.208,
+    "p95": 2.06,
+    "max": 2.171,
+    "std": 0.365,
+    "ci_95": [
+      1.262,
+      1.515
+    ],
+    "margin": 0.127
+  },
+  "loop_on_mitigated": {
+    "mean": 1.903,
+    "p50": 1.588,
+    "p95": 3.716,
+    "max": 4.018,
+    "std": 0.975,
+    "ci_95": [
+      1.575,
+      2.262
+    ],
+    "margin": 0.343
+  },
+  "delta_unmitigated_s": -0.407,
+  "delta_mitigated_s": 0.114,
+  "mitigation_savings_s": -0.521
+}

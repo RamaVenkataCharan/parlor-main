@@ -65,6 +65,7 @@ class WellnessService:
         self._history: List[Dict[str, Any]] = []
         self._voice_active: bool = False
         self._last_voice_turn_time: float = 0.0
+        self.concurrency_mitigation_enabled: bool = True
 
         # Initialize SQLite DB
         db.init_db()
@@ -194,7 +195,7 @@ class WellnessService:
         if not agg["face_detected"] and not agg["speech_detected"]:
             # Do not waste compute or hallucinate stress when no user signals exist
             honest_slm = {
-                "stress_level": "Low (Tier 0)",
+                "stress_level": "insufficient signal",
                 "primary_drivers": ["No active signals detected"],
                 "explainable_reasoning": "No facial or vocal signals detected in the current observation window.",
                 "confidence_score": 0.0,
@@ -206,7 +207,7 @@ class WellnessService:
 
         # Voice Turn Deferral: If conversational voice turn is active or recently active (< 5s),
         # defer SLM reasoning to prevent GPU contention and avoid evicting conversational prompt KV cache.
-        if self._voice_active or (time.time() - self._last_voice_turn_time < 5.0):
+        if self.concurrency_mitigation_enabled and (self._voice_active or (time.time() - self._last_voice_turn_time < 5.0)):
             return None
 
         # Format prompt

@@ -203,3 +203,4 @@ with open(HTML_PATH, "w", encoding="utf-8") as f:
     f.write(html)
 
 print("Updated docs/FINAL_PROJECT_REPORT.html successfully!")
+

@@ -1,0 +1,94 @@
+{
+  "timestamp": 1793623733.7340336,
+  "mode": "balanced",
+  "consecutive_required": 3,
+  "cooldown_sec": 300.0,
+  "cycles": [
+    {
+      "cycle": 1,
+      "response": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 1,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 1,
+          "ema_score": 0.6,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "below_threshold"
+        }
+      },
+      "intervention_received": false
+    },
+    {
+      "cycle": 2,
+      "response": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 2,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 2,
+          "ema_score": 1.02,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "below_threshold"
+        }
+      },
+      "intervention_received": false
+    },
+    {
+      "cycle": 3,
+      "response": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 0,
+        "should_fire": true,
+        "intervention_fired": true,
+        "metadata": {
+          "consecutive_count": 3,
+          "ema_score": 1.31,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "pattern_matched (3_consecutive_cycles)"
+        }
+      },
+      "intervention_received": true,
+      "intervention_pkg": {
+        "title": "Guided 4-7-8 Breathing Exercise",
+        "category": "Guided Breathing",
+        "icon": "\ud83e\udec1",
+        "action_label": "Start 1-Min Breathing",
+        "steps": [
+          "Inhale deeply through your nose for 4 seconds.",
+          "Hold your breath gently for 7 seconds.",
+          "Exhale slowly and completely through your mouth for 8 seconds.",
+          "Repeat this cycle 4 times to relax your nervous system."
+        ],
+        "personalized_note": "Observed triggers: AU04 Brow Furrow=0.95, Vocal Tension=0.88, Pitch Delta=+68Hz.",
+        "slm_reasoning": "Severe sustained brow furrow and high vocal acoustic tension indicating acute stress.",
+        "slm_drivers": [
+          "AU04 Brow Furrow=0.95",
+          "Vocal Tension=0.88",
+          "Pitch Delta=+68Hz"
+        ],
+        "stress_level": "High (Tier 2)",
+        "confidence_score": 0.95,
+        "ambiguity_note": null
+      }
+    },
+    {
+      "cycle": 4,
+      "response": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 1,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 1,
+          "ema_score": 1.52,
+          "cooldown_remaining_sec": 300.0,
+          "reason": "cooldown_active (299s left)"
+        }
+      },
+      "intervention_received": false
+    }
+  ]
+}

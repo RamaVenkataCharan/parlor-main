@@ -133,8 +133,22 @@ def evaluate(file_path: Path):
         print("\n[ABORTED] Evaluation refused due to unverified consent or missing identification metadata.")
         return
 
-    # Filter to paired records
-    paired = [r for r in records if r.get("system_assessment") is not None and r["system_assessment"].get("tier") is not None]
+    # Filter to paired records (explicitly excluding zero-signal / 'insufficient signal' windows)
+    excluded_insufficient = 0
+    paired = []
+    for r in records:
+        sys_ass = r.get("system_assessment")
+        if not sys_ass or sys_ass.get("tier") is None:
+            continue
+        stress_lvl = str(sys_ass.get("stress_level", "")).lower()
+        tier_val = sys_ass.get("tier")
+        if "insufficient" in stress_lvl or str(tier_val) in ["-1", "None", "insufficient signal"]:
+            excluded_insufficient += 1
+            continue
+        paired.append(r)
+
+    if excluded_insufficient > 0:
+        print(f"[FILTER] Excluded {excluded_insufficient} zero-signal / 'insufficient signal' window(s) from EMA accuracy calculation.")
     if not paired:
         print("\n[STATUS] REQUIRES HUMAN — NO PAIRED SYSTEM ASSESSMENTS FOUND")
         print(f"Found {len(records)} valid EMA submissions, but none have paired system assessments.")

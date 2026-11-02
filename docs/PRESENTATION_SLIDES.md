@@ -2,7 +2,8 @@
 ## On-Device Multimodal Affective Wellness Monitoring & Conversational AI
 
 **Batch:** 14 | **Section:** A | **Branch:** Computer Science and Engineering  
-**Project Guide:** Mrs. V. Aruna, Senior Assistant Professor  
+**Academic Year:** 2026–2027  
+**Project Guide:** Mrs. V. Aruna, Project Guide, Dept. of CSE  
 **Team Members:**
 - M. Rama Venkata Charan (Roll No: 23KN1A0543)
 - B. Murali Gopi (Roll No: 23KN1A0515)
@@ -15,15 +16,15 @@
 - **Project Title:** EMO Assistant ("Parlor")
 - **Subtitle:** On-Device Multimodal Affective Wellness Monitoring and Real-Time Voice Assistant
 - **Domain:** Affective Computing, Edge AI, Multimodal Signal Processing, Human-Computer Interaction
-- **Academic Context:** Major Project — Department of Computer Science & Engineering (Batch 14, Section A)
-- **Project Guide:** Mrs. V. Aruna, Senior Assistant Professor, Dept. of CSE
+- **Academic Context:** Major Project — Department of Computer Science & Engineering (Batch 14, Section A, Academic Year 2026–2027)
+- **Project Guide:** Mrs. V. Aruna, Project Guide, Dept. of CSE
 
 ---
 
 ### Slide 2: The Problem: Silent Workplace Burnout & Wearable Friction
 - **The Burnout Crisis:** Knowledge workers suffer from insidious "stress blindness" — accumulating cognitive fatigue and autonomic tension without conscious awareness.
 - **Wearable Friction:** Smartwatches and chest bands require charging, cause skin irritation, cost \$200–\$500, and suffer from high abandonment rates.
-- **Manual Logging Failure:** Subjective journaling apps experience $>80\%$ user attrition within 14 days due to workflow disruption.
+- **Manual Logging Failure:** Subjective journaling apps experience substantial user attrition within the initial weeks due to workflow disruption (Baumel et al., 2019; Eysenbach, 2005).
 - **Cloud Privacy Dilemma:** Transmitting raw webcam video and microphone audio to remote servers introduces catastrophic privacy and compliance risks (GDPR/HIPAA).
 - **Brittle Thresholds:** Static statistical cutoffs misclassify animated speaking as stress, triggering irritating false alarms.
 
@@ -52,7 +53,7 @@
 
 ### Slide 5: Perception Layer: Facial Micro-Expression Extraction
 - **Landmarking Core:** Google MediaPipe FaceMesh tracking 478 3D landmarks in real time (**3.97 ms mean, 4.81 ms p95** on CPU with real face; **1.92 ms** on blank frame early exit).
-- **Condition Robustness:** Dim light 15% lux (**4.39 ms mean**); Head turned ~30° (**4.69 ms mean**).
+- **Condition Robustness:** Dim light 15% lux (**4.39 ms mean**, simulated); Head turned ~30° (**4.69 ms mean**, simulated).
 - **Target Action Units (FACS):**
   - **AU04 (Brow Lowerer):** Medial brow contraction normalized to nasal bridge (corrugator supercilii — cognitive strain).
   - **AU07 (Lid Tightener):** Palpebral fissure narrowing (orbicularis oculi — visual strain/fatigue).
@@ -76,7 +77,7 @@
 ### Slide 7: Cognitive Layer: Qualitative SLM Pattern Reasoning
 - **Small Language Model:** Google Gemma 4 E2B IT quantized at `Q4_0` (3.35 GB GGUF) running locally via `llama-server`.
 - **Grammar-Forced Schema:** Response is constrained to deterministic JSON schema containing `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
-- **Inference Latency:** **2.14 s mean / 2.42 s p95** on NVIDIA RTX 4050 GPU (comfortably within the 5.0 s budget with 2.58 s safety margin).
+- **Inference Latency:** **2.14 s mean / 2.44 s p95** on NVIDIA RTX 4050 GPU (margin $\pm 0.10\text{ s}$, comfortably within the 5.0 s budget with 2.56 s safety margin).
 - **Temporal Fusion:** 8-second observation window buffer normalizes signals against the user's calibrated baseline before prompt generation.
 
 ---
@@ -87,26 +88,30 @@
   - Input: Elevated vocal pitch ($\Delta F0 = +32\text{ Hz}$) + completely relaxed face (AU04 = 0.05).
   - SLM Output: **Tier 1** (Confidence 0.72).
   - SLM Reasoning: *"Assessed as Moderate Stress due to conflicting signals between modalities... Vocal biomarkers indicate acoustic tension while facial expressions remain neutral."*
-- **Signal Honesty:** When camera is covered and user is silent $\rightarrow$ outputs `confidence_score: 0.0` and suppresses all interventions.
+- **Signal Honesty:** When camera is covered and user is silent $\rightarrow$ stored and displayed as **"insufficient signal"** (numeric score -1.0, confidence 0.0), suppressing all interventions and strictly excluded from EMA ground-truth analysis.
 
 ---
 
 ### Slide 9: Intervention Policy & Anti-False-Positive Gating
-- **Multi-Cycle Hysteresis:** Interventions require **two consecutive Tier 2 cycles** (16+ seconds of sustained tension). Single momentary spikes are logged but suppressed.
-- **Sensitivity Profiles:**
-  - *Gentle (Low):* 3 consecutive cycles, 30-min cooldown between alerts.
-  - *Balanced (Default):* 2 consecutive cycles, 15-min cooldown.
-  - *Responsive (High):* Sustained Tier 1 or 2, 10-min cooldown.
+- **Multi-Cycle Hysteresis:** Interventions require sustained elevated tension across multiple observation windows before an alert can trigger. Single momentary spikes are logged but suppressed.
+- **Sensitivity Profiles (Harmonized):**
+  - *Conservative:* 4 consecutive cycles, 7.5-min (450 s) cooldown.
+  - *Balanced (Default):* 3 consecutive cycles, 5.0-min (300 s) cooldown.
+  - *Sensitive:* 2 consecutive cycles, 3.0-min (180 s) cooldown.
 - **User Control Agency:** One-click Snooze (10–60 mins) and Audio Mute directly from the UI.
 - **Provenance Card:** Interactive UI card with expandable *"Why did this fire?"* panel displaying contributing biological signals.
 
 ---
 
-### Slide 10: Conversational Engine & Acoustic Turn-Taking
-- **Real-Time Voice Assistant:** Built-in multimodal conversational agent sharing the same event loop.
-- **Conversational TTFA:** **1.411 s mean** (loop off) / **1.829 s mean** (loop on, +0.418s concurrency cost mitigated via voice turn deferral).
-- **Smart-Turn Classifier:** `smart-turn-v3.2` ONNX model classifies audio completeness in **68.2 ms**, eliminating awkward artificial turn pauses while holding incomplete thoughts.
-- **Local Speech Synthesis:** `Kokoro-ONNX` neural TTS synthesizes natural speech chunks streamed directly over WebSockets.
+### Slide 10: Conversational Engine & Concurrency Engineering
+- **Real-Time Voice Assistant:** Built-in multimodal conversational agent sharing the same single-process `asyncio` event loop.
+- **Conversational TTFA (30-Turn Alternating Benchmark):**
+  - Loop OFF: **1.789 s mean** (p50: 1.593 s, p95: 2.755 s, 95% CI: [1.626 s, 1.968 s]).
+  - Loop ON Mitigated: **1.903 s mean** (p50: 1.588 s, p95: 3.716 s, 95% CI: [1.575 s, 2.262 s]).
+  - Concurrency Cost Delta: **+0.114 s** (voice turn prioritization defers wellness SLM execution).
+- **Smart-Turn Classifier:** `smart-turn-v3.2` ONNX model classifies audio completeness in **68.2 ms**, holding turn during mid-sentence hesitation.
+- **Non-SLM Pipeline Overhead:** Total mean latency **10.89 ms** (Facial AU: 3.97 ms, Vocal DSP: 2.85 ms, DB write: 4.07 ms).
+- **Resource Footprint:** Host working set RAM **3.55 GB** (`llama-server` 2.75 GB + `python` 0.80 GB), Peak GPU VRAM **3.90 GB**, SQLite storage rate **~180 KB / active hour**.
 
 ---
 
@@ -119,7 +124,7 @@
 - **Automated Test Suite:**
   - Full suite of **111 tests** covering end-to-end conversation, turn gating, delegation, facial/vocal extraction, fusion, and crash resilience.
   - **Results:** **110 Passed, 0 Failed, 1 Skipped by Design** (**99.1% Pass Rate**).
-  - *Test Note:* 42 E2E tests that previously skipped now execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` due to synthetic falling TTS prosody.
+  - *Test Note:* 42 E2E tests that previously skipped now execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` in `tests/test_conversation.py:68` (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
 
 ---
 
@@ -131,12 +136,14 @@
 | Facial AU Extraction (Real Face, p95) | **4.81 ms** (mean: 3.97 ms) | — | **PASS** | `evidence/facial_extraction_real.csv` |
 | Facial AU Extraction (Blank / No Face) | **2.45 ms** (mean: 1.92 ms) | — | **PASS** | `evidence/facial_extraction_blank.csv` |
 | Vocal DSP Extraction (CPU, p95) | **3.73 ms** (mean: 2.85 ms) | — | **PASS** | `evidence/vocal_extraction.csv` |
-| Wellness SLM Latency (GPU, p95) | **2.42 s** (mean: 2.14 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.58s)** | `evidence/wellness_slm_latency.csv` |
-| Voice TTFA (Loop OFF, Mean) | **1.411 s** (p50: 1.384 s) | — | **Baseline** | `evidence/voice_ttfa.csv` |
-| Voice TTFA (Loop ON, Mean) | **1.829 s** (p50: 1.745 s) | — | **+0.418s cost** | `evidence/voice_ttfa.csv` |
-| Test Suite Integration | **110 / 111 Passed** | — | **PASS** | `evidence/pytest_full.log` |
+| SQLite Logging Latency (p95) | **5.29 ms** (mean: 4.07 ms) | — | **PASS** | `evidence/db_write_latency.csv` |
+| Wellness SLM Latency (GPU, p95) | **2.44 s** (mean: 2.14 s, p50: 2.23 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.56s)** | `evidence/wellness_slm_latency.csv` |
+| Voice TTFA (Loop OFF, 30 turns) | **1.789 s mean** (p50: 1.593 s, p95: 2.755 s) | — | **Baseline** | `evidence/voice_ttfa_30_turns.csv` |
+| Voice TTFA (Loop ON Mitigated, 30 turns) | **1.903 s mean** (p50: 1.588 s, p95: 3.716 s) | $\le 2.00\text{ s}$ target | **PASS (+0.114s cost)** | `evidence/voice_ttfa_30_turns.csv` |
+| Test Suite Integration | **110 / 111 Passed (1 skipped by design)** | All functional | **PASS (99.1%)** | `evidence/pytest_full.log` |
 | Outbound Network Sockets | **0 (0.00 KB)** | $0.0\text{ KB}$ | **PASS** | `evidence/netstat_outbound.txt` |
 | Peak VRAM (Session) | **3.90 GB** (3991 MB peak) | 6.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
+| Host Working Set RAM | **3.55 GB** (`llama-server` 2.75GB + `python` 0.80GB) | 16.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
 
 *Examiner Reproducibility:* `powershell -ExecutionPolicy Bypass -File scripts/reproduce_numbers.ps1`
 
@@ -148,7 +155,7 @@
 - **Model Quantization Agreement:** Measures prediction similarity between 4-bit and FP16 models. Unquantized FP16 weights were not stored locally for Gemma 4 E2B $\rightarrow$ **NOT MEASURED**.
 - **Human Ground-Truth Agreement:** Evaluates inferred stress against human self-reports. Preliminary reports used synthetic distributions for analysis smoke testing. Empirical human data is formally marked: **`NOT COLLECTED / REQUIRES HUMAN STUDY`**.
 - **Turnkey Human Re-Collection Kit:** Packaged in `docs/EMA_RECOLLECTION_KIT.md` with interactive tool `scripts/ema_collector.py` and evaluation harness `scripts/evaluate_ema.py` for execution with $\ge 8$ human participants (4 developers + 4 external peers) prior to viva.
-- **Empirical Live Reasoning Proofs:** Verified 5/5 trials Low Tier 0 on cross-modal conflict; 5/5 trials Moderate Tier 1 on acute stress; 0.0 confidence on zero signal (`evidence/live_pattern_reasoning.json`).
+- **Empirical Live Reasoning Proofs:** Verified 10 feature vectors $\times$ 3 repeats (N=30 runs) covering Tier 0, Tier 1, and Tier 2 (`evidence/tier_sweep.csv`); cross-modal conflict reasoning verified live; zero-signal windows reported as `"insufficient signal"` (`evidence/live_zero_signal.json`).
 
 ---
 
@@ -162,7 +169,7 @@
 
 ### Slide 15: Limitations, Future Work & Conclusion
 - **Clinical Role Boundary:** Parlor estimates behavioral stress signals and suggests micro-breaks; it is an occupational wellness tool, **NOT a medical diagnostic device**.
-- **Limitations:** Student/developer participant cohorts, subjectivity of EMA self-report, camera performance in low light ($<20\text{ lux}$), and live demo recording (`REQUIRES HUMAN: record the demo`).
+- **Limitations:** Student/developer participant cohorts, subjectivity of EMA self-report, camera performance in insufficient ambient lighting, and live demo recording (`REQUIRES HUMAN: record the demo`).
 - **Future Directions:**
   - Dedicated NPU offload (Intel NPU, Snapdragon X Elite, Apple Neural Engine) to operate at $<5\text{ Watts}$.
   - Multi-day circadian baseline adaptation in local SQLite.

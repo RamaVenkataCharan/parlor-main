@@ -99,3 +99,4 @@ if webcam_frame is not None:
     r_cam = benchmark_cond("5. Live Webcam Real Frame (CAP_DSHOW)", webcam_frame, 100)
 else:
     print("Live webcam frame was not captured.")
+

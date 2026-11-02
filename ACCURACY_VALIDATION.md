@@ -80,7 +80,7 @@ The evaluation suite has been updated in `scripts/evaluate_ema.py` with:
 2. **Participant Demographics & Small N:** Peer evaluation cohorts consist of undergraduate engineering students. Baseline facial mobility and vocal characteristics vary across demographics, accents, and age groups, which require broader population studies.
 3. **EMA Subjectivity & Recall Lag:** Self-report ratings are inherently subjective and influenced by personal stress thresholds. Retrospective reporting over 5-minute windows may smooth over momentary peak tension spikes.
 4. **Lighting & Acoustic Sensitivity:** While graceful audio fallback is implemented, single-modality tracking exhibits wider confidence bounds than concurrent multimodal capture.
-5. **GPU Sharing Contention:** Running affective reasoning concurrently with speech adds $+0.418\text{s}$ mean latency to voice TTFA on a single RTX 4050 GPU, which is mitigated by deferring wellness SLM cycles during active conversation turns.
+5. **GPU Sharing Contention:** Running affective reasoning concurrently with speech adds $+0.114\text{s}$ mean latency to voice TTFA on a single RTX 4050 GPU (1.789s loop off vs 1.903s loop on mitigated in our 30-turn alternating benchmark), which is mitigated by deferring wellness SLM cycles during active conversation turns. Furthermore, zero-signal windows (`"insufficient signal"`) are strictly isolated and excluded from EMA ground-truth analysis.
 
 ---
 

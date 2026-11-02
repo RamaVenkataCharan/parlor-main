@@ -9,7 +9,7 @@
     "f0_mean_hz": 0.0
   },
   "system_response": {
-    "stress_level": "Low (Tier 0)",
+    "stress_level": "insufficient signal",
     "primary_drivers": [
       "No active signals detected"
     ],

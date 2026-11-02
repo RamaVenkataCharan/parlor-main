@@ -2,16 +2,16 @@
 
 > **Major Project — Department of Computer Science & Engineering**  
 > **Class & Batch:** B.Tech CSE, Section A, Batch 14  
-> **Project Guide:** Mrs. V. Aruna, Senior Assistant Professor  
+> **Project Guide:** Mrs. V. Aruna, Project Guide, Dept. of CSE  
 > **Student Team:**
 > - M. Rama Venkata Charan (Roll No: 23KN1A0543)
 > - B. Murali Gopi (Roll No: 23KN1A0515)
 > - M. Kumar Siva Sai (Roll No: 23KN1A0542)
 > - Y. Yashwanth Prakash (Roll No: 23KN1A0571)  
-> **Academic Session:** 2025 – 2026
+> **Academic Year:** 2026 – 2027
 
 [![Test Suite](https://img.shields.io/badge/pytest-110%20passed%20%7C%200%20failed-brightgreen.svg)](VERIFICATION_REPORT.md)
-[![TTFA](https://img.shields.io/badge/Conversational%20TTFA-1.33s%20mean-blue.svg)](VERIFICATION_REPORT.md)
+[![TTFA](https://img.shields.io/badge/Conversational%20TTFA-1.79s%20mean-blue.svg)](VERIFICATION_REPORT.md)
 [![Quantization](https://img.shields.io/badge/Quantization%20Agreement-NOT%20MEASURED-lightgrey.svg)](ACCURACY_VALIDATION.md)
 [![Ground Truth](https://img.shields.io/badge/EMA%20Ground%20Truth-REQUIRES%20HUMAN%20STUDY-orange.svg)](ACCURACY_VALIDATION.md)
 [![Privacy](https://img.shields.io/badge/Network%20Transmission-0.00%20KB%20(Local%20Only)-success.svg)](VERIFICATION_REPORT.md)
@@ -25,10 +25,10 @@
 Combining an ultra-low-latency conversational voice interface with continuous, passive affective monitoring, Parlor operates exclusively on consumer-grade laptop hardware (webcam + microphone) without requiring smartwatches, chest straps, or manual journal logging.
 
 ### Key Capabilities
-- **Conversational Voice Assistant:** Achieves **1.411s mean Time-To-First-Audio (TTFA)** with wellness loop off (**1.829s mean** with loop on, +0.418s concurrency cost mitigated via voice turn deferral) using acoustic endpointing (`smart-turn-v3.2.onnx`), speculative prompt cache pre-filling, and on-device Kokoro TTS (`kokoro-v1.0.onnx`).
+- **Conversational Voice Assistant:** Achieves **1.789s mean Time-To-First-Audio (TTFA)** with wellness loop off (**1.903s mean** with loop on mitigated, +0.114s concurrency cost) using acoustic endpointing (`smart-turn-v3.2.onnx`), speculative prompt cache pre-filling, and on-device Kokoro TTS (`kokoro-v1.0.onnx`).
 - **Passive Multimodal Feature Extraction:** Concurrently extracts MediaPipe FaceMesh facial Action Units (`AU04` brow furrow, `AU07` eyelid tightener, `AU20` lip stretcher: **3.97 ms mean / 4.81 ms p95** on real face; **1.92 ms** on blank frame early exit) and Librosa/NumPy acoustic DSP features ($\Delta F0$ pitch shift, jitter %, shimmer %, spectral tension: **2.85 ms mean**) on standard CPU threads.
-- **Pattern-Based Qualitative SLM Reasoning:** Evaluates cross-modal physiological signals using a local Small Language Model (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) with structured JSON schema outputs in **2.14 s mean / 2.42 s p95** on GPU, eliminating brittle rigid thresholds.
-- **Explainable, Gated Micro-Interventions:** Enforces consecutive elevated observation cycles (Tier 2) and an 80-second cooldown before triggering non-intrusive micro-breaks (Somatic, Cognitive, Environmental) with complete provenance disclosure (*"Why did this fire?"*).
+- **Pattern-Based Qualitative SLM Reasoning:** Evaluates cross-modal physiological signals using a local Small Language Model (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) with structured JSON schema outputs in **2.14 s mean / 2.44 s p95** on GPU (margin $\pm 0.10\text{ s}$), eliminating brittle rigid thresholds.
+- **Explainable, Gated Micro-Interventions:** Enforces consecutive elevated observation cycles (e.g. 3 cycles in default Balanced mode, 2 in Sensitive, 4 in Conservative) and cooldowns (300s Balanced, 180s Sensitive, 450s Conservative) before triggering non-intrusive micro-breaks (Somatic, Cognitive, Environmental) with complete provenance disclosure (*"Why did this fire?"*).
 - **Strict Local Isolation & Zero External Transmission:** Transmits **0.00 KB** over external networks. The system operates with no outbound network traffic during standard operation; model weights are downloaded once during initial setup; the optional research mode is the only feature capable of making external API calls.
 
 ---
@@ -39,22 +39,23 @@ All metrics reported below were measured directly on the evaluation hardware: **
 
 | Metric Dimension | Measured Empirical Result | Engineering Budget | Verification Source |
 | :--- | :---: | :---: | :--- |
-| **Conversational Turn TTFA (Loop OFF)** | **`1.411 s`** (mean, 1.384 s p50, N=10) | — | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) |
-| **Conversational Turn TTFA (Loop ON)** | **`1.829 s`** (mean, 1.745 s p50, N=10) | — | [`evidence/voice_ttfa.csv`](evidence/voice_ttfa.csv) (+0.418s mitigated cost) |
+| **Conversational Turn TTFA (Loop OFF)** | **`1.789 s`** (mean, 1.593 s p50, 2.755 s p95, N=30) | — | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) |
+| **Conversational Turn TTFA (Loop ON Mitigated)** | **`1.903 s`** (mean, 1.588 s p50, 3.716 s p95, N=30) | $\le 2.00\text{ s}$ target | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) (+0.114s cost) |
 | **Facial AU Extraction (Real Face, Normal)** | **`3.97 ms`** (mean) / **`4.81 ms`** (p95) | — | [`evidence/facial_extraction_real.csv`](evidence/facial_extraction_real.csv) |
-| **Facial AU Extraction (Dim Light / Turned)**| **`4.39 ms`** (dim) / **`4.69 ms`** (turned)| — | [`evidence/facial_extraction_dim.csv`](evidence/facial_extraction_dim.csv) |
+| **Facial AU Extraction (Dim Light / Turned)**| **`4.39 ms`** (dim, simulated) / **`4.69 ms`** (turned, simulated)| — | [`evidence/facial_extraction_dim.csv`](evidence/facial_extraction_dim.csv) |
 | **Facial AU Extraction (Blank / No Face)**  | **`1.92 ms`** (mean) / **`2.45 ms`** (p95) | — | [`evidence/facial_extraction_blank.csv`](evidence/facial_extraction_blank.csv) (early exit) |
 | **Vocal Acoustic DSP Extraction (CPU)** | **`2.85 ms`** (mean) / **`3.73 ms`** (p95) | — | [`evidence/vocal_extraction.csv`](evidence/vocal_extraction.csv) |
-| **SLM Wellness Cycle Latency (GPU, p95)** | **`2.42 s`** (mean: `2.14 s`) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.58s margin) |
+| **SLM Wellness Cycle Latency (GPU, p95)** | **`2.44 s`** (mean: `2.14 s`, p50: `2.23 s`) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.56s margin) |
 | **SQLite Transaction Logging (p95)** | **`5.29 ms`** (mean: `4.07 ms`) | — | [`evidence/db_write_latency.csv`](evidence/db_write_latency.csv) |
-| **Complete Observation Cycle Latency** | **`2.15 s`** (mean) / **`2.43 s`** (p95) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.57s margin) |
+| **Complete Observation Cycle Latency** | **`2.15 s`** (mean) / **`2.45 s`** (p95) | $\le 5.00\text{ s}$ (window) | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) (+2.55s margin) |
 | **Outbound Network Transmission** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) |
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB) | 6.0 GB capacity | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) |
+| **Host Working Set Memory** | **`3.55 GB`** (`llama-server` 2.75GB + `python` 0.80GB) | 16.0 GB capacity | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) |
 | **Automated Test Suite Pass Rate** | **`99.1%`** (110 pass, 0 fail, 1 skip\*) | All functional | [`evidence/pytest_full.log`](evidence/pytest_full.log) |
 | **Model Quantization Agreement** | **`NOT MEASURED`** (No FP16 weights on disk) | N/A | [`EVIDENCE_AUDIT.md`](EVIDENCE_AUDIT.md) |
 | **EMA Ground-Truth Human Agreement** | **`NOT COLLECTED / REQUIRES HUMAN STUDY`** | Kit Ready | [`docs/EMA_RECOLLECTION_KIT.md`](docs/EMA_RECOLLECTION_KIT.md) |
 
-*\*Note on Skipped Test:* `test_thinking_pause_is_held` in `tests/test_conversation.py` is skipped by design; synthetic TTS imparts falling pitch prosody evaluated as turn completion, whereas human hesitation must be evaluated live.
+*\*Note on Skipped Test:* `test_thinking_pause_is_held` in `tests/test_conversation.py:68` is skipped by design (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
 
 ### Single-Command Viva Examiner Verification
 Examiners can reproduce all 8 empirical metrics immediately with a single command:

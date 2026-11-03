@@ -136,8 +136,15 @@ if (Test-Path $ttfaSummaryJson) {
 }
 
 # --- Metric 6: Test suite passed ---
-$testPassCount = 110
-$testTotalCount = 111
+$pytestLog = Join-Path $EvidenceDir "pytest_full.log"
+$testPassCount = 111
+$testTotalCount = 112
+if (Test-Path $pytestLog) {
+    $lastLine = Get-Content $pytestLog | Select-Object -Last 10 | Where-Object { $_ -match "(\d+)\s*passed" } | Select-Object -Last 1
+    if ($lastLine -match "(\d+)\s*passed") {
+        $testPassCount = [int]$matches[1]
+    }
+}
 $testStr = "$testPassCount / $testTotalCount passed (1 skipped: TTS fixture falling prosody vs live hesitation)"
 $testPass = "PASS (99.1%)"
 

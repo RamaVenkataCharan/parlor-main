@@ -77,7 +77,7 @@
 ### Slide 7: Cognitive Layer: Qualitative SLM Pattern Reasoning
 - **Small Language Model:** Google Gemma 4 E2B IT quantized at `Q4_0` (3.35 GB GGUF) running locally via `llama-server`.
 - **Grammar-Forced Schema:** Response is constrained to deterministic JSON schema containing `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
-- **Inference Latency:** **2.14 s mean / 2.44 s p95** on NVIDIA RTX 4050 GPU (margin $\pm 0.10\text{ s}$, comfortably within the 5.0 s budget with 2.56 s safety margin).
+- **Inference Latency:** **2.14 s mean / 2.45 s p95** on NVIDIA RTX 4050 GPU (pooled across all prompts including cross-modal conflict CoT: **2.23 s mean / 2.49 s p95 / 4.32 s max**, comfortably within the 5.0 s budget with 0.68 s safety margin on worst-case and 2.77 s on mean).
 - **Temporal Fusion:** 8-second observation window buffer normalizes signals against the user's calibrated baseline before prompt generation.
 
 ---
@@ -98,6 +98,7 @@
   - *Conservative:* 4 consecutive cycles, 7.5-min (450 s) cooldown.
   - *Balanced (Default):* 3 consecutive cycles, 5.0-min (300 s) cooldown.
   - *Sensitive:* 2 consecutive cycles, 3.0-min (180 s) cooldown.
+- **Insufficient Signal Window HOLD Policy:** Sensor occlusion / missing face (-1.0) holds the consecutive stress count to prevent transient occlusion wiping real distress, while strictly prohibiting interventions from firing.
 - **User Control Agency:** One-click Snooze (10–60 mins) and Audio Mute directly from the UI.
 - **Provenance Card:** Interactive UI card with expandable *"Why did this fire?"* panel displaying contributing biological signals.
 
@@ -105,13 +106,14 @@
 
 ### Slide 10: Conversational Engine & Concurrency Engineering
 - **Real-Time Voice Assistant:** Built-in multimodal conversational agent sharing the same single-process `asyncio` event loop.
-- **Conversational TTFA (30-Turn Alternating Benchmark):**
-  - Loop OFF: **1.789 s mean** (p50: 1.593 s, p95: 2.755 s, 95% CI: [1.626 s, 1.968 s]).
-  - Loop ON Mitigated: **1.903 s mean** (p50: 1.588 s, p95: 3.716 s, 95% CI: [1.575 s, 2.262 s]).
-  - Concurrency Cost Delta: **+0.114 s** (voice turn prioritization defers wellness SLM execution).
+- **Conversational TTFA (30-Turn Alternating Benchmark with GPU Telemetry):**
+  - Loop OFF: **1.920 s mean** (p50: 1.622 s, p95: 3.545 s, 95% CI: [1.663 s, 2.213 s]).
+  - Loop ON Unmitigated: **1.739 s mean** (p50: 1.514 s, p95: 3.612 s, 95% CI: [1.467 s, 2.066 s]).
+  - Loop ON Mitigated: **1.774 s mean** (p50: 1.483 s, p95: 3.419 s, 95% CI: [1.505 s, 2.077 s]).
+  - Evaluated on NVIDIA RTX 4050 6GB Laptop GPU (plugged into AC power, 2700 MHz core clocks, 54°C–71°C GPU temp).
 - **Smart-Turn Classifier:** `smart-turn-v3.2` ONNX model classifies audio completeness in **68.2 ms**, holding turn during mid-sentence hesitation.
 - **Non-SLM Pipeline Overhead:** Total mean latency **10.89 ms** (Facial AU: 3.97 ms, Vocal DSP: 2.85 ms, DB write: 4.07 ms).
-- **Resource Footprint:** Host working set RAM **3.55 GB** (`llama-server` 2.75 GB + `python` 0.80 GB), Peak GPU VRAM **3.90 GB**, SQLite storage rate **~180 KB / active hour**.
+- **Resource Footprint:** Host working set RAM **2.42 GB** (`llama-server` 1.84 GB + `python` 0.61 GB; 5.24 GB private commit), Peak GPU VRAM **3.90 GB**, SQLite storage rate **132 KB / active hour**.
 
 ---
 
@@ -122,9 +124,9 @@
   - GPU: NVIDIA GeForce RTX 4050 Laptop GPU (6GB VRAM, CUDA 12.4)
   - RAM: 16 GB DDR5
 - **Automated Test Suite:**
-  - Full suite of **111 tests** covering end-to-end conversation, turn gating, delegation, facial/vocal extraction, fusion, and crash resilience.
-  - **Results:** **110 Passed, 0 Failed, 1 Skipped by Design** (**99.1% Pass Rate**).
-  - *Test Note:* 42 E2E tests that previously skipped now execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` in `tests/test_conversation.py:68` (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
+  - Full regression test suite covering end-to-end conversation, turn gating, delegation, facial/vocal extraction, fusion, and crash resilience.
+  - **Results:** **111 Passed out of 112 items, 0 Failed, 1 Skipped by Design** (**99.1% Pass Rate**).
+  - *Test Note:* All E2E tests execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` in `tests/test_conversation.py:68` (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
 
 ---
 
@@ -137,7 +139,10 @@
 | Facial AU Extraction (Blank / No Face) | **2.45 ms** (mean: 1.92 ms) | — | **PASS** | `evidence/facial_extraction_blank.csv` |
 | Vocal DSP Extraction (CPU, p95) | **3.73 ms** (mean: 2.85 ms) | — | **PASS** | `evidence/vocal_extraction.csv` |
 | SQLite Logging Latency (p95) | **5.29 ms** (mean: 4.07 ms) | — | **PASS** | `evidence/db_write_latency.csv` |
-| Wellness SLM Latency (GPU, p95) | **2.44 s** (mean: 2.14 s, p50: 2.23 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.56s)** | `evidence/wellness_slm_latency.csv` |
+| Wellness SLM Latency (GPU, Standard p95) | **2.45 s** (mean: 2.14 s, p50: 2.23 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.55s)** | `evidence/wellness_slm_latency.csv` |
+| Wellness SLM Latency (GPU, Conflict Max) | **4.32 s** (mean: 2.79 s, CoT) | $\le 5.0\text{ s}$ (window) | **PASS (+0.68s)** | `evidence/live_pattern_reasoning.json` |
+| Conversational Turn TTFA (Loop OFF, p50) | **1.62 s** (mean: 1.92 s, p95: 3.55 s) | — | **MEASURED** | `evidence/voice_ttfa_30_turns.csv` |
+| Conversational Turn TTFA (Loop Mitigated, p50) | **1.48 s** (mean: 1.77 s, p95: 3.42 s) | — | **MEASURED** | `evidence/voice_ttfa_30_turns.csv` |
 | Voice TTFA (Loop OFF, 30 turns) | **1.789 s mean** (p50: 1.593 s, p95: 2.755 s) | — | **Baseline** | `evidence/voice_ttfa_30_turns.csv` |
 | Voice TTFA (Loop ON Mitigated, 30 turns) | **1.903 s mean** (p50: 1.588 s, p95: 3.716 s) | $\le 2.00\text{ s}$ target | **PASS (+0.114s cost)** | `evidence/voice_ttfa_30_turns.csv` |
 | Test Suite Integration | **110 / 111 Passed (1 skipped by design)** | All functional | **PASS (99.1%)** | `evidence/pytest_full.log` |

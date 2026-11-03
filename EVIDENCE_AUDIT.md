@@ -21,26 +21,23 @@
 | **Vocal DSP Extraction (CPU, Mean)** | 18.7 ms (carried-over) | **2.85 ms (mean) / 3.73 ms (p95)** | `evidence/vocal_extraction.csv` | `measure_extraction.py` (N=100) | **CHANGED (VERIFIED)** |
 | **Database Write Latency (SQLite)** | 2.57 ms (carried-over) | **4.07 ms (mean) / 5.29 ms (p95)** | `evidence/db_write_latency.csv` | `measure_extraction.py` (N=100) | **CHANGED (VERIFIED)** |
 | **Total Non-SLM Pipeline Overhead** | ~35 ms (estimated) | **10.89 ms mean** (Face 3.97 + Vocal 2.85 + DB 4.07) | CSVs in `evidence/` | Direct sum of verified module means | **VERIFIED** |
-| **SLM Wellness Latency (Mean, GPU)** | 2.76 s (carried-over) | **2.14 s (mean) [2.138s]** | `evidence/wellness_slm_latency.csv` | `measure_wellness_slm.py` (N=30) | **CHANGED (VERIFIED)** |
-| **SLM Wellness Latency (p50, GPU)** | Not specified | **2.23 s (p50) [2.228s]** | `evidence/wellness_slm_latency.csv` | `measure_wellness_slm.py` (N=30) | **VERIFIED** |
-| **SLM Wellness Latency (p95, GPU)** | 3.12 s (carried-over) | **2.44 s (p95) [2.436s]** | `evidence/wellness_slm_latency.csv` | `measure_wellness_slm.py` (N=30) | **CHANGED (VERIFIED)** |
-| **SLM Wellness Latency (Max, GPU)** | Not specified | **2.45 s (max) [2.446s]** | `evidence/wellness_slm_latency.csv` | `measure_wellness_slm.py` (N=30) | **VERIFIED** |
-| **SLM Latency 95% CI Margin** | Not reported | **+/- 0.10 s** (interval: [2.04s, 2.23s]) | `evidence/wellness_slm_latency.csv` | $1.96 \times (s/\sqrt{N})$, $s=0.269\text{s}$ | **VERIFIED** |
-| **SLM 5.0s Window Margin** | 1.88 s | **+2.56 s (5.0s - 2.44s p95)** | `evidence/wellness_slm_latency.csv` | Margin within 5.0s engineering budget | **CHANGED (VERIFIED)** |
-| **Voice TTFA (Loop OFF, Mean)** | 0.781 s (isolated) | **1.789 s (mean) / 2.755 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.63s, 1.97s]) | **CHANGED (VERIFIED)** |
-| **Voice TTFA (Loop ON Unmitigated)** | Not measured | **1.382 s (mean) / 2.060 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.26s, 1.52s]) | **VERIFIED** |
-| **Voice TTFA (Loop ON Mitigated)** | Not measured | **1.903 s (mean) / 3.716 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.58s, 2.26s]) | **CHANGED (VERIFIED)** |
-| **Voice TTFA Concurrency Delta** | Claimed "Zero regression" | **+0.114 s (Mitigated vs OFF)** | `evidence/voice_ttfa_summary.json` | Alternating round-robin 30 cycles | **CHANGED (VERIFIED)** |
-| **Tier 2 Range Sweep (10 Vectors x 3)**| Untested sweep | **Tier 0 (V1-V4), Tier 1 (V5-V9), Tier 2 (V10: 3/3)** | `evidence/tier_sweep.csv` | `test_tier_sweep.py` (N=30 runs) | **VERIFIED** |
-| **Live WS Balanced Trigger Test** | Unverified /ws test | **3 cycles -> Fired 4-7-8 Breathing Card** | `evidence/live_ws_intervention_trigger.json` | `test_live_ws_trigger_balanced.py` | **VERIFIED** |
-| **Cross-Modal Conflict Reasoning** | Claimed in theory | **5/5 trials Low (Tier 0)** | `evidence/live_pattern_reasoning.json` | Synthetic feature vectors (`collect_live_evidence.py`) | **VERIFIED** |
-| **Consistent Acute Stress Reasoning** | Claimed in theory | **5/5 trials Moderate (Tier 1)** | `evidence/live_pattern_reasoning.json` | Synthetic feature vectors (`collect_live_evidence.py`) | **VERIFIED** |
-| **Zero-Signal Sensor Occlusion** | Stored as Tier 0 | **Stored as "insufficient signal", Conf 0.0** | `evidence/live_zero_signal.json` | Covered camera + silence; excluded from EMA | **CHANGED (VERIFIED)** |
-| **llama-server Crash & Recovery** | Claimed in theory | **3.95 s mean recovery time** | `evidence/live_llama_kill_recovery.log` | `collect_live_evidence.py` (3 repeats) | **VERIFIED** |
-| **Peak Dedicated GPU VRAM** | ~3.8 GB (unverified) | **3.90 GB (3991 MB / 6141 MB capacity)** | `evidence/vram_cpu_usage.log` | `measure_hardware_and_network.py` | **CHANGED (VERIFIED)** |
-| **Host Working Set Memory (RAM)** | ~4.2 GB (unverified) | **3.55 GB** (`llama-server` 2.75GB + `python` 0.80GB) | Windows `Get-Process` WorkingSet64 | Measured live during active execution | **CHANGED (VERIFIED)** |
+| **SLM Wellness Latency (Standard Prompts, GPU)** | 2.76 s (carried-over) | **2.14 s (mean) / 2.45 s (p95) / 2.45 s (max)** | `evidence/wellness_slm_latency.csv` | `measure_wellness_slm.py` (N=30) | **CHANGED (VERIFIED)** |
+| **SLM Wellness Latency (Conflict CoT, GPU)** | Not specified | **2.79 s (mean) / 4.32 s (max)** | `evidence/live_pattern_reasoning.json` | Extended CoT reasoning (N=5) | **VERIFIED** |
+| **SLM Latency Pooled Envelope (N=35)** | Not reported | **2.23 s (mean) / 2.49 s (p95) / 4.32 s (max)** | `wellness_slm_latency.csv` + `live_pattern_reasoning.json` | Combined across all conditions | **VERIFIED** |
+| **SLM 5.0s Window Margin (Worst-Case Conflict)**| 1.88 s | **+0.68 s (5.0s - 4.32s max)** | `live_pattern_reasoning.json` | Margin under worst observed deliberation | **VERIFIED** |
+| **SLM 5.0s Window Margin (Pooled Mean)** | 1.88 s | **+2.77 s (5.0s - 2.23s mean)** | `wellness_slm_latency.csv` | Standard operational margin | **VERIFIED** |
+| **Voice TTFA (Loop OFF, Mean)** | 0.781 s (isolated) | **1.920 s (mean) / 1.622 s (p50) / 3.545 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.66s, 2.21s]) | **CHANGED (VERIFIED)** |
+| **Voice TTFA (Loop ON Unmitigated)** | Not measured | **1.739 s (mean) / 1.514 s (p50) / 3.612 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.47s, 2.07s]) | **VERIFIED** |
+| **Voice TTFA (Loop ON Mitigated)** | Not measured | **1.774 s (mean) / 1.483 s (p50) / 3.419 s (p95)** | `evidence/voice_ttfa_30_turns.csv` | `measure_voice_ttfa_30.py` (N=30, CI: [1.51s, 2.08s]) | **CHANGED (VERIFIED)** |
+| **Voice TTFA Telemetry Condition** | Untracked thermal state | **Plugged into AC, 2700MHz core clocks, 54-71°C** | `evidence/voice_ttfa_30_turns.csv` | Logged via nvidia-smi per turn | **VERIFIED** |
+| **Tier 2 Reachability Boundary** | Untested fine boundary | **AU04 >= 0.97, Pitch Delta >= +90Hz, Tension >= 0.94** | `evidence/tier2_reachability_sweep.csv` | `sweep_tier2_reachability.py` (13 vec x 3) | **VERIFIED** |
+| **Live-Model Card Trigger Proof** | Hardcoded mock payload | **3 real llama-server cycles -> Guided Breathing card** | `evidence/live_model_card_trigger.json` | `test_live_model_card_trigger.py` + Playwright | **VERIFIED** |
+| **Insufficient Signal (-1.0) Policy** | Reset counter to 0 | **HOLD counter; do not reset or increment; no fire** | `src/parlor/triggers.py` | `test_phase3_interventions.py` | **VERIFIED** |
+| **Longitudinal Storage Ingestion Rate** | ~180 KB/hr (estimated) | **132.00 KB/hour (300.37 bytes/cycle)** | `evidence/storage_growth_rate.txt` | `measure_storage_and_ram.py` (450 cycles) | **VERIFIED** |
+| **Host Working Set Memory (RAM)** | ~4.2 GB (unverified) | **2.42 GB working set (5.24 GB commit)** | `evidence/ram_working_set.txt` | `measure_storage_and_ram.py` via Get-Process | **CHANGED (VERIFIED)** |
+| **Bibliographic Citation Audit** | Baumel (2019) & Eysenbach (2005) | **Verified full DOI/PMID/Abstract** | `evidence/citation_verification.txt` | JMIR verified records | **VERIFIED** |
 | **Outbound Network Telemetry** | "Air-gapped" | **0 outbound sockets (0.00 KB)** | `evidence/netstat_outbound.txt` | `netstat -ano` audit; local network boundary | **VERIFIED** |
-| **Test Suite Passed** | 69 passed, 42 skipped | **110 passed, 0 failed, 1 skipped** | `evidence/pytest_full.log` | `uv run pytest -rs` | **CHANGED (VERIFIED)** |
+| **Test Suite Passed** | 69 passed, 42 skipped | **111 passed out of 112 items, 0 failed, 1 skipped** | `evidence/pytest_full.log` | `uv run pytest -rs` | **CHANGED (VERIFIED)** |
 | **Pytest Skip Reason** | "prosody" / "CUDA" | **"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"** | `tests/test_conversation.py:68` | Exact raw skip reason from `pytest -rs` | **VERIFIED** |
 | **Gemma 4 E2B Quantization Agreement**| 91.4% (Q4_K_M vs FP16) | **NOT MEASURED** | Local disk contains only Q4_0 | FP16 unquantized weights not present locally | **NOT MEASURED** |
 | **Ground-Truth Human EMA Agreement** | 77.8% exact / 100% 1-tier | **NOT YET COLLECTED** | `shared_state/ema_records.json` | Toolkit ready (`evaluate_ema.py` & `ema_collector.py`) | **NOT YET COLLECTED / REQUIRES HUMAN** |

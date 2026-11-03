@@ -1,0 +1,21 @@
+================================================================================
+PARLOR AFFECTIVE WELLNESS SYSTEM - PROCESS WORKING SET RAM MEASUREMENT
+Date / Timestamp: 2026-11-03 11:12:15 UTC
+Measurement Command: Get-Process python, llama-server
+================================================================================
+
+PID      Process Name       Working Set (MB)   Private Bytes (MB)   Peak WS (MB)   
+-------------------------------------------------------------------------------
+24828    llama-server       1839.52            3687.09              1887.14        
+7412     python             18.42              11.29                29.08          
+15104    python             4.25               0.80                 4.31           
+16236    python             612.48             1661.80              615.43         
+23316    python             4.33               0.80                 4.33           
+-------------------------------------------------------------------------------
+TOTAL WORKING SET RAM:   2479.00 MB (2.42 GB)
+TOTAL PRIVATE COMMITTED: 5361.79 MB (5.24 GB)
+
+SUMMARY:
+Total measured Parlor system working set RAM is 2.42 GB (~3.55 GB baseline target),
+incorporating llama-server with Gemma 4 E2B Q4_0 (CUDA offload) and the FastAPI backend.
+================================================================================

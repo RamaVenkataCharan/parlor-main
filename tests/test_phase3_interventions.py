@@ -64,3 +64,46 @@ def test_intervention_generator_personalized_output():
     assert "AU04 Brow Furrow=0.84" in pkg["personalized_note"]
     assert "Severe facial and vocal tension" in pkg["slm_reasoning"]
     assert len(pkg["steps"]) == 4
+
+
+def test_trigger_manager_insufficient_signal_hold_policy():
+    mgr = TriggerManager(consecutive_required=3, cooldown_sec=300.0)
+
+    high_slm = {"stress_level": "High (Tier 2)", "explainable_reasoning": "Elevated AU04 and pitch."}
+    insufficient_slm = {"stress_level": "Insufficient Signal", "explainable_reasoning": "No face detected in video stream."}
+    low_slm = {"stress_level": "Low (Tier 0)", "explainable_reasoning": "Relaxed facial baseline."}
+
+    # Cycle 1: High stress -> consecutive count becomes 1
+    fire, cat, meta = mgr.evaluate(high_slm)
+    assert fire is False
+    assert meta["consecutive_count"] == 1
+
+    # Cycle 2: Insufficient signal (-1.0) -> HOLD: count stays 1, must NOT fire
+    fire, cat, meta = mgr.evaluate(insufficient_slm)
+    assert fire is False
+    assert meta["consecutive_count"] == 1
+    assert meta["reason"] == "insufficient_signal_held"
+
+    # Cycle 3: High stress -> consecutive count becomes 2
+    fire, cat, meta = mgr.evaluate(high_slm)
+    assert fire is False
+    assert meta["consecutive_count"] == 2
+
+    # Cycle 4: Insufficient signal (-1.0) -> HOLD: count stays 2, must NOT fire
+    fire, cat, meta = mgr.evaluate(insufficient_slm)
+    assert fire is False
+    assert meta["consecutive_count"] == 2
+    assert meta["reason"] == "insufficient_signal_held"
+
+    # Cycle 5: High stress -> consecutive count becomes 3 -> SHOULD FIRE
+    fire, cat, meta = mgr.evaluate(high_slm)
+    assert fire is True
+    assert cat == "acute_stress"
+
+    # Cycle 6: Reset on genuine Tier 0
+    mgr.last_intervention_time = 0.0  # clear cooldown for test
+    mgr.consecutive_high_stress_count = 2
+    fire, cat, meta = mgr.evaluate(low_slm)
+    assert fire is False
+    assert meta["consecutive_count"] == 0
+

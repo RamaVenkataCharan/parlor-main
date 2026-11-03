@@ -1,0 +1,40 @@
+================================================================================
+PARLOR AFFECTIVE WELLNESS SYSTEM - STORAGE GROWTH RATE MEASUREMENT
+Date / Timestamp: 2026-11-03 11:12:15 UTC
+Measurement Script: scripts/measure_storage_and_ram.py
+Target Database: SQLite 3 (shared_state/wellness_history.db)
+================================================================================
+
+1. EXPERIMENTAL PARAMETERS
+   - Observation Cycle Duration: 8.0 seconds per cycle
+   - Observation Cycles per Hour: 3,600 s / 8.0 s = 450 cycles/hour
+   - Test Sample Size: 450 simulated real-world cycles
+   - Data Schema: id (INTEGER PK), timestamp (REAL), stress_level (TEXT),
+                  numeric_score (REAL), primary_drivers (JSON TEXT),
+                  reasoning (TEXT 150-250 chars), confidence (REAL),
+                  intervention_fired (INTEGER), intervention_type (TEXT),
+                  metadata (JSON TEXT)
+
+2. MEASURED STORAGE METRICS
+   - Base SQLite File Overhead: 12288 bytes (12.00 KB)
+   - Final Database Size (450 cycles): 147456 bytes (144.00 KB)
+   - Net Storage Delta per 1 Hour: 135168 bytes (132.00 KB/hr)
+   - Average Storage per Assessment Cycle: 300.37 bytes/cycle
+
+3. PROJECTED LONGITUDINAL FOOTPRINT
+   - 1 Hour (450 cycles): 132.00 KB (~132 KB/hr)
+   - 8-Hour Workday (3,600 cycles): 1056.00 KB (~1.03 MB)
+   - 24-Hour Continuous Run (10,800 cycles): 3.09 MB/day
+   - 30-Day Continuous Run (324,000 cycles): 92.81 MB/month
+   - 1-Year Continuous Run: 1.09 GB/year
+
+4. LIVE PRODUCTION DATABASE STATUS
+   - Path: C:\Users\ramav\Documents\PROJECTS\parlor\parlor-main-main\shared_state\wellness_history.db
+   - Status: Exists: 851968 bytes (832.00 KB) across 2722 records.
+
+5. CONCLUSION
+   The measured hourly storage ingestion rate of ~132 KB/hour confirms
+   that longitudinal affective wellness history requires minimal disk storage
+   (< 5 MB per continuous 24-hour day; < 135 MB per month), fully feasible for
+   constrained edge and consumer laptops without risk of disk exhaustion.
+================================================================================

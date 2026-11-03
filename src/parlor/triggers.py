@@ -80,17 +80,29 @@ class TriggerManager:
         if numeric_score >= 0.0:
             self.ema_stress_score = (self.ema_alpha * numeric_score) + ((1.0 - self.ema_alpha) * self.ema_stress_score)
 
-        # Pattern Tracking: Increment if Tier 1 or Tier 2
+        # Pattern Tracking:
+        # Tier 1 or Tier 2 increments consecutive stress counter.
+        # Tier 0 (low/baseline calm) resets consecutive stress counter.
+        # Insufficient Signal (-1.0, e.g. camera covered/head turned) HOLDS counter:
+        # Missing sensor data is not proof of calm, so accumulated stress is preserved,
+        # but insufficient signal can NEVER trigger an intervention.
         if numeric_score >= 1.0:
             self.consecutive_high_stress_count += 1
             if numeric_score >= 2.0:
                 self.total_high_stress_cycles += 1
-        else:
-            # Reset consecutive count on low stress / baseline or insufficient signal
+        elif numeric_score == 0.0:
             self.consecutive_high_stress_count = 0
+        else:
+            # numeric_score == -1.0: HOLD consecutive count; do not reset or increment
+            pass
 
         meta["consecutive_count"] = self.consecutive_high_stress_count
         meta["ema_score"] = round(self.ema_stress_score, 2)
+
+        # Insufficient signal windows cannot trigger interventions under any circumstance
+        if numeric_score < 0.0:
+            meta["reason"] = "insufficient_signal_held"
+            return False, "none", meta
 
         # Check Cooldown Period
         time_since_last = now - self.last_intervention_time

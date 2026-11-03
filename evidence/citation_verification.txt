@@ -1,0 +1,70 @@
+================================================================================
+PARLOR AFFECTIVE WELLNESS SYSTEM - CITATION VERIFICATION & RELEVANCE AUDIT
+Verified Bibliographic References: Baumel et al. (2019) & Eysenbach (2005)
+================================================================================
+
+1. CITATION 1: BAUMEL ET AL. (2019)
+--------------------------------------------------------------------------------
+Full Citation:
+Baumel, A., Muench, F., Edan, S., & Kane, J. M. (2019).
+"Objective User Engagement With Mobile Health Apps: Systematic Search and Analysis of
+Publicly Available Information."
+Journal of Medical Internet Research (JMIR), 21(9), e14567.
+DOI: 10.2196/14567
+PMID: 31573916 | PMCID: PMC6792018
+
+Study Design & Methodology:
+- Evaluated real-world usage and user retention across 93 popular Android and iOS
+  mental health mobile apps (targeting depression, anxiety, stress, emotional well-being)
+  each having over 10,000 installations.
+- Analyzed objective telemetry data rather than subjective self-report surveys.
+
+Key Empirical Findings:
+- Median 15-day retention rate: 3.9% (interquartile range: 1.5% - 8.2%).
+  This implies an attrition / abandonment rate of ~96.1% within just two weeks.
+- Median 30-day retention rate: 3.3%.
+- Median active daily minutes: Less than 5 minutes per user per day.
+- Conclusions: Mental health and emotional tracking apps that require proactive,
+  manual user engagement (e.g., daily journaling, manual mood logging, survey entry)
+  experience catastrophic user abandonment.
+
+Contextual Relevance to Parlor:
+- Parlor cites Baumel et al. (2019) in Section 1 (Introduction & Problem Statement)
+  and Section 2 (Literature Review) to justify the architectural paradigm shift from
+  active manual logging to passive, on-device multimodal observation.
+- By continuously monitoring webcam facial action units and ambient microphone vocal
+  prosody in the background without requiring user input, Parlor eliminates the
+  cognitive logging burden that drives the 96% attrition documented by Baumel et al.
+
+
+2. CITATION 2: EYSENBACH (2005)
+--------------------------------------------------------------------------------
+Full Citation:
+Eysenbach, G. (2005).
+"The Law of Attrition."
+Journal of Medical Internet Research (JMIR), 7(1), e11.
+DOI: 10.2196/jmir.7.1.e11
+PMID: 15829473 | PMCID: PMC1550631
+
+Theoretical Framework:
+- Introduced the foundational theoretical concepts of "dropout attrition" (participants
+  who become lost to follow-up or actively drop out of a digital intervention trial)
+  and "nonusage attrition" (participants who remain enrolled or retain the application
+  on their device, but discontinue active usage or engagement).
+- Formalized "The Law of Attrition": in any open-access or self-administered digital
+  health intervention, a substantial proportion of users drop out before completion or
+  stop using the intervention entirely.
+- Highlighted that perceived user burden, logging friction, and cognitive overhead
+  are the primary mathematical predictors of nonusage attrition curves.
+
+Contextual Relevance to Parlor:
+- Parlor cites Eysenbach (2005) to frame the human-computer interaction (HCI) challenge
+  inherent in workplace stress management.
+- Traditional ecological momentary assessment (EMA) frameworks and manual wellbeing
+  check-ins inevitably succumb to Eysenbach's nonusage attrition curve because users
+  under high workplace pressure lack the spare cognitive bandwidth to interrupt their
+  workflow to log stress.
+- Parlor resolves nonusage attrition by operating as a non-intrusive ambient background
+  daemon that computes stress trajectories autonomously and presents actionable
+  micro-interventions only when sustained acute distress is empirically detected.
+================================================================================

@@ -49,6 +49,24 @@ def load_wav_b64(filename: str) -> str:
         return base64.b64encode(f.read()).decode("ascii")
 
 
+def query_gpu_telemetry() -> dict:
+    try:
+        import subprocess
+        res = subprocess.run(
+            ["nvidia-smi", "--query-gpu=clocks.gr,clocks.mem,temperature.gpu,power.draw", "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=2.0
+        )
+        parts = [p.strip() for p in res.stdout.strip().split(",")]
+        return {
+            "gpu_clock_graphics_mhz": float(parts[0]),
+            "gpu_clock_mem_mhz": float(parts[1]),
+            "gpu_temp_c": float(parts[2]),
+            "gpu_power_w": float(parts[3])
+        }
+    except Exception:
+        return {"gpu_clock_graphics_mhz": 0.0, "gpu_clock_mem_mhz": 0.0, "gpu_temp_c": 0.0, "gpu_power_w": 0.0}
+
+
 async def execute_turn(ws, audio_b64: str) -> dict:
     t0 = time.perf_counter()
     await ws.send(json.dumps({"type": "speech", "audio": audio_b64}))
@@ -132,6 +150,7 @@ async def run_benchmark():
             # 1. Condition: Loop OFF
             await ws.send(json.dumps({"type": "set_wellness_mute", "muted": True}))
             r_ack = json.loads(await ws.recv())
+            gpu_t1 = query_gpu_telemetry()
             res_off = await execute_turn(ws, audio_b64)
             ttfas_off.append(res_off["ttfa_s"])
             records.append({
@@ -141,10 +160,14 @@ async def run_benchmark():
                 "audio_fixture": fixture,
                 "ttfa_sec": round(res_off["ttfa_s"], 4),
                 "first_chunk_bytes": res_off["first_chunk_bytes"],
+                "gpu_temp_c": gpu_t1["gpu_temp_c"],
+                "gpu_clock_graphics_mhz": gpu_t1["gpu_clock_graphics_mhz"],
+                "gpu_clock_mem_mhz": gpu_t1["gpu_clock_mem_mhz"],
+                "gpu_power_w": gpu_t1["gpu_power_w"],
                 "transcript": (res_off.get("transcript") or "")[:60],
                 "reply": (res_off.get("reply_text") or "")[:60]
             })
-            print(f"  [Turn {turn_counter:02d}] LOOP_OFF             : {res_off['ttfa_s']:.3f}s")
+            print(f"  [Turn {turn_counter:02d}] LOOP_OFF             : {res_off['ttfa_s']:.3f}s (GPU: {gpu_t1['gpu_temp_c']}C, {gpu_t1['gpu_clock_graphics_mhz']}MHz)")
             turn_counter += 1
             await asyncio.sleep(0.4)
 
@@ -159,6 +182,7 @@ async def run_benchmark():
                 "image": f"data:image/jpeg;base64,{blank_face}",
                 "audio": audio_b64
             }))
+            gpu_t2 = query_gpu_telemetry()
             res_unmit = await execute_turn(ws, audio_b64)
             ttfas_unmitigated.append(res_unmit["ttfa_s"])
             records.append({
@@ -168,10 +192,14 @@ async def run_benchmark():
                 "audio_fixture": fixture,
                 "ttfa_sec": round(res_unmit["ttfa_s"], 4),
                 "first_chunk_bytes": res_unmit["first_chunk_bytes"],
+                "gpu_temp_c": gpu_t2["gpu_temp_c"],
+                "gpu_clock_graphics_mhz": gpu_t2["gpu_clock_graphics_mhz"],
+                "gpu_clock_mem_mhz": gpu_t2["gpu_clock_mem_mhz"],
+                "gpu_power_w": gpu_t2["gpu_power_w"],
                 "transcript": (res_unmit.get("transcript") or "")[:60],
                 "reply": (res_unmit.get("reply_text") or "")[:60]
             })
-            print(f"  [Turn {turn_counter:02d}] LOOP_ON_UNMITIGATED  : {res_unmit['ttfa_s']:.3f}s")
+            print(f"  [Turn {turn_counter:02d}] LOOP_ON_UNMITIGATED  : {res_unmit['ttfa_s']:.3f}s (GPU: {gpu_t2['gpu_temp_c']}C, {gpu_t2['gpu_clock_graphics_mhz']}MHz)")
             turn_counter += 1
             await asyncio.sleep(0.4)
 
@@ -185,6 +213,7 @@ async def run_benchmark():
                 "image": f"data:image/jpeg;base64,{blank_face}",
                 "audio": audio_b64
             }))
+            gpu_t3 = query_gpu_telemetry()
             res_mit = await execute_turn(ws, audio_b64)
             ttfas_mitigated.append(res_mit["ttfa_s"])
             records.append({
@@ -194,15 +223,23 @@ async def run_benchmark():
                 "audio_fixture": fixture,
                 "ttfa_sec": round(res_mit["ttfa_s"], 4),
                 "first_chunk_bytes": res_mit["first_chunk_bytes"],
+                "gpu_temp_c": gpu_t3["gpu_temp_c"],
+                "gpu_clock_graphics_mhz": gpu_t3["gpu_clock_graphics_mhz"],
+                "gpu_clock_mem_mhz": gpu_t3["gpu_clock_mem_mhz"],
+                "gpu_power_w": gpu_t3["gpu_power_w"],
                 "transcript": (res_mit.get("transcript") or "")[:60],
                 "reply": (res_mit.get("reply_text") or "")[:60]
             })
-            print(f"  [Turn {turn_counter:02d}] LOOP_ON_MITIGATED    : {res_mit['ttfa_s']:.3f}s")
+            print(f"  [Turn {turn_counter:02d}] LOOP_ON_MITIGATED    : {res_mit['ttfa_s']:.3f}s (GPU: {gpu_t3['gpu_temp_c']}C, {gpu_t3['gpu_clock_graphics_mhz']}MHz)")
             turn_counter += 1
             await asyncio.sleep(0.4)
 
     # Save CSVs
-    fieldnames = ["turn_index", "cycle", "condition", "audio_fixture", "ttfa_sec", "first_chunk_bytes", "transcript", "reply"]
+    fieldnames = [
+        "turn_index", "cycle", "condition", "audio_fixture", "ttfa_sec", "first_chunk_bytes",
+        "gpu_temp_c", "gpu_clock_graphics_mhz", "gpu_clock_mem_mhz", "gpu_power_w",
+        "transcript", "reply"
+    ]
     for out_p in [OUT_CSV_30, OUT_CSV_MASTER]:
         with open(out_p, "w", newline="", encoding="utf-8") as f:
             w = csv.DictWriter(f, fieldnames=fieldnames)

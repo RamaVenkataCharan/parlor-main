@@ -3,10 +3,10 @@
 # 🌿 Parlor ("EMO Assistant")
 ### Fully On-Device Multimodal Affective Wellness Monitoring & Conversational Voice AI
 
-[![Test Suite](https://img.shields.io/badge/pytest-110%20passed%20%7C%200%20failed%20%7C%201%20skipped-brightgreen.svg)](VERIFICATION_REPORT.md)
-[![Conversational TTFA](https://img.shields.io/badge/Voice%20TTFA-1.789s%20mean%20(Loop%20OFF)-blue.svg)](evidence/voice_ttfa_30_turns.csv)
-[![Mitigated TTFA](https://img.shields.io/badge/Voice%20TTFA-1.903s%20mean%20(Loop%20ON)-indigo.svg)](evidence/voice_ttfa_30_turns.csv)
-[![SLM Latency](https://img.shields.io/badge/SLM%20Reasoning-2.14s%20mean%20%7C%202.44s%20p95-purple.svg)](evidence/wellness_slm_latency.csv)
+[![Test Suite](https://img.shields.io/badge/pytest-111%20passed%20%7C%200%20failed%20%7C%201%20skipped-brightgreen.svg)](VERIFICATION_REPORT.md)
+[![Conversational TTFA](https://img.shields.io/badge/Voice%20TTFA-1.920s%20mean%20(Loop%20OFF)-blue.svg)](evidence/voice_ttfa_30_turns.csv)
+[![Mitigated TTFA](https://img.shields.io/badge/Voice%20TTFA-1.774s%20mean%20(Loop%20ON)-indigo.svg)](evidence/voice_ttfa_30_turns.csv)
+[![SLM Latency](https://img.shields.io/badge/SLM%20Reasoning-2.14s%20mean%20%7C%202.45s%20p95-purple.svg)](evidence/wellness_slm_latency.csv)
 [![Non-SLM Overhead](https://img.shields.io/badge/Non--SLM%20Overhead-10.89ms%20mean-teal.svg)](VERIFICATION_REPORT.md)
 [![Peak VRAM](https://img.shields.io/badge/GPU%20VRAM-3.90%20GB%20%2F%206.0%20GB-blueviolet.svg)](evidence/vram_cpu_usage.log)
 [![Network Isolation](https://img.shields.io/badge/Network%20Telemetry-0.00%20KB%20(Strictly%20Local)-success.svg)](evidence/netstat_outbound.txt)
@@ -50,9 +50,9 @@ Knowledge workers and software developers increasingly suffer from **insidious s
   └────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **🎙️ Real-Time Voice Assistant:** Achieves **1.789s mean Time-To-First-Audio (TTFA)** with the wellness loop off and **1.903s mean** with the loop on (mitigated concurrency cost of just **+0.114s**) using `smart-turn-v3.2.onnx` acoustic endpointing, speculative prompt pre-filling, and streaming `Kokoro-ONNX` neural TTS.
+- **🎙️ Real-Time Voice Assistant:** Achieves **1.920s mean Time-To-First-Audio (TTFA)** with the wellness loop off and **1.774s mean** with the loop on (mitigated concurrency) using `smart-turn-v3.2.onnx` acoustic endpointing, speculative prompt pre-filling, and streaming `Kokoro-ONNX` neural TTS.
 - **👁️ Non-Invasive Multimodal Perception:** Concurrently tracks MediaPipe FaceMesh 3D landmarks (`AU04` brow furrow, `AU07` eyelid tightener, `AU20` lip stretcher: **3.97 ms mean / 4.81 ms p95**) and vectorized acoustic DSP features ($\Delta F0$ pitch shift, jitter %, shimmer %, vocal tension: **2.85 ms mean**) on lightweight CPU background threads.
-- **🧠 Cognitive Pattern Reasoning (No Brittle Thresholds):** Replaces rigid numeric cutoffs with local Small Language Model pattern reasoning (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) executing structured JSON completions in **2.14 s mean / 2.44 s p95** on GPU. Disambiguates animated conversation from acute distress.
+- **🧠 Cognitive Pattern Reasoning (No Brittle Thresholds):** Replaces rigid numeric cutoffs with local Small Language Model pattern reasoning (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) executing structured JSON completions in **2.14 s mean / 2.45 s p95** on GPU (worst-case cross-modal conflict reasoning: **4.32 s max**, leaving a **0.68 s safety margin** below the 5.0 s budget). Disambiguates animated conversation from acute distress.
 - **🌿 Multi-Cycle Anti-False-Alarm Gating:** Enforces multi-cycle temporal hysteresis before triggering non-intrusive micro-breaks (Somatic, Cognitive, Environmental), backed by configurable cooldowns (300s Balanced, 180s Sensitive, 450s Conservative), user snooze (10–60m), and one-click mute.
 - **🛡️ Air-Gapped Privacy Architecture:** Emits **0.00 KB** outbound network traffic during standard operation. All WebSocket connections bind strictly to loopback (`127.0.0.1`). Silero VAD is vendored locally. Raw video frames and audio buffers are processed ephemerally in RAM and immediately freed.
 
@@ -129,21 +129,22 @@ All performance statistics reported below were measured directly on the evaluati
 **Hardware:** Intel Core i5-13450HX (10 cores, 16 threads), NVIDIA GeForce RTX 4050 Laptop GPU (6GB GDDR6, CUDA 12.4), 16GB DDR5 RAM, Windows 11 Home.  
 **SLM Model:** Google Gemma 4 E2B IT (`Q4_0`, 3.35 GB GGUF) + multimodal projector (986 MB) running under `llama-server` (llama.cpp b12015).
 
-| Benchmark Dimension | Measured Result (Empirical) | Engineering Spec Budget | Evidence Log | Status |
+| Benchmark Dimension | Measured Result (Empirical) | Subsystem Context / Specification | Evidence Log | Status |
 | :--- | :---: | :---: | :--- | :---: |
-| **Voice Turn TTFA (Loop OFF)** | **`1.789 s`** (mean, p50: 1.59s, p95: 2.76s, N=30) | $\le 2.00\text{ s}$ | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) | **PASS** |
-| **Voice Turn TTFA (Loop ON Mitigated)** | **`1.903 s`** (mean, p50: 1.59s, p95: 3.72s, N=30) | $\le 2.00\text{ s}$ | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) | **PASS (+0.114s cost)** |
-| **Facial AU Extraction (Real Face)** | **`3.97 ms`** (mean) / **`4.81 ms`** (p95) | Real-time frame | [`evidence/facial_extraction_real.csv`](evidence/facial_extraction_real.csv) | **PASS** |
+| **Voice Turn TTFA (Loop OFF)** | **`1.920 s`** (mean, p50: 1.62s, p95: 3.55s, N=30) | Isolated voice assistant mode | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) | **MEASURED** |
+| **Voice Turn TTFA (Loop ON Mitigated)** | **`1.774 s`** (mean, p50: 1.48s, p95: 3.42s, N=30) | Concurrent wellness with turn yield | [`evidence/voice_ttfa_30_turns.csv`](evidence/voice_ttfa_30_turns.csv) | **MEASURED** |
+| **Facial AU Extraction (Real Face)** | **`3.97 ms`** (mean) / **`4.81 ms`** (p95) | Real-time frame ($\le 33.3\text{ ms}$) | [`evidence/facial_extraction_real.csv`](evidence/facial_extraction_real.csv) | **PASS** |
 | **Facial AU Extraction (Blank Frame)**| **`1.92 ms`** (mean) / **`2.45 ms`** (p95) | Fast early exit | [`evidence/facial_extraction_blank.csv`](evidence/facial_extraction_blank.csv) | **PASS** |
-| **Vocal Acoustic DSP Extraction** | **`2.85 ms`** (mean) / **`3.73 ms`** (p95) | Real-time frame | [`evidence/vocal_extraction.csv`](evidence/vocal_extraction.csv) | **PASS** |
-| **SQLite Transaction Logging** | **`4.07 ms`** (mean) / **`5.29 ms`** (p95) | Sub-frame logging | [`evidence/db_write_latency.csv`](evidence/db_write_latency.csv) | **PASS** |
-| **Total Non-SLM Pipeline Overhead** | **`10.89 ms`** (mean sum: $3.97 + 2.85 + 4.07\text{ ms}$) | $\le 30.0\text{ ms}$ | Subsystem CSVs | **PASS** |
-| **Wellness SLM Reasoning (GPU)** | **`2.14 s`** (mean) / **`2.44 s`** (p95) / **`2.45 s`** (max) | $\le 5.00\text{ s}$ rolling window | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) | **PASS (+2.56s margin)** |
-| **Test Suite Integration** | **`110 / 111 Passed`** (99.1% pass rate) | All functional | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
-| **Outbound Network Telemetry** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) | **PASS (Local Loopback)** |
+| **Vocal Acoustic DSP Extraction** | **`2.85 ms`** (mean) / **`3.73 ms`** (p95) | Real-time frame ($\le 20.0\text{ ms}$) | [`evidence/vocal_extraction.csv`](evidence/vocal_extraction.csv) | **PASS** |
+| **SQLite Transaction Logging** | **`4.07 ms`** (mean) / **`5.29 ms`** (p95) | Sub-frame persistence | [`evidence/db_write_latency.csv`](evidence/db_write_latency.csv) | **PASS** |
+| **Total Non-SLM Pipeline Overhead** | **`10.89 ms`** (mean sum: $3.97 + 2.85 + 4.07\text{ ms}$) | $\le 50.0\text{ ms}$ budget | Subsystem CSVs | **PASS** |
+| **Wellness SLM Reasoning (Standard GPU)** | **`2.14 s`** (mean) / **`2.45 s`** (p95) | $\le 5.00\text{ s}$ observation window | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) | **PASS (+2.55s margin)** |
+| **Wellness SLM Reasoning (Conflict CoT)** | **`2.79 s`** (mean) / **`4.32 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/live_pattern_reasoning.json`](evidence/live_pattern_reasoning.json) | **PASS (+0.68s margin)** |
+| **Test Suite Integration** | **`111 / 112 Passed`** (99.1% pass rate) | 0 failed, 1 skipped by design | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
+| **Outbound Network Telemetry** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ local boundary | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) | **PASS (Local Loopback)** |
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB capacity) | $\le 6.0\text{ GB}$ VRAM | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) | **PASS** |
-| **Host Working Set Memory** | **`3.55 GB`** (`llama-server` 2.75GB + `python` 0.80GB) | 16.0 GB RAM | Task Manager / PerfMon | **PASS** |
-| **SQLite Database Storage Rate** | **`~180 KB / active monitoring hour`** | Multi-year local storage | 450 cycles/hr $\times \approx 400\text{ B}$ | **PASS** |
+| **Host Working Set Memory (RAM)** | **`2.42 GB`** (`llama-server` 1.84GB + `python` 0.61GB) | 16.0 GB RAM (5.24 GB commit) | [`evidence/ram_working_set.txt`](evidence/ram_working_set.txt) | **PASS** |
+| **SQLite Database Storage Rate** | **`132.00 KB / active monitoring hour`** | 300.37 bytes/cycle (1.03 MB/workday) | [`evidence/storage_growth_rate.txt`](evidence/storage_growth_rate.txt) | **PASS** |
 | **EMA Ground-Truth Agreement** | **`NOT COLLECTED / REQUIRES HUMAN STUDY`** | Human Protocol Ready | [`docs/EMA_RECOLLECTION_KIT.md`](docs/EMA_RECOLLECTION_KIT.md) | **Kit Packaged** |
 
 *\*Note on Skipped Test:* `test_thinking_pause_is_held` in `tests/test_conversation.py:68` is skipped by design (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
@@ -223,10 +224,10 @@ Metric                                 Measured
 Facial AU Extraction (Real Face)       3.97 ms (mean) / 4.81 ms (p95) [Det: 100%]                                   
 Facial AU Extraction (Blank / No Face) 1.92 ms (mean) / 2.45 ms (p95) [Det: 0% early exit]                          
 Vocal DSP Extraction (CPU)             2.85 ms (mean) / 3.73 ms (p95)                                               
-Wellness SLM Latency (GPU, Gemma 4)    2.14 s (mean) / 2.44 s (p95) [Margin: +2.56s]                                
-Voice TTFA (Wellness Loop OFF)         1.789 s (mean) / 2.755 s (p95, N=30, CI: [1.626s, 1.968s])                   
-Voice TTFA (Wellness Loop ON)          1.903 s (mean) / 3.716 s (p95, N=30, CI: [1.575s, 2.262s]) [Delta: +0.114 s] 
-Integration Test Suite                 110 / 111 passed (1 skipped: TTS fixture falling prosody vs live hesitation) 
+Wellness SLM Latency (GPU, Gemma 4)    2.14 s (mean) / 2.45 s (p95) [Conflict Max: 4.32s, Margin: +0.68s]           
+Voice TTFA (Wellness Loop OFF)         1.920 s (mean) / 3.545 s (p95, N=30, CI: [1.663s, 2.213s])                   
+Voice TTFA (Wellness Loop ON)          1.774 s (mean) / 3.419 s (p95, N=30, CI: [1.505s, 2.077s])                   
+Integration Test Suite                 111 / 112 passed (1 skipped: TTS fixture falling prosody vs live hesitation) 
 Outbound Network Telemetry             0 sockets (0.00 KB outbound)                                                 
 Peak GPU VRAM Utilization              3.9 GB (3991 MB / 6141 MB capacity)                                          
 Human Ground-Truth Accuracy            NOT YET COLLECTED                                                            

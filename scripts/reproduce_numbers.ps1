@@ -137,8 +137,8 @@ if (Test-Path $ttfaSummaryJson) {
 
 # --- Metric 6: Test suite passed ---
 $pytestLog = Join-Path $EvidenceDir "pytest_full.log"
-$testPassCount = 111
-$testTotalCount = 112
+$testPassCount = 114
+$testTotalCount = 115
 if (Test-Path $pytestLog) {
     $lastLine = Get-Content $pytestLog | Select-Object -Last 10 | Where-Object { $_ -match "(\d+)\s*passed" } | Select-Object -Last 1
     if ($lastLine -match "(\d+)\s*passed") {

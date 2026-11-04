@@ -78,7 +78,7 @@
 - **Small Language Model:** Google Gemma 4 E2B IT quantized at `Q4_0` (3.35 GB GGUF) running locally via `llama-server`.
 - **Grammar-Forced Schema:** Response is constrained to deterministic JSON schema containing `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
 - **Inference Latency:** **2.14 s mean / 2.45 s p95** on NVIDIA RTX 4050 GPU (pooled across all prompts including cross-modal conflict CoT: **2.23 s mean / 2.49 s p95 / 4.32 s max**, comfortably within the 5.0 s budget with 0.68 s safety margin on worst-case and 2.77 s on mean).
-- **Temporal Fusion:** 8-second observation window buffer normalizes signals against the user's calibrated baseline before prompt generation.
+- **Temporal Fusion:** 8-second observation window buffer computes running statistics and acoustic delta ($F_0 = 145.0\text{ Hz}$); dynamic per-user baseline calibration identified as future work.
 
 ---
 
@@ -141,14 +141,13 @@
 | SQLite Logging Latency (p95) | **5.29 ms** (mean: 4.07 ms) | — | **PASS** | `evidence/db_write_latency.csv` |
 | Wellness SLM Latency (GPU, Standard p95) | **2.45 s** (mean: 2.14 s, p50: 2.23 s) | $\le 5.0\text{ s}$ (window) | **PASS (+2.55s)** | `evidence/wellness_slm_latency.csv` |
 | Wellness SLM Latency (GPU, Conflict Max) | **4.32 s** (mean: 2.79 s, CoT) | $\le 5.0\text{ s}$ (window) | **PASS (+0.68s)** | `evidence/live_pattern_reasoning.json` |
-| Conversational Turn TTFA (Loop OFF, p50) | **1.62 s** (mean: 1.92 s, p95: 3.55 s) | — | **MEASURED** | `evidence/voice_ttfa_30_turns.csv` |
-| Conversational Turn TTFA (Loop Mitigated, p50) | **1.48 s** (mean: 1.77 s, p95: 3.42 s) | — | **MEASURED** | `evidence/voice_ttfa_30_turns.csv` |
-| Voice TTFA (Loop OFF, 30 turns) | **1.789 s mean** (p50: 1.593 s, p95: 2.755 s) | — | **Baseline** | `evidence/voice_ttfa_30_turns.csv` |
-| Voice TTFA (Loop ON Mitigated, 30 turns) | **1.903 s mean** (p50: 1.588 s, p95: 3.716 s) | $\le 2.00\text{ s}$ target | **PASS (+0.114s cost)** | `evidence/voice_ttfa_30_turns.csv` |
-| Test Suite Integration | **110 / 111 Passed (1 skipped by design)** | All functional | **PASS (99.1%)** | `evidence/pytest_full.log` |
+| Conversational Turn TTFA (Loop OFF, 30 turns) | **1.920 s mean** (p50: 1.622 s, p95: 3.545 s, CI: [1.66s, 2.21s]) | Baseline isolated voice mode | **MEASURED** | `evidence/voice_ttfa_summary.json` |
+| Conversational Turn TTFA (Loop Mitigated, 30 turns) | **1.774 s mean** (p50: 1.483 s, p95: 3.419 s, CI: [1.51s, 2.08s]) | Interactive threshold $\le 2.00\text{ s}$ | **PASS (No distinguishable cost; CIs overlap)** | `evidence/voice_ttfa_summary.json` |
+| Test Suite Integration | **114 / 115 Passed (1 skipped by design)** | All functional | **PASS (99.1%)** | `evidence/pytest_full.log` |
 | Outbound Network Sockets | **0 (0.00 KB)** | $0.0\text{ KB}$ | **PASS** | `evidence/netstat_outbound.txt` |
 | Peak VRAM (Session) | **3.90 GB** (3991 MB peak) | 6.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
-| Host Working Set RAM | **3.55 GB** (`llama-server` 2.75GB + `python` 0.80GB) | 16.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
+| Host Working Set RAM | **2.42 GB** (`llama-server` 1.84 GB + `python` 0.61 GB; 5.24 GB commit) | 16.0 GB capacity | **PASS** | `evidence/ram_working_set.txt` |
+| Longitudinal Storage Growth | **132.00 KB/hour** (300.37 bytes/cycle) | Local SQLite | **PASS** | `evidence/storage_growth_rate.txt` |
 
 *Examiner Reproducibility:* `powershell -ExecutionPolicy Bypass -File scripts/reproduce_numbers.ps1`
 
@@ -167,7 +166,7 @@
 ### Slide 14: Privacy Architecture & Browser DevTools Audit (B1–B12)
 - **Zero Outbound Data Transmission:** Socket inspection confirmed **0.00 KB** outbound network traffic during live operation.
 - **Strict Local Loopback:** Binds strictly to `127.0.0.1:8000` (FastAPI) and `127.0.0.1:8081` (`llama-server`).
-- **Vendored Offline VAD & Clean HAR:** Vendored Silero VAD and removed Google Fonts CDN leak. Verified 100% offline air-gapped execution via session HAR export (`evidence/browser/session_privacy.har`).
+- **Vendored Offline VAD & Clean HAR:** Vendored Silero VAD and removed Google Fonts CDN leak. Verified no outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API (`evidence/browser/session_privacy.har`).
 - **Browser Performance & Reliability (B1–B12):**
   - Clean page load in **0.887 s** with 0 console errors.
   - Single-session WebSocket policy (Code 4001 rejects concurrent tab without reconnect loops).

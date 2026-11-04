@@ -1,0 +1,15 @@
+=== NETSTAT ACTIVE CONNECTIONS ON 8000 / 8081 ===
+  TCP    127.0.0.1:8000         127.0.0.1:51457        TIME_WAIT       0
+  TCP    127.0.0.1:8081         127.0.0.1:64399        TIME_WAIT       0
+  TCP    127.0.0.1:8081         127.0.0.1:64400        TIME_WAIT       0
+  TCP    127.0.0.1:8081         127.0.0.1:64401        TIME_WAIT       0
+  TCP    127.0.0.1:8081         127.0.0.1:64402        TIME_WAIT       0
+  TCP    127.0.0.1:8081         127.0.0.1:64403        TIME_WAIT       0
+  TCP    127.0.0.1:52066        127.0.0.1:8000         TIME_WAIT       0
+  TCP    127.0.0.1:52482        127.0.0.1:8000         TIME_WAIT       0
+  TCP    127.0.0.1:53714        127.0.0.1:8000         TIME_WAIT       0
+  TCP    127.0.0.1:58547        127.0.0.1:8000         TIME_WAIT       0
+  TCP    127.0.0.1:64404        127.0.0.1:8081         TIME_WAIT       0
+  TCP    127.0.0.1:65528        127.0.0.1:8000         TIME_WAIT       0
+=== PROCESS STATUS ===
+ZERO LLAMA-SERVER OR UVICORN PROCESSES RUNNING

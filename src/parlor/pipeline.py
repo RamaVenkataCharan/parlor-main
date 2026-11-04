@@ -432,8 +432,9 @@ async def run_turn(ws, messages: list, interrupted: asyncio.Event,
     )
 
     def turn_no_speech() -> bool:
-        return (not proactive and parser.transcript is not None
-                and clean_transcript(parser.transcript) is None)
+        if proactive or not expect_transcript:
+            return False
+        return parser.transcript is None or clean_transcript(parser.transcript) is None
 
     if interrupted.is_set():
         print("Interrupted mid-turn")

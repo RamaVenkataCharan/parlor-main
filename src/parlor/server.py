@@ -806,8 +806,20 @@ async def _run_session(ws: WebSocket):
                 await send_json(ws, {"type": "concurrency_mitigation_changed", "enabled": mitigated})
                 continue
 
+            if msg.get("type") == "set_demo_mode":
+                demo_enabled = bool(msg.get("enabled", False))
+                if wellness_service:
+                    wellness_service.demo_mode = demo_enabled
+                print(f"[DEMO MODE] Simulated stress injection {'ENABLED' if demo_enabled else 'DISABLED'}")
+                await send_json(ws, {"type": "demo_mode_changed", "enabled": demo_enabled})
+                continue
+
             if msg.get("type") == "test_wellness_cycle":
-                print("[TEST CYCLE] Received test_wellness_cycle request")
+                is_sim = bool(msg.get("is_simulated", False) or (wellness_service and getattr(wellness_service, "demo_mode", False)))
+                if is_sim:
+                    print("[STAGE 2] [SIMULATED INPUT] Processing demo-mode stress vector (is_simulated=True).")
+                else:
+                    print("[TEST CYCLE] Received test_wellness_cycle request")
                 vector = msg.get("vector")
                 prompt_used = None
                 if vector and wellness_service:
@@ -825,9 +837,13 @@ async def _run_session(ws: WebSocket):
                     })
                 if wellness_service:
                     should_fire, category, meta = wellness_service.trigger_manager.evaluate(slm_input)
+                    if is_sim:
+                        meta["simulated"] = True
                     intervention_pkg = None
                     if should_fire:
                         intervention_pkg = wellness_service.intervention_generator.generate(category, slm_input)
+                        if is_sim:
+                            intervention_pkg["is_simulated"] = True
                         await dispatch_wellness_intervention(intervention_pkg)
                     resp = {
                         "type": "test_wellness_cycle_result",
@@ -836,7 +852,8 @@ async def _run_session(ws: WebSocket):
                         "intervention_fired": intervention_pkg is not None,
                         "metadata": meta,
                         "slm_output": slm_input,
-                        "prompt": prompt_used
+                        "prompt": prompt_used,
+                        "is_simulated": is_sim
                     }
                     print("[TEST CYCLE] Sending response back to client...")
                     await send_json(ws, resp)

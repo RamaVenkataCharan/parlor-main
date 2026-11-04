@@ -15,6 +15,12 @@
     <h1>Parlor</h1>
   </div>
   <div class="header-right">
+    <label class="demo-toggle-wrap" title="Toggle Demo Mode (Injects simulated stress biomarkers)">
+      <input type="checkbox" id="demoModeToggle">
+      <span class="slider round"></span>
+      <span class="demo-toggle-label">Demo</span>
+    </label>
+    <span id="simulatedInputBadge" class="simulated-badge" hidden title="Simulated stress input active">⚠️ SIMULATED INPUT</span>
     <button id="wellnessBtn" class="diag-btn" title="Wellness Settings" type="button" aria-controls="wellnessPanel" aria-expanded="false">🌿 Wellness</button>
     <button id="diagBtn" class="diag-btn" title="Toggle Diagnostics" type="button" aria-controls="diagPanel" aria-expanded="false">⚙ Diagnostics</button>
     <div id="status" class="status-pill disconnected">Disconnected</div>
@@ -75,6 +81,7 @@
       <h4 id="interventionTitle">Guided 4-7-8 Breathing</h4>
       <span id="interventionCategory" class="intervention-cat">Guided Breathing</span>
       <span id="interventionMutedBadge" class="intervention-muted-badge" hidden>🔕 Muted</span>
+      <span id="interventionSimulatedBadge" class="simulated-badge" hidden>⚠️ SIMULATED INPUT</span>
     </div>
     <button id="interventionClose" class="intervention-close" title="Dismiss">&times;</button>
   </div>

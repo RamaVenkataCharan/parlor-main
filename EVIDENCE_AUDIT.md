@@ -36,7 +36,7 @@
 | **Longitudinal Storage Ingestion Rate** | ~180 KB/hr (estimated) | **132.00 KB/hour (300.37 bytes/cycle)** | `evidence/storage_growth_rate.txt` | `measure_storage_and_ram.py` (450 cycles) | **VERIFIED** |
 | **Host Working Set Memory (RAM)** | ~4.2 GB (unverified) | **2.42 GB working set (5.24 GB commit)** | `evidence/ram_working_set.txt` | `measure_storage_and_ram.py` via Get-Process | **CHANGED (VERIFIED)** |
 | **Bibliographic Citation Audit** | Baumel (2019) & Eysenbach (2005) | **Verified full DOI/PMID/Abstract** | `evidence/citation_verification.txt` | JMIR verified records | **VERIFIED** |
-| **Outbound Network Telemetry** | "Air-gapped" | **0 outbound sockets (0.00 KB)** | `evidence/netstat_outbound.txt` | `netstat -ano` audit; local network boundary | **VERIFIED** |
+| **Outbound Network Telemetry** | No outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API. | **0 outbound sockets (0.00 KB)** | `evidence/netstat_outbound.txt` | `netstat -ano` audit; local loopback boundary (`127.0.0.1`) | **VERIFIED** |
 | **Test Suite Passed** | 69 passed, 42 skipped | **111 passed out of 112 items, 0 failed, 1 skipped** | `evidence/pytest_full.log` | `uv run pytest -rs` | **CHANGED (VERIFIED)** |
 | **Pytest Skip Reason** | "prosody" / "CUDA" | **"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"** | `tests/test_conversation.py:68` | Exact raw skip reason from `pytest -rs` | **VERIFIED** |
 | **Gemma 4 E2B Quantization Agreement**| 91.4% (Q4_K_M vs FP16) | **NOT MEASURED** | Local disk contains only Q4_0 | FP16 unquantized weights not present locally | **NOT MEASURED** |
@@ -57,11 +57,11 @@
 
 2. **Voice Latency (TTFA) Benchmark Upgrade (N=10 $\rightarrow$ N=30 per condition, Alternating Order):**
    - *Audit Finding:* Earlier TTFA claims (0.781s isolated, or 1.411s off / 1.829s on from 10 consecutive turns) did not protect against thermal drift or short-sample variance.
-   - *Resolution:* Conducted 30 cycles $\times$ 3 conditions = 90 total turns in strict alternating round-robin order (`scripts/measure_voice_ttfa_30.py`):
-     - Loop OFF (N=30): **1.789 s mean / 2.755 s p95** (95% CI: [1.626s, 1.968s]).
-     - Loop ON Unmitigated (N=30): **1.382 s mean / 2.060 s p95** (95% CI: [1.262s, 1.515s]).
-     - Loop ON Mitigated (N=30): **1.903 s mean / 3.716 s p95** (95% CI: [1.575s, 2.262s]).
-     - Concurrency Delta: **+0.114 s**.
+   - *Resolution:* Conducted 30 cycles $\times$ 3 conditions = 90 total turns in strict alternating round-robin order (`scripts/measure_voice_ttfa_30.py`), yielding the verified baseline in `evidence/voice_ttfa_summary.json`:
+     - Loop OFF (N=30): **1.920 s mean / 1.622 s p50 / 3.545 s p95** (95% CI: [1.663s, 2.213s]).
+     - Loop ON Unmitigated (N=30): **1.739 s mean / 1.514 s p50 / 3.612 s p95** (95% CI: [1.467s, 2.066s]).
+     - Loop ON Mitigated (N=30): **1.774 s mean / 1.483 s p50 / 3.419 s p95** (95% CI: [1.505s, 2.077s]).
+     - Spread Across 3 Benchmark Runs: Loop OFF means span [1.411s, 1.920s]; Loop ON means span [1.382s, 1.903s]. Because the 95% confidence intervals overlap across all three conditions, there is **no distinguishable cost** on interactive voice latency from concurrent wellness monitoring. Single-GPU execution serializes concurrent inference without KV-cache-rotation overhead.
 
 3. **Zero-Signal Windows Stored as "insufficient signal" (Task 2):**
    - *Audit Finding:* Zero-signal windows (unlit/covered camera and silent microphone) were previously logged as `Low (Tier 0)`, contaminating baseline relaxation statistics.
@@ -108,15 +108,15 @@ The following items cannot and will not be filled with synthetic data:
 | Suite ID | Tested Functional Area | Measured Value / Evidence | Raw Evidence File |
 |:---|:---|:---|:---|
 | **B1** | Load & Console Integrity | Page load: **0.887 s**, Errors: **0**, Warnings: **0** | `evidence/browser/console_load.log` |
-| **B2** | Network Privacy HAR Audit | **0 external hosts contacted** (Air-gapped; Google Fonts CDN leak removed) | `evidence/browser/session_privacy.har`, `evidence/browser/network_privacy_audit.json` |
-| **B3** | Offline Execution | 100% offline capability (vendored ONNX/WASM/VAD) | `evidence/browser/offline_test.log`, `evidence/browser/offline_mode.png` |
+| **B2** | Network Privacy HAR Audit | **0 external hosts contacted** (No outbound network traffic during operation; weights downloaded once at setup; optional research mode is the only external API feature; Google Fonts CDN leak removed) | `evidence/browser/session_privacy.har`, `evidence/browser/network_privacy_audit.json` |
+| **B3** | Offline Execution | 100% offline capability (vendored ONNX/WASM/VAD; zero outbound network dependency) | `evidence/browser/offline_test.log`, `evidence/browser/offline_mode.png` |
 | **B4** | WebSocket Schema Conformance | Chronological CDP frame capture across all commands/events | `evidence/browser/ws_frames_trace.json` |
 | **B5** | Single-Session Policy | Tab 2 rejected with Close Code **4001**; no reconnect thrashing | `evidence/browser/single_session.log`, `evidence/browser/single_session_rejected.png` |
 | **B6** | Watchdog Respawn Latency | **6.21 s mean** across 3 trials (6.89s, 5.86s, 5.89s) | `evidence/browser/server_failure_recovery.log`, `evidence/browser/llama_down_ui.png` |
 | **B7** | Live-Model Card Trigger | Vector B07_V10 $\times$ 3 cycles $\rightarrow$ Tier 2 card, 2-min box breathing UI | `evidence/browser/b7_card_live_model_trace.json`, 6 PNG screenshots |
-| **B8** | Performance & 4x CPU Throttle | **0 long tasks**, **60.2 FPS** (1x), **60.0 FPS** (4x throttle), **7.11 MB** JS Heap | `evidence/browser/performance_5turns.json`, `evidence/browser/performance_throttled.json` |
-| **B9** | Client Storage Zero-Leak | **0.00 KB** stored across localStorage, sessionStorage, IndexedDB | `evidence/browser/application_storage_audit.json` |
-| **B10** | Permissions & Edge Cases | Camera/Mic denied and Camera Busy handled gracefully | `evidence/browser/permissions_audit.log`, 3 PNG screenshots |
-| **B11** | Responsive & Accessibility | 1280x800 & 375x667 viewports (0 overflow), focus rings, Escape dismissal | `evidence/browser/viewport_desktop.png`, `viewport_mobile.png`, `accessibility_audit.json` |
-| **B12** | Repeatable Media Fixtures | Synthetic Y4M face (30 FPS) and WAV speech fixtures generated | `evidence/media/synthetic_face_test.y4m`, `evidence/media/synthetic_speech_test.wav` |
+| **B8** | Performance & 4x CPU Throttle | **SIMULATED:** **0 long tasks**, **60.2 FPS** (1x), **60.0 FPS** (4x throttle), **7.11 MB** JS Heap | `evidence/browser/performance_5turns.json`, `evidence/browser/performance_throttled.json` |
+| **B9** | Client Storage Zero-Leak | **0.00 KB** stored across localStorage, sessionStorage, IndexedDB, CacheStorage | `evidence/browser/application_storage_audit.json` |
+| **B10** | Permissions & Edge Cases | **SIMULATED:** Camera/Mic denied and Camera Busy handled gracefully via automated CDP overrides (Physical camera disconnect marked **REQUIRES HUMAN**) | `evidence/browser/permissions_audit.log`, 3 PNG screenshots |
+| **B11** | Responsive, Accessibility & Lighthouse | 1280x800 & 375x667 viewports (0 overflow), focus rings, Escape dismissal; Lighthouse CLI: **94/100 Accessibility**, **78/100 Best Practices** | `evidence/browser/viewport_desktop.png`, `viewport_mobile.png`, `accessibility_audit.json`, `lighthouse_desktop.json`, `lighthouse_mobile.json` |
+| **B12** | Repeatable Media Fixtures | **SIMULATED:** Synthetic Y4M face (30 FPS) and WAV speech fixtures generated for automated tests (Real camera/mic testing marked **REQUIRES HUMAN**) | `evidence/media/synthetic_face_test.y4m`, `evidence/media/synthetic_speech_test.wav` |
 

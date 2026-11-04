@@ -14,17 +14,17 @@ Every user interface state, network exchange, performance envelope, and edge con
 | Test ID | Test Category & Description | DevTools Panel / CDP Interface | Primary Evidence File | Result | Fix Applied |
 | :--- | :--- | :--- | :--- | :---: | :--- |
 | **B1** | Load & Console Integrity | Console & Network (`Page.navigate`) | `evidence/browser/console_load.log` | **PASS** | Clean cache load in 0.887s; zero console errors or uncaught warnings. |
-| **B2** | Network Privacy & Isolation | Network (`Network.exportHAR`) | `evidence/browser/session_privacy.har`<br>`evidence/browser/network_privacy_audit.json` | **PASS (FIXED)** | Discovered external Google Fonts leak (`fonts.googleapis.com`); removed remote CDN tags from `index.html` and configured native system font stack in `style.css`. Re-test confirmed 100% local isolation (0 external hosts contacted). |
-| **B3** | Air-Gapped Offline Mode | Network (`Network.emulateNetworkConditions`) | `evidence/browser/offline_test.log`<br>`evidence/browser/offline_mode.png` | **PASS** | Complete client-side functionality (vendored Silero VAD, Web Audio, video canvas) operating with zero external network connectivity. |
+| **B2** | Network Privacy & Isolation | Network (`Network.exportHAR`) | `evidence/browser/session_privacy.har`<br>`evidence/browser/network_privacy_audit.json` | **PASS (FIXED)** | Discovered external Google Fonts leak (`fonts.googleapis.com`); removed remote CDN tags from `index.html` and configured native system font stack in `style.css`. Re-test confirmed zero outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API (0 external hosts contacted). |
+| **B3** | Local Offline Mode | Network (`Network.emulateNetworkConditions`) | `evidence/browser/offline_test.log`<br>`evidence/browser/offline_mode.png` | **PASS** | No outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API. Complete client-side functionality (vendored Silero VAD, Web Audio, video canvas) operating with zero external network connectivity. |
 | **B4** | WebSocket Protocol Schema | CDP WebSocket frames (`Network.webSocketFrame*`) | `evidence/browser/ws_frames_trace.json` | **PASS** | Verified two-way schema conformance for all client commands (`sensitivity`, `mute`, `snooze`) and server broadcasts (`intervention_triggered`, `telemetry`). |
 | **B5** | Single-Session Concurrency | WebSocket Lifecycle & Close Codes | `evidence/browser/single_session.log`<br>`evidence/browser/single_session_rejected.png` | **PASS** | Tab 1 connects cleanly; Tab 2 rejected with WebSocket Code 4001 and explicit rejection banner. Closing Tab 1 enables immediate reconnection without reconnect loops. |
 | **B6** | Server Failure & Watchdog | Process Diagnostics & CDP Screenshots | `evidence/browser/server_failure_recovery.log`<br>`evidence/browser/llama_down_ui.png` | **PASS** | Terminated `llama-server.exe` mid-session; UI remained responsive without freezing. Measured 3 watchdog respawn trials: 6.89s, 5.86s, 5.89s (mean **6.21 s**). |
 | **B7** | Intervention Card Live-Model Drive | DOM Inspection, Web Audio, & CDP Trace | `evidence/browser/b7_card_live_model_trace.json`<br>`evidence/browser/card_rendered.png`<br>`evidence/browser/card_why_expanded.png`<br>`evidence/browser/card_exercise_started.png`<br>`evidence/browser/card_muted.png`<br>`evidence/browser/card_snoozed.png`<br>`evidence/browser/card_cooldown_blocked.png` | **PASS** | Driven end-to-end via 3 consecutive cycles of Vector `B07_V10` through live Gemma 4 E2B inference. Verified card rendering, driver chips, accordion reasoning expansion, interactive 2-min box breathing UI, mute chime suppression, snooze 10m, sensitivity switching, and cooldown blocking. |
-| **B8** | Performance & 4x CPU Throttle | Performance Panel & `Emulation.setCPUThrottlingRate` | `evidence/browser/performance_5turns.json`<br>`evidence/browser/performance_throttled.json` | **PASS** | 5-turn session: 0 long tasks (>50ms), mean 60.2 FPS, JS Heap 7.11 MB. Under 4x CPU throttle: 0 long tasks, mean 60.0 FPS, zero frame drops below 30 FPS. |
+| **B8** | Performance & 4x CPU Throttle | Performance Panel & `Emulation.setCPUThrottlingRate` | `evidence/browser/performance_5turns.json`<br>`evidence/browser/performance_throttled.json` | **PASS (SIMULATED: automated turns)** | Automated 5-turn session: 0 long tasks (>50ms), mean 60.2 FPS, JS Heap 7.11 MB. Under 4x CPU throttle: 0 long tasks, mean 60.0 FPS, zero frame drops below 30 FPS. |
 | **B9** | Client Storage & Zero-Leak Audit | Application Panel (`Storage`, `IndexedDB`) | `evidence/browser/application_storage_audit.json` | **PASS** | Zero bytes (0.00 KB) of biometric markers, raw audio, or video buffers retained in `localStorage`, `sessionStorage`, `IndexedDB`, or `CacheStorage`. |
-| **B10** | Permissions & Edge Cases | CDP Browser Permissions & WebRTC | `evidence/browser/permissions_audit.log`<br>`evidence/browser/permission_camera_denied.png`<br>`evidence/browser/permission_mic_denied.png`<br>`evidence/browser/permission_camera_busy.png` | **PASS** | Camera denied, mic denied, and camera busy (`NotReadableError`) handled with explicit, actionable UI feedback without hanging. Physical camera unplug mid-session marked **REQUIRES HUMAN** with viva verification protocol. |
-| **B11** | Responsive & Accessibility | Viewport Emulation & Accessibility Tree | `evidence/browser/viewport_desktop.png`<br>`evidence/browser/viewport_mobile.png`<br>`evidence/browser/accessibility_audit.json` | **PASS (FIXED)** | Verified desktop (1280x800) and mobile (375x667 portrait) viewports with zero horizontal scroll overflow. Added `:focus-visible` accessible outline and global `Escape` key dismissal for drawers and cards. 11/11 buttons labelled, 2/2 dialog panels ARIA-compliant. |
-| **B12** | Repeatable Media Fixtures | Chrome Fake Device Streams | `evidence/media/synthetic_face_test.y4m`<br>`evidence/media/synthetic_speech_test.wav` | **PASS** | Repeatable synthetic Y4M (320x240 YUV4MPEG2 30 FPS) video and 16kHz WAV speech fixtures generated for automated headless testing (`--use-file-for-fake-video-capture`). |
+| **B10** | Permissions & Edge Cases | CDP Browser Permissions & WebRTC | `evidence/browser/permissions_audit.log`<br>`evidence/browser/permission_camera_denied.png`<br>`evidence/browser/permission_mic_denied.png`<br>`evidence/browser/permission_camera_busy.png` | **PASS (SIMULATED: automated CDP permissions)** | Camera denied, mic denied, and camera busy (`NotReadableError`) handled with explicit, actionable UI feedback without hanging via automated CDP permission manipulation. Physical camera unplug mid-session marked **REQUIRES HUMAN** with viva verification protocol. |
+| **B11** | Responsive, Accessibility & Lighthouse | Viewport Emulation, Accessibility Tree & Lighthouse CLI | `evidence/browser/viewport_desktop.png`<br>`evidence/browser/viewport_mobile.png`<br>`evidence/browser/accessibility_audit.json`<br>`evidence/browser/lighthouse_desktop.json`<br>`evidence/browser/lighthouse_mobile.json` | **PASS (FIXED)** | Verified desktop (1280x800) and mobile (375x667) viewports with zero horizontal scroll overflow. Lighthouse: Accessibility 94/100 desktop, 94/100 mobile; Best Practices 78/100 desktop, 79/100 mobile. 11/11 buttons labelled, 2/2 dialog panels ARIA-compliant, `:focus-visible` active, global `Escape` key dismissal. |
+| **B12** | Repeatable Media Fixtures | Chrome Fake Device Streams | `evidence/media/synthetic_face_test.y4m`<br>`evidence/media/synthetic_speech_test.wav` | **PASS (SIMULATED: fake media fixtures)** | Repeatable synthetic Y4M (320x240 YUV4MPEG2 30 FPS) video and 16kHz WAV speech fixtures generated for automated headless testing (`--use-file-for-fake-video-capture`). Real webcam/mic interactions marked **REQUIRES HUMAN**. |
 
 ---
 
@@ -53,7 +53,8 @@ Every user interface state, network exchange, performance envelope, and edge con
 
 ---
 
-### B3: Air-Gapped Offline Mode
+### B3: Local Offline Mode (Zero Outbound Traffic)
+- **Mandate:** No outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API.
 - **Methodology:** Emulated total network disconnect via CDP `Network.emulateNetworkConditions(offline=True)`.
 - **Observations:** All local assets (HTML, CSS, WebAssembly bundles, ONNX runtime, Silero VAD model, and Web Audio worklets) loaded and initialized directly from the local Python web server. The video viewport and waveform visualizer operated smoothly without remote connectivity.
 - **Evidence Artifacts:** `evidence/browser/offline_test.log`, `evidence/browser/offline_mode.png`.
@@ -137,7 +138,8 @@ Every user interface state, network exchange, performance envelope, and edge con
 
 ---
 
-### B8: Performance Panel & 4x CPU Throttling
+### B8: Performance Panel & 4x CPU Throttling (SIMULATED)
+- **Evaluation Type:** SIMULATED (automated turns and simulated user interactions). Real physical interactions marked **REQUIRES HUMAN**.
 - **Methodology:** Monitored main thread execution metrics via `PerformanceObserver` tracking `longtask` entries (>50ms duration) and frame rates across 5 consecutive turns. Repeated under 4x CPU throttling via CDP `Emulation.setCPUThrottlingRate(rate=4)`.
 - **Measured Metrics:**
   - **1x Normal CPU:**
@@ -165,7 +167,8 @@ Every user interface state, network exchange, performance envelope, and edge con
 
 ---
 
-### B10: Permissions & Peripheral Edge Cases
+### B10: Permissions & Peripheral Edge Cases (SIMULATED)
+- **Evaluation Type:** SIMULATED (automated CDP browser permission overrides). Real physical camera unplug marked **REQUIRES HUMAN**.
 - **Camera Denied:** Navigated with camera permission revoked (`permissions=["microphone"]`). Browser handled gracefully without uncaught exceptions; UI remained responsive. Screenshot: `evidence/browser/permission_camera_denied.png`.
 - **Microphone Denied:** Navigated with microphone revoked (`permissions=["camera"]`). UI displayed `⚫ No device` in diagnostics without hanging. Screenshot: `evidence/browser/permission_mic_denied.png`.
 - **Camera Busy / Device in Use:** Emulated webcam claiming by another app via `NotReadableError`. Handled cleanly with informative warning. Screenshot: `evidence/browser/permission_camera_busy.png`.
@@ -180,7 +183,7 @@ Every user interface state, network exchange, performance envelope, and edge con
 
 ---
 
-### B11: Responsive Viewport & Accessibility
+### B11: Responsive Viewport, Accessibility & Lighthouse Audits
 - **Responsive Viewport:**
   - Desktop Viewport (1280x800): Standard full layout rendered cleanly. Screenshot: `evidence/browser/viewport_desktop.png`.
   - Mobile Viewport (375x667 portrait): Media queries in `style.css` collapsed drawer panels and intervention cards to full mobile width (`calc(100vw - 24px)`). Checked `document.documentElement.scrollWidth > window.innerWidth`: returned **False** (zero horizontal scroll overflow). Screenshot: `evidence/browser/viewport_mobile.png`.
@@ -192,11 +195,19 @@ Every user interface state, network exchange, performance envelope, and edge con
   - Total Buttons Evaluated: **11**
   - Unlabelled Buttons: **0**
   - Dialog Panels: **2** (Both configured with `role="dialog"` and `aria-label`)
-- **Evidence Artifacts:** `evidence/browser/viewport_desktop.png`, `evidence/browser/viewport_mobile.png`, `evidence/browser/accessibility_audit.json`.
+- **Official Google Lighthouse Audit (CLI 12.8.2):**
+  - **Desktop Audit (`evidence/browser/lighthouse_desktop.json`):**
+    - **Accessibility Score:** **94 / 100**
+    - **Best Practices Score:** **78 / 100** (Deductions reflect unminified local development source files and local HTTP `127.0.0.1` protocol)
+  - **Mobile Audit (`evidence/browser/lighthouse_mobile.json`):**
+    - **Accessibility Score:** **94 / 100**
+    - **Best Practices Score:** **79 / 100**
+- **Evidence Artifacts:** `evidence/browser/viewport_desktop.png`, `evidence/browser/viewport_mobile.png`, `evidence/browser/accessibility_audit.json`, `evidence/browser/lighthouse_desktop.json`, `evidence/browser/lighthouse_mobile.json`.
 
 ---
 
-### B12: Repeatable Media Fixtures
+### B12: Repeatable Media Fixtures (SIMULATED)
+- **Evaluation Type:** SIMULATED (Chrome synthetic video `.y4m` and audio `.wav` fixtures for automated headless testing). Real webcam/mic testing requires a physical human subject (**REQUIRES HUMAN**).
 - **Implementation:** Generated automated media stream fixtures to enable deterministic, headless testing in continuous integration pipelines:
   - Video Fixture: `evidence/media/synthetic_face_test.y4m` (320x240 YUV4MPEG2 30 FPS synthetic face).
   - Audio Fixture: `evidence/media/synthetic_speech_test.wav` (16kHz 16-bit mono PCM speech).
@@ -219,6 +230,7 @@ Every user interface state, network exchange, performance envelope, and edge con
    - *Fix:* Updated `format_prompt()` to use `.get()` with resilient default fallbacks.
 3. **Missing Mobile Responsive Styles & Focus Rings (Issue B11):**
    - *Problem:* Mobile viewport (375x667) lacked specific media queries for drawer and card overlays. Interactive controls lacked distinct `:focus-visible` rings.
-   - *Fix:* Added `@media (max-width: 640px)` stylesheet rules and prominent `:focus-visible` outline. Added global `Escape` key dismissal.
+   - *Fix:* Added `@media (max-width: 640px)` stylesheet rules and prominent `:focus-visible` outline. Added global `Escape` key dismissal. All Lighthouse audits verified (94/100 Accessibility).
 
 All B1–B12 browser test requirements have been completed, verified with raw DevTools evidence, and archived in the repository.
+

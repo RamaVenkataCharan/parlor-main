@@ -1163,6 +1163,66 @@ function playWellnessChime() {
   }
 }
 
+let demoModeActive = false;
+let demoModeInterval = null;
+
+const DEMO_VECTOR_B07_V10 = {
+  window_samples: 5,
+  face_detected: true,
+  au04_brow_furrow: 0.98,
+  au07_lid_tightener: 0.95,
+  au15_lip_depressor: 0.65,
+  au20_lip_stretcher: 0.60,
+  ear: 0.22,
+  head_pitch: 0.0,
+  head_yaw: 0.0,
+  head_roll: 0.0,
+  face_confidence: 0.98,
+  speech_detected: true,
+  rms_energy: 0.08,
+  f0_mean_hz: 212.0,
+  f0_baseline_hz: 120.0,
+  f0_delta_hz: 92.0,
+  f0_std_hz: 38.0,
+  jitter_local_pct: 5.6,
+  shimmer_local_pct: 6.8,
+  pause_ratio: 0.35,
+  vocal_tension_index: 0.95
+};
+
+function bindDemoModeControls() {
+  const demoToggle = document.getElementById('demoModeToggle');
+  const simBadge = document.getElementById('simulatedInputBadge');
+  if (!demoToggle) return;
+
+  demoToggle.addEventListener('change', (e) => {
+    demoModeActive = e.target.checked;
+    if (simBadge) simBadge.hidden = !demoModeActive;
+
+    wsSend({ type: 'set_demo_mode', enabled: demoModeActive });
+
+    if (demoModeActive) {
+      console.warn('[DEMO MODE] Activated: injecting SIMULATED INPUT stress vector (B07_V10)');
+      showToast('Demo Mode ON: injecting simulated stress biomarkers', 'warning', 4000);
+      wsSend({ type: 'test_wellness_cycle', vector: DEMO_VECTOR_B07_V10, is_simulated: true });
+      if (demoModeInterval) clearInterval(demoModeInterval);
+      demoModeInterval = setInterval(() => {
+        if (demoModeActive && wsOpen()) {
+          console.log('[DEMO MODE] Injecting periodic simulated stress vector...');
+          wsSend({ type: 'test_wellness_cycle', vector: DEMO_VECTOR_B07_V10, is_simulated: true });
+        }
+      }, 8000);
+    } else {
+      console.log('[DEMO MODE] Deactivated: returning to live sensor stream');
+      showToast('Demo Mode OFF: live sensor monitoring restored', 'success', 3000);
+      if (demoModeInterval) {
+        clearInterval(demoModeInterval);
+        demoModeInterval = null;
+      }
+    }
+  });
+}
+
 function showInterventionCard(data) {
   if (!data) return;
   const card = document.getElementById('interventionCard');
@@ -1175,6 +1235,11 @@ function showInterventionCard(data) {
 
   const mutedBadge = document.getElementById('interventionMutedBadge');
   if (mutedBadge) mutedBadge.hidden = !wellnessMuted;
+
+  const simCardBadge = document.getElementById('interventionSimulatedBadge');
+  if (simCardBadge) {
+    simCardBadge.hidden = !(demoModeActive || data.is_simulated || data.simulated);
+  }
 
   // Render Driver Chips
   const chipsContainer = document.getElementById('interventionChips');
@@ -1283,6 +1348,7 @@ function stopBreathingExercise() {
 document.addEventListener('DOMContentLoaded', () => {
   bindDiagnosticsControls();
   bindWellnessControls();
+  bindDemoModeControls();
 
   const closeBtn = document.getElementById('interventionClose');
   if (closeBtn) closeBtn.addEventListener('click', hideInterventionCard);

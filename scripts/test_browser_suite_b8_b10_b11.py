@@ -451,3 +451,4 @@ if __name__ == "__main__":
     run_b8_performance()
     run_b10_permissions()
     run_b11_responsive_accessibility()
+

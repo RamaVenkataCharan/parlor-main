@@ -54,7 +54,7 @@ Knowledge workers and software developers increasingly suffer from **insidious s
 - **👁️ Non-Invasive Multimodal Perception:** Concurrently tracks MediaPipe FaceMesh 3D landmarks (`AU04` brow furrow, `AU07` eyelid tightener, `AU20` lip stretcher: **3.97 ms mean / 4.81 ms p95**) and vectorized acoustic DSP features ($\Delta F0$ pitch shift, jitter %, shimmer %, vocal tension: **2.85 ms mean**) on lightweight CPU background threads.
 - **🧠 Cognitive Pattern Reasoning (No Brittle Thresholds):** Replaces rigid numeric cutoffs with local Small Language Model pattern reasoning (**Google Gemma 4 E2B IT `Q4_0`** via `llama-server`) executing structured JSON completions in **2.14 s mean / 2.45 s p95** on GPU (worst-case cross-modal conflict reasoning: **4.32 s max**, leaving a **0.68 s safety margin** below the 5.0 s budget). Disambiguates animated conversation from acute distress.
 - **🌿 Multi-Cycle Anti-False-Alarm Gating:** Enforces multi-cycle temporal hysteresis before triggering non-intrusive micro-breaks (Somatic, Cognitive, Environmental), backed by configurable cooldowns (300s Balanced, 180s Sensitive, 450s Conservative), user snooze (10–60m), and one-click mute.
-- **🛡️ Air-Gapped Privacy Architecture:** Emits **0.00 KB** outbound network traffic during standard operation. All WebSocket connections bind strictly to loopback (`127.0.0.1`). Silero VAD is vendored locally. Raw video frames and audio buffers are processed ephemerally in RAM and immediately freed.
+- **🛡️ Privacy Architecture (Zero Outbound Traffic):** No outbound network traffic during operation; weights are downloaded once at setup; the optional research mode is the only feature that can call an external API. Emits **0.00 KB** outbound network traffic during standard operation. All WebSocket connections bind strictly to loopback (`127.0.0.1`). Silero VAD is vendored locally. Raw video frames and audio buffers are processed ephemerally in RAM and immediately freed.
 
 ---
 
@@ -63,8 +63,8 @@ Knowledge workers and software developers increasingly suffer from **insidious s
 When sustained multi-modal stress (Tier 2) is observed across consecutive observation windows, Parlor dispatches an evidence-backed intervention card directly to the web client:
 
 <div align="center">
-  <img src="evidence/intervention_card_browser.png" alt="Parlor Live Browser Intervention Card" width="850" style="border-radius: 8px; border: 1px solid #30363d; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
-  <p><i>Figure 1: Live Playwright browser capture of the Guided 4-7-8 Breathing Intervention card in Balanced mode with full biomarker provenance.</i></p>
+  <img src="evidence/browser/card_rendered.png" alt="Parlor Live Browser Intervention Card" width="850" style="border-radius: 8px; border: 1px solid #30363d; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+  <p><i>Figure 1: Live browser DevTools capture of the Guided 4-7-8 Breathing Intervention card in Balanced mode with full biomarker provenance (CDP verified).</i></p>
 </div>
 
 ---
@@ -140,7 +140,7 @@ All performance statistics reported below were measured directly on the evaluati
 | **Total Non-SLM Pipeline Overhead** | **`10.89 ms`** (mean sum: $3.97 + 2.85 + 4.07\text{ ms}$) | $\le 50.0\text{ ms}$ budget | Subsystem CSVs | **PASS** |
 | **Wellness SLM Reasoning (Standard GPU)** | **`2.14 s`** (mean) / **`2.45 s`** (p95) | $\le 5.00\text{ s}$ observation window | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) | **PASS (+2.55s margin)** |
 | **Wellness SLM Reasoning (Conflict CoT)** | **`2.79 s`** (mean) / **`4.32 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/live_pattern_reasoning.json`](evidence/live_pattern_reasoning.json) | **PASS (+0.68s margin)** |
-| **Test Suite Integration** | **`111 / 112 Passed`** (99.1% pass rate) | 0 failed, 1 skipped by design | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
+| **Test Suite Integration** | **`114 / 115 Passed`** (99.1% pass rate) | 0 failed, 1 skipped by design | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
 | **Outbound Network Telemetry** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ local boundary | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) | **PASS (Local Loopback)** |
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB capacity) | $\le 6.0\text{ GB}$ VRAM | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) | **PASS** |
 | **Host Working Set Memory (RAM)** | **`2.42 GB`** (`llama-server` 1.84GB + `python` 0.61GB) | 16.0 GB RAM (5.24 GB commit) | [`evidence/ram_working_set.txt`](evidence/ram_working_set.txt) | **PASS** |
@@ -187,9 +187,21 @@ Place the model weights in `models/` (or specify paths in `.env`):
 - `models/voices-v1.0.bin` (27 MB)
 - `models/smart-turn-v3.2.onnx` (1.8 MB)
 
-### 4. Launch the System
+### 4. One-Click Desktop Start (No Terminal Steps)
 
-Execute the hardened startup script:
+For seamless daily operation on Windows 11 without manual terminal commands, Parlor includes native desktop shortcuts with custom multi-resolution icons:
+
+```powershell
+# Run once to create 'Parlor' and 'Stop Parlor' shortcuts on your Desktop:
+powershell -ExecutionPolicy Bypass -File scripts/Create-Parlor-Shortcut.ps1
+```
+
+- **▶️ Double-Click `Parlor` (Desktop):** Runs [`scripts/Launch-Parlor.ps1`](scripts/Launch-Parlor.ps1), launches the engine in a dedicated server window, polls ports 8081 and 8000 (with a 240s safety timeout and clear progress output), and opens `http://localhost:8000` automatically. If services are already running, it opens the browser immediately without duplicate processes.
+- **⏹️ Double-Click `Stop Parlor` (Desktop):** Runs [`scripts/Stop-Parlor.ps1`](scripts/Stop-Parlor.ps1), cleanly terminates all backend processes on ports 8000 and 8081, verifies ports are freed, and exits.
+
+### 5. Launch from Terminal (Alternative)
+
+Alternatively, execute the startup script directly:
 ```powershell
 .\start.ps1
 ```

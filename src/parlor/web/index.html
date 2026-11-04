@@ -129,6 +129,11 @@
   <div id="viewportWrap" class="viewport-wrap loading">
     <div class="viewport-glow"></div>
     <video id="video" autoplay muted playsinline></video>
+    <div id="cameraPlaceholder" class="camera-placeholder">
+      <div class="placeholder-icon">📷</div>
+      <div id="placeholderTitle" class="placeholder-title">Webcam Monitoring</div>
+      <div id="placeholderSubtext" class="placeholder-subtext">Allow camera and microphone access when prompted by your browser to enable live stress and fatigue tracking.</div>
+    </div>
   </div>
 
   <!-- Audio waveform visualizer -->
@@ -150,8 +155,8 @@
       <div id="stateDot" class="dot loading"></div>
       <span id="stateText">Loading...</span>
     </div>
-    <span class="on-device-pill">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="12" height="9" rx="2"/><path d="M5 4V3a3 3 0 0 1 6 0v1"/></svg>
+    <span class="on-device-pill" title="100% Local On-Device Edge Execution — Zero Cloud Telemetry">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       On-device
     </span>
   </div>

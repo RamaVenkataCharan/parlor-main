@@ -37,16 +37,32 @@ const STATE_COLORS = {
 
 // ── Toasts & Diagnostics Panel ──
 function showToast(message, type = 'warning', durationMs = 6000) {
-  if (!toastContainer) return;
+  if (!toastContainer) return null;
+  // De-duplicate: If a toast with this exact message already exists, update and refresh its timer
+  const existing = Array.from(toastContainer.querySelectorAll('.toast-banner')).find(
+    el => el.querySelector('span')?.textContent === message
+  );
+  if (existing) {
+    existing.className = `toast-banner ${type}`;
+    if (existing._dismissTimer) clearTimeout(existing._dismissTimer);
+    if (durationMs > 0) {
+      existing._dismissTimer = setTimeout(() => { if (existing.parentNode) existing.remove(); }, durationMs);
+    }
+    return existing;
+  }
   const toast = document.createElement('div');
   toast.className = `toast-banner ${type}`;
   toast.innerHTML = `<span>${message}</span><button class="toast-close">✕</button>`;
   const closeBtn = toast.querySelector('.toast-close');
-  if (closeBtn) closeBtn.onclick = () => toast.remove();
+  if (closeBtn) closeBtn.onclick = () => {
+    if (toast._dismissTimer) clearTimeout(toast._dismissTimer);
+    toast.remove();
+  };
   toastContainer.appendChild(toast);
   if (durationMs > 0) {
-    setTimeout(() => { if (toast.parentNode) toast.remove(); }, durationMs);
+    toast._dismissTimer = setTimeout(() => { if (toast.parentNode) toast.remove(); }, durationMs);
   }
+  return toast;
 }
 
 function updateDiagnostics() {
@@ -341,16 +357,43 @@ function wsSend(payload) {
   if (wsOpen()) ws.send(JSON.stringify(payload));
 }
 
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 8;
+const BASE_RECONNECT_DELAY_MS = 1000;
+const MAX_RECONNECT_DELAY_MS = 12000;
+let reconnectTimer = null;
+
 function connect() {
-  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws`);
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+  const wsProtocol = location.protocol === 'https:' ? 'wss' : 'ws';
+  // Windows IPv6 fallback: resolve 'localhost' to IPv4 loopback '127.0.0.1' to prevent [::1] connection timeouts
+  const wsHost = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
+    ? `127.0.0.1:${location.port || '8000'}`
+    : location.host;
+
+  ws = new WebSocket(`${wsProtocol}://${wsHost}/ws`);
   ws.onopen = () => {
+    reconnectAttempts = 0;
     setStatus('connected', 'Connected');
     if (state !== 'loading') setState('listening');
     updateDiagnostics();
+    // Dismiss any stale reconnection warning toasts
+    if (toastContainer) {
+      Array.from(toastContainer.querySelectorAll('.toast-banner')).forEach(t => {
+        const txt = t.textContent || '';
+        if (txt.includes('Disconnected') || txt.includes('reconnecting') || txt.includes('WebSocket connection error')) {
+          t.remove();
+        }
+      });
+    }
   };
-  ws.onerror = () => {
+  ws.onerror = (err) => {
     updateDiagnostics();
-    showToast('WebSocket connection error', 'error', 3000);
+    console.warn('[WS ERROR]', err);
+    // Suppress separate toast here — onclose immediately handles user notification
   };
   ws.onclose = (evt) => {
     // A reconnect gets a brand-new server conversation — reset per-turn state.
@@ -367,7 +410,7 @@ function connect() {
       setStatus('disconnected', 'Session Rejected');
       setState('muted');
       updateDiagnostics();
-      showToast('Connection rejected — another session is already active in another tab or window', 'error', 15000);
+      showToast('Connection rejected: Another session is active in another tab. Please close other Parlor tabs and reload.', 'error', 0);
       console.warn('[SINGLE SESSION POLICY] Connection closed (code 4001): another tab is active.');
       return; // Do NOT auto-reconnect in a loop
     }
@@ -375,16 +418,26 @@ function connect() {
       setStatus('disconnected', 'Server Error');
       setState('muted');
       updateDiagnostics();
-      showToast('Server initialization failed: llama-server or model unavailable', 'error', 15000);
+      showToast('Server initialization failed: llama-server or model unavailable. Check server console and .env configuration.', 'error', 0);
       showModelUnavailableMessage('The assistant engine (llama-server) or quantized model weights failed to initialize. Please check server configuration.');
       console.warn('[SERVER INIT ERROR] Connection closed (code 1011): server model load failed.');
+      return; // Stop retrying on fatal server configuration failure
+    }
+
+    reconnectAttempts++;
+    if (reconnectAttempts > MAX_RECONNECT_ATTEMPTS) {
+      setStatus('disconnected', 'Connection Failed');
+      updateDiagnostics();
+      showToast('Could not connect to Parlor server after multiple attempts. Please ensure start.ps1 or Launch-Parlor.ps1 is running.', 'error', 0);
+      console.error(`[WS RECONNECT] Aborted after ${MAX_RECONNECT_ATTEMPTS} attempts.`);
       return;
     }
 
-    setStatus('disconnected', 'Disconnected');
+    const delay = Math.min(MAX_RECONNECT_DELAY_MS, Math.round(BASE_RECONNECT_DELAY_MS * Math.pow(1.5, reconnectAttempts - 1)));
+    setStatus('disconnected', `Reconnecting (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`);
     updateDiagnostics();
-    showToast('Disconnected from server — reconnecting...', 'warning', 3000);
-    setTimeout(connect, 2000);
+    showToast(`Disconnected from server — reconnecting in ${(delay / 1000).toFixed(0)}s...`, 'warning', delay + 400);
+    reconnectTimer = setTimeout(connect, delay);
   };
   ws.onmessage = ({ data }) => {
     const msg = JSON.parse(data);
@@ -714,15 +767,25 @@ function setupAudioTrackListeners(track) {
 }
 
 async function startCamera() {
+  const placeholder = $('cameraPlaceholder');
+  const placeholderTitle = $('placeholderTitle');
+  const placeholderSubtext = $('placeholderSubtext');
+
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS,
     });
     video.srcObject = mediaStream;
     cameraEnabled = true;
+    if (placeholder) placeholder.classList.add('hidden');
   } catch (e) {
     console.warn('Video+audio getUserMedia failed, attempting audio-only fallback:', e.message);
     cameraEnabled = false;
+    if (placeholder) {
+      placeholder.classList.remove('hidden');
+      if (placeholderTitle) placeholderTitle.textContent = 'Camera Inactive (Voice Mode)';
+      if (placeholderSubtext) placeholderSubtext.textContent = 'Continuing in voice-only mode. Click "Camera On" below or allow webcam access in your browser settings to enable stress monitoring.';
+    }
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
       showToast('Camera unavailable or permission denied — continuing in audio-only mode', 'warning', 6000);
@@ -731,6 +794,11 @@ async function startCamera() {
       setStatus('disconnected', 'Mic Access Denied');
       setState('muted');
       updateDiagnostics();
+      if (placeholder) {
+        placeholder.classList.remove('hidden');
+        if (placeholderTitle) placeholderTitle.textContent = 'Microphone Access Required';
+        if (placeholderSubtext) placeholderSubtext.textContent = 'Microphone permission was denied. Please allow microphone access in your browser settings to speak with Parlor.';
+      }
       showToast('Microphone access required — check browser permissions or input device connection', 'error', 10000);
       return;
     }
@@ -1069,6 +1137,18 @@ cameraToggle.addEventListener('click', () => {
   cameraToggle.classList.toggle('active', cameraEnabled);
   cameraToggle.textContent = cameraEnabled ? 'Camera On' : 'Camera Off';
   video.style.opacity = cameraEnabled ? 1 : 0.3;
+  const placeholder = $('cameraPlaceholder');
+  const placeholderTitle = $('placeholderTitle');
+  const placeholderSubtext = $('placeholderSubtext');
+  if (placeholder) {
+    if (!cameraEnabled) {
+      placeholder.classList.remove('hidden');
+      if (placeholderTitle) placeholderTitle.textContent = 'Camera Off';
+      if (placeholderSubtext) placeholderSubtext.textContent = 'Webcam monitoring paused by user. Click "Camera On" to resume.';
+    } else if (mediaStream && mediaStream.getVideoTracks().length) {
+      placeholder.classList.add('hidden');
+    }
+  }
 });
 
 // ── Init ──
@@ -1076,13 +1156,14 @@ async function init() {
   initWaveformCanvas();
   window.addEventListener('resize', initWaveformCanvas);
 
-  await startCamera();
-  connect();
+  connect(); // Establish WebSocket connection immediately — do not wait for camera permission
   bindDiagnosticsControls();
+  await startCamera();
 
-  try {
-    myvad = await vad.MicVAD.new({
-      getStream: async () => new MediaStream(mediaStream.getAudioTracks()),
+  if (mediaStream && mediaStream.getAudioTracks().length) {
+    try {
+      myvad = await vad.MicVAD.new({
+        getStream: async () => new MediaStream(mediaStream.getAudioTracks()),
       positiveSpeechThreshold: 0.5,
       negativeSpeechThreshold: 0.25,
       // Short redemption for fast turn-taking; the server's smart-turn
@@ -1112,6 +1193,9 @@ async function init() {
     console.error('VAD init failed:', e);
     showToast('Failed to initialize VAD engine', 'error');
   }
+} else {
+  updateDiagnostics();
+}
 
   // Init audio context on first user gesture for mic visualizer
   // (browsers require user interaction to create AudioContext)

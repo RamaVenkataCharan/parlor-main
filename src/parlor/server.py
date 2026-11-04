@@ -85,15 +85,11 @@ CAPABILITY_NOTE = (
 # migration run were "capital of France" answered with a deferral).
 RESEARCH_NOTE = (
     " You also have a background research assistant with web access: "
-    "when the user explicitly asks to search or look up current info (weather, news, prices), say you will find out. "
-    "Everything else — greetings, chat, general knowledge, unchanging facts — answer directly and completely yourself from memory. "
-    "Never say you will find out unless explicitly asked to search or look up."
-
-
+    "when the user explicitly asks to search or look up current info (weather, news, prices), say in "
     "one short sentence that you'll find out; the answer arrives later "
     "and you can share it then. Everything else — greetings, chat, "
-    "general knowledge, facts that don't change (such as 'capital of France' -> answer Paris) — answer yourself, "
-    "directly and completely."
+    "general knowledge, unchanging facts — answer directly and completely yourself from memory. "
+    "Never say you will find out unless explicitly asked to search or look up."
 )
 
 # The per-utterance instruction in translate mode. Exit commands are not

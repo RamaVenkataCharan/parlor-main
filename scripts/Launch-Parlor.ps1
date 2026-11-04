@@ -3,8 +3,8 @@
     Parlor Desktop Launcher
 .DESCRIPTION
     Starts the Parlor multimodal AI assistant and opens the web application in the default browser.
-    Ensures llama-server and FastAPI backend are fully initialized before opening the browser.
-    Prevents duplicate instances if ports 8000 and 8081 are already active.
+    Ensures llama-server, FastAPI backend, AND WebSocket endpoint (/ws) are fully initialized before opening the browser.
+    Prevents duplicate instances if ports 8000, 8081, and WebSocket connections are already active.
 #>
 
 [CmdletBinding()]
@@ -36,6 +36,7 @@ Write-Host "====================================================================
 Write-Host "Project Root : $ProjectRoot"
 Write-Host "App URL      : http://localhost:8000"
 Write-Host "Inference URL: http://127.0.0.1:8081/health"
+Write-Host "WebSocket URL: ws://127.0.0.1:8000/ws"
 Write-Host "Timeout      : $TimeoutSec seconds (poll every $PollIntervalSec s)"
 Write-Host "---------------------------------------------------------------------------"
 
@@ -69,12 +70,33 @@ function Test-HttpEndpoint([string]$Url, [int]$TimeoutSeconds = 2) {
     }
 }
 
-# 2. Check if ports 8000 and 8081 already respond
-$isAppRunning = (Test-HttpEndpoint "http://127.0.0.1:8000/" 2) -or (Test-HttpEndpoint "http://localhost:8000/" 2)
-$isLlamaRunning = Test-HttpEndpoint "http://127.0.0.1:8081/health" 2
+# Helper function: tests real WebSocket handshake on loopback IPv4
+function Test-WsHandshake([string]$Url, [int]$TimeoutMs = 1500) {
+    try {
+        $ws = New-Object System.Net.WebSockets.ClientWebSocket
+        $cts = New-Object System.Threading.CancellationTokenSource($TimeoutMs)
+        $uri = New-Object System.Uri($Url)
+        $connectTask = $ws.ConnectAsync($uri, $cts.Token)
+        $connectTask.Wait()
+        $isOpen = ($ws.State -eq [System.Net.WebSockets.WebSocketState]::Open)
+        if ($isOpen) {
+            $closeTask = $ws.CloseAsync([System.Net.WebSockets.WebSocketCloseStatus]::NormalClosure, "LauncherHealthCheck", [System.Threading.CancellationToken]::None)
+            $closeTask.Wait(500) | Out-Null
+        }
+        $ws.Dispose()
+        return $isOpen
+    } catch {
+        return $false
+    }
+}
 
-if ($isAppRunning -and $isLlamaRunning) {
-    Write-Host "[ALREADY RUNNING] Parlor backend and llama-server are active." -ForegroundColor Green
+# 2. Check if ports 8000 and 8081 already respond AND WebSocket endpoint is ready
+$isAppRunning   = (Test-HttpEndpoint "http://127.0.0.1:8000/" 2) -or (Test-HttpEndpoint "http://localhost:8000/" 2)
+$isLlamaRunning = Test-HttpEndpoint "http://127.0.0.1:8081/health" 2
+$isWsRunning    = if ($isAppRunning) { Test-WsHandshake "ws://127.0.0.1:8000/ws" 1500 } else { $false }
+
+if ($isAppRunning -and $isLlamaRunning -and $isWsRunning) {
+    Write-Host "[ALREADY RUNNING] Parlor backend, llama-server, and WebSocket endpoint are active." -ForegroundColor Green
     Write-Host "No second instance needed. Opening browser at http://localhost:8000..." -ForegroundColor Cyan
     if (-not $NoBrowser) {
         Start-Process "http://localhost:8000"
@@ -118,7 +140,7 @@ if (-not $procInfo) {
 }
 
 Write-Host "Server console launched (PID: $($procInfo.Id))." -ForegroundColor Cyan
-Write-Host "Waiting for inference engine and web server to initialize..." -ForegroundColor Cyan
+Write-Host "Waiting for inference engine, web server, and WebSocket endpoint to initialize..." -ForegroundColor Cyan
 Write-Host "Note: Model weights (Gemma 4 E2B) loading may take 15 to 45 seconds on GPU/VRAM." -ForegroundColor DarkGray
 Write-Host "---------------------------------------------------------------------------"
 
@@ -141,14 +163,18 @@ while ($startTime.Elapsed.TotalSeconds -lt $TimeoutSec) {
 
     $llamaOk = Test-HttpEndpoint "http://127.0.0.1:8081/health" 1
     $appOk   = (Test-HttpEndpoint "http://127.0.0.1:8000/" 1) -or (Test-HttpEndpoint "http://localhost:8000/" 1)
+    $wsOk    = if ($appOk) { Test-WsHandshake "ws://127.0.0.1:8000/ws" 1200 } else { $false }
 
     $llamaStatus = if ($llamaOk) { "READY" } else { "loading..." }
     $appStatus   = if ($appOk)   { "READY" } else { "waiting..." }
+    $wsStatus    = if ($wsOk)    { "READY" } else { "waiting..." }
 
-    Write-Host ("[{0,3}s / {1}s] llama-server (8081): {2,-11} | web app (8000): {3,-11}" -f $elapsed, $TimeoutSec, $llamaStatus, $appStatus)
+    Write-Host ("[{0,3}s / {1}s] llama-server (8081): {2,-10} | web app (8000): {3,-10} | websocket (/ws): {4,-10}" -f $elapsed, $TimeoutSec, $llamaStatus, $appStatus, $wsStatus)
 
-    if ($llamaOk -and $appOk) {
+    if ($llamaOk -and $appOk -and $wsOk) {
         $ready = $true
+        # Allow 250ms for the test connection cleanup on the server
+        Start-Sleep -Milliseconds 250
         break
     }
 }
@@ -170,6 +196,7 @@ if ($ready) {
     Write-Host "[TIMEOUT] Server did not become ready within $TimeoutSec seconds." -ForegroundColor Red
     Write-Host "llama-server health : $(Test-HttpEndpoint 'http://127.0.0.1:8081/health' 1)" -ForegroundColor Yellow
     Write-Host "web app status      : $(Test-HttpEndpoint 'http://127.0.0.1:8000/' 1)" -ForegroundColor Yellow
+    Write-Host "websocket status    : $(Test-WsHandshake 'ws://127.0.0.1:8000/ws' 1000)" -ForegroundColor Yellow
     Write-Host "Please inspect the server window for stack traces or resource errors." -ForegroundColor Yellow
     Pause-IfInteractive
     Exit 1

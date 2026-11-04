@@ -1,0 +1,34 @@
+=== PARLOR WEBSOCKET STARTUP REPRODUCTION AUDIT ===
+Target URL: http://localhost:8000
+Status Badge Text: CONNECTED
+
+--- Toast Stack (Count: 1) ---
+  [1] Microphone access required — check browser permissions or input device connection
+
+--- WebSocket Events ---
+  Opened: ['ws://localhost:8000/ws']
+  Closed: []
+  Errors: []
+  Frames Sent: 0
+  Frames Received: 0
+
+--- Console Logs (Total: 11) ---
+  [WARNING] Video+audio getUserMedia failed, attempting audio-only fallback: Not supported
+  [ERROR] Audio-only getUserMedia failed: Not supported
+  [LOG] [STATE] loading -> muted
+  [LOG] VAD | debug > initializing vad
+  [LOG] VAD | debug > vad is initialized
+  [LOG] VAD | debug > initializing micVAD
+  [ERROR] Error starting micVad TypeError: Cannot read properties of undefined (reading 'getAudioTracks')
+    at Object.getStream (http://localhost:8000/static/app.js:1085:58)
+    at f.start (http://localhost:8000/static/vendor/bundle.min.js:2:59342)
+    at f.new (http://localhost:8000/static/vendor/bundle.min.js:2:63986)
+    at async init (http://localhost:8000/static/app.js:1084:13)
+  [ERROR] VAD init failed: TypeError: Cannot read properties of undefined (reading 'getAudioTracks')
+    at Object.getStream (http://localhost:8000/static/app.js:1085:58)
+    at f.start (http://localhost:8000/static/vendor/bundle.min.js:2:59342)
+    at f.new (http://localhost:8000/static/vendor/bundle.min.js:2:63986)
+    at async init (http://localhost:8000/static/app.js:1084:13)
+  [LOG] [STATE] muted -> listening
+  [LOG] VAD initialized
+  [LOG] [STATE] listening -> listening

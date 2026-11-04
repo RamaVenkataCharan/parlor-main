@@ -4,9 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Parlor</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/style.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
 </head>
@@ -38,6 +35,10 @@
         <option value="balanced" selected>Balanced (3 cycles, 5m cooldown)</option>
         <option value="sensitive">Sensitive (2 cycles, 3m cooldown)</option>
       </select>
+    </div>
+    <div class="diag-row">
+      <span class="diag-label">Active Policy</span>
+      <span id="wellnessPolicyLabel" class="diag-val ok">Balanced (3 cycles, 300s cooldown)</span>
     </div>
     <div class="diag-row">
       <span class="diag-label">Mute Alerts</span>
@@ -73,21 +74,46 @@
     <div class="intervention-title-wrap">
       <h4 id="interventionTitle">Guided 4-7-8 Breathing</h4>
       <span id="interventionCategory" class="intervention-cat">Guided Breathing</span>
+      <span id="interventionMutedBadge" class="intervention-muted-badge" hidden>🔕 Muted</span>
     </div>
-    <button id="interventionClose" class="intervention-close">&times;</button>
+    <button id="interventionClose" class="intervention-close" title="Dismiss">&times;</button>
   </div>
   <div class="intervention-body">
     <p id="interventionNote" class="intervention-note">Observed triggers: AU04 Brow Furrow=0.84, Pitch Delta=+43.4Hz</p>
+    <div id="interventionChips" class="intervention-chips"></div>
     <ul id="interventionSteps" class="intervention-steps"></ul>
     
-    <details class="intervention-why">
+    <details id="interventionWhy" class="intervention-why">
       <summary>Why did this fire?</summary>
       <div id="interventionReasoning" class="why-content"></div>
     </details>
   </div>
   <div class="intervention-actions">
-    <button id="interventionAction" class="btn-primary">Start 1-Min Breathing</button>
+    <button id="interventionAction" class="btn-primary">Start Exercise</button>
     <button id="interventionSnooze" class="btn-secondary">Snooze 10m</button>
+  </div>
+</div>
+
+<!-- Interactive 2-Minute Box Breathing Exercise Card -->
+<div id="exerciseCard" class="exercise-card" hidden>
+  <div class="exercise-header">
+    <span class="exercise-icon">🫁</span>
+    <div class="exercise-title-wrap">
+      <h4 id="exerciseTitle">2-Minute Box Breathing</h4>
+      <span class="exercise-cycle">Cycle <span id="exerciseCycleNum">1</span> of 7</span>
+    </div>
+    <button id="exerciseClose" class="exercise-close" title="End Exercise">&times;</button>
+  </div>
+  <div class="exercise-body">
+    <div class="timer-display" id="exerciseTimer">02:00</div>
+    <div class="exercise-visual">
+      <div id="breathingPacer" class="breathing-circle inhale"></div>
+      <div id="breathingPhase" class="breathing-phase-text">Inhale (4s)</div>
+    </div>
+    <p class="exercise-hint">Follow the circle: Inhale 4s &bull; Hold 4s &bull; Exhale 4s &bull; Hold 4s</p>
+  </div>
+  <div class="exercise-actions">
+    <button id="exerciseFinish" class="btn-primary">Finish Exercise</button>
   </div>
 </div>
 

@@ -1,0 +1,413 @@
+{
+  "timestamp_start": 1793771777.9332361,
+  "vector_tested": "B07_V10",
+  "vector_data": {
+    "window_samples": 5,
+    "face_detected": true,
+    "au04_brow_furrow": 0.98,
+    "au07_lid_tightener": 0.95,
+    "au15_lip_depressor": 0.65,
+    "au20_lip_stretcher": 0.6,
+    "ear": 0.22,
+    "head_pitch": 0.0,
+    "head_yaw": 0.0,
+    "head_roll": 0.0,
+    "face_confidence": 0.98,
+    "speech_detected": true,
+    "rms_energy": 0.08,
+    "f0_mean_hz": 212.0,
+    "f0_baseline_hz": 120.0,
+    "f0_delta_hz": 92.0,
+    "f0_std_hz": 38.0,
+    "jitter_local_pct": 5.6,
+    "shimmer_local_pct": 6.8,
+    "pause_ratio": 0.35,
+    "vocal_tension_index": 0.95
+  },
+  "cycles": [
+    {
+      "cycle_index": 1,
+      "latency_s": 2.7393069000099786,
+      "vector": {
+        "window_samples": 5,
+        "face_detected": true,
+        "au04_brow_furrow": 0.98,
+        "au07_lid_tightener": 0.95,
+        "au15_lip_depressor": 0.65,
+        "au20_lip_stretcher": 0.6,
+        "ear": 0.22,
+        "head_pitch": 0.0,
+        "head_yaw": 0.0,
+        "head_roll": 0.0,
+        "face_confidence": 0.98,
+        "speech_detected": true,
+        "rms_energy": 0.08,
+        "f0_mean_hz": 212.0,
+        "f0_baseline_hz": 120.0,
+        "f0_delta_hz": 92.0,
+        "f0_std_hz": 38.0,
+        "jitter_local_pct": 5.6,
+        "shimmer_local_pct": 6.8,
+        "pause_ratio": 0.35,
+        "vocal_tension_index": 0.95
+      },
+      "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n",
+      "slm_output": {
+        "stress_level": "High (Tier 2)",
+        "primary_drivers": [
+          "AU04 Brow Furrow=0.98",
+          "Pitch Mean (F0) Delta=+92 Hz",
+          "Local Jitter=5.6%",
+          "Vocal Tension Index=0.95"
+        ],
+        "explainable_reasoning": "The high AU04 (Brow Furrow) and elevated Vocal Tension Index (0.95) indicate significant emotional arousal and physical tension. This is compounded by a substantial increase in pitch (Delta +92 Hz) and high vocal instability (Jitter 5.6%), suggesting an acute state of high physiological stress or intense cognitive load.",
+        "confidence_score": 0.95,
+        "ambiguity_note": "None"
+      },
+      "consecutive_count": 1,
+      "should_fire": false
+    },
+    {
+      "cycle_index": 2,
+      "latency_s": 2.1295084999874234,
+      "vector": {
+        "window_samples": 5,
+        "face_detected": true,
+        "au04_brow_furrow": 0.98,
+        "au07_lid_tightener": 0.95,
+        "au15_lip_depressor": 0.65,
+        "au20_lip_stretcher": 0.6,
+        "ear": 0.22,
+        "head_pitch": 0.0,
+        "head_yaw": 0.0,
+        "head_roll": 0.0,
+        "face_confidence": 0.98,
+        "speech_detected": true,
+        "rms_energy": 0.08,
+        "f0_mean_hz": 212.0,
+        "f0_baseline_hz": 120.0,
+        "f0_delta_hz": 92.0,
+        "f0_std_hz": 38.0,
+        "jitter_local_pct": 5.6,
+        "shimmer_local_pct": 6.8,
+        "pause_ratio": 0.35,
+        "vocal_tension_index": 0.95
+      },
+      "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n",
+      "slm_output": {
+        "stress_level": "High (Tier 2)",
+        "primary_drivers": [
+          "AU04 Brow Furrow=0.98",
+          "Pitch Mean (F0) Delta=+92 Hz",
+          "Local Jitter=5.6%",
+          "Vocal Tension Index=0.95"
+        ],
+        "explainable_reasoning": "The high AU04 (Brow Furrow) and significant positive pitch shift (+92 Hz) indicate intense cognitive load and emotional arousal. This is compounded by high vocal instability metrics, specifically elevated Jitter and a very high Vocal Tension Index, suggesting significant physiological strain and heightened sympathetic nervous system activation.",
+        "confidence_score": 0.98,
+        "ambiguity_note": "None"
+      },
+      "consecutive_count": 2,
+      "should_fire": false
+    },
+    {
+      "cycle_index": 3,
+      "latency_s": 2.7367658999864943,
+      "vector": {
+        "window_samples": 5,
+        "face_detected": true,
+        "au04_brow_furrow": 0.98,
+        "au07_lid_tightener": 0.95,
+        "au15_lip_depressor": 0.65,
+        "au20_lip_stretcher": 0.6,
+        "ear": 0.22,
+        "head_pitch": 0.0,
+        "head_yaw": 0.0,
+        "head_roll": 0.0,
+        "face_confidence": 0.98,
+        "speech_detected": true,
+        "rms_energy": 0.08,
+        "f0_mean_hz": 212.0,
+        "f0_baseline_hz": 120.0,
+        "f0_delta_hz": 92.0,
+        "f0_std_hz": 38.0,
+        "jitter_local_pct": 5.6,
+        "shimmer_local_pct": 6.8,
+        "pause_ratio": 0.35,
+        "vocal_tension_index": 0.95
+      },
+      "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n",
+      "slm_output": {
+        "stress_level": "Moderate (Tier 1)",
+        "primary_drivers": [
+          "AU04 Brow Furrow=0.98",
+          "Pitch Mean (F0) Delta=+92 Hz",
+          "Vocal Tension Index (HF Energy >1kHz Ratio)=0.95"
+        ],
+        "explainable_reasoning": "The high AU04 Brow Furrow and significant positive pitch shift (+92 Hz) indicate active cognitive load and emotional arousal. This is compounded by a very high Vocal Tension Index (0.95), suggesting increased muscular effort in the vocal folds, consistent with moderate stress or focused exertion.",
+        "confidence_score": 0.95,
+        "ambiguity_note": "The low RMS Energy (0.08) suggests the vocal output might be quiet, which could be due to low arousal or a specific speaking style, but the high tension metrics override this for a moderate stress assessment."
+      },
+      "consecutive_count": 0,
+      "should_fire": true
+    }
+  ],
+  "card_rendered": true,
+  "why_expanded": true,
+  "exercise_started": true,
+  "snooze_tested": true,
+  "mute_tested": true,
+  "sensitivity_tested": true,
+  "cooldown_blocked": true,
+  "events": [
+    {
+      "time": 1793771780.459272,
+      "type": "wellness_sensitivity_changed",
+      "data": {
+        "type": "wellness_sensitivity_changed",
+        "sensitivity": "balanced"
+      }
+    },
+    {
+      "time": 1793771783.1945117,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 1,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 1,
+          "ema_score": 0.6,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "below_threshold"
+        },
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Local Jitter=5.6%",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 (Brow Furrow) and elevated Vocal Tension Index (0.95) indicate significant emotional arousal and physical tension. This is compounded by a substantial increase in pitch (Delta +92 Hz) and high vocal instability (Jitter 5.6%), suggesting an acute state of high physiological stress or intense cognitive load.",
+          "confidence_score": 0.95,
+          "ambiguity_note": "None"
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    },
+    {
+      "time": 1793771785.8254218,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 2,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 2,
+          "ema_score": 1.02,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "below_threshold"
+        },
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Local Jitter=5.6%",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 (Brow Furrow) and significant positive pitch shift (+92 Hz) indicate intense cognitive load and emotional arousal. This is compounded by high vocal instability metrics, specifically elevated Jitter and a very high Vocal Tension Index, suggesting significant physiological strain and heightened sympathetic nervous system activation.",
+          "confidence_score": 0.98,
+          "ambiguity_note": "None"
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    },
+    {
+      "time": 1793771789.061753,
+      "type": "intervention_triggered",
+      "data": {
+        "type": "intervention_triggered",
+        "intervention": {
+          "title": "Guided 4-7-8 Breathing Exercise",
+          "category": "Guided Breathing",
+          "icon": "\ud83e\udec1",
+          "action_label": "Start 1-Min Breathing",
+          "steps": [
+            "Inhale deeply through your nose for 4 seconds.",
+            "Hold your breath gently for 7 seconds.",
+            "Exhale slowly and completely through your mouth for 8 seconds.",
+            "Repeat this cycle 4 times to relax your nervous system."
+          ],
+          "personalized_note": "Observed triggers: AU04 Brow Furrow=0.98, Pitch Mean (F0) Delta=+92 Hz, Vocal Tension Index (HF Energy >1kHz Ratio)=0.95.",
+          "slm_reasoning": "The high AU04 Brow Furrow and significant positive pitch shift (+92 Hz) indicate active cognitive load and emotional arousal. This is compounded by a very high Vocal Tension Index (0.95), suggesting increased muscular effort in the vocal folds, consistent with moderate stress or focused exertion.",
+          "slm_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Vocal Tension Index (HF Energy >1kHz Ratio)=0.95"
+          ],
+          "stress_level": "Moderate (Tier 1)",
+          "confidence_score": 0.95,
+          "ambiguity_note": "The low RMS Energy (0.08) suggests the vocal output might be quiet, which could be due to low arousal or a specific speaking style, but the high tension metrics override this for a moderate stress assessment."
+        }
+      }
+    },
+    {
+      "time": 1793771789.061753,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 0,
+        "should_fire": true,
+        "intervention_fired": true,
+        "metadata": {
+          "consecutive_count": 3,
+          "ema_score": 1.01,
+          "cooldown_remaining_sec": 0.0,
+          "reason": "pattern_matched (3_consecutive_cycles)"
+        },
+        "slm_output": {
+          "stress_level": "Moderate (Tier 1)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Vocal Tension Index (HF Energy >1kHz Ratio)=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 Brow Furrow and significant positive pitch shift (+92 Hz) indicate active cognitive load and emotional arousal. This is compounded by a very high Vocal Tension Index (0.95), suggesting increased muscular effort in the vocal folds, consistent with moderate stress or focused exertion.",
+          "confidence_score": 0.95,
+          "ambiguity_note": "The low RMS Energy (0.08) suggests the vocal output might be quiet, which could be due to low arousal or a specific speaking style, but the high tension metrics override this for a moderate stress assessment."
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    },
+    {
+      "time": 1793771793.6607988,
+      "type": "wellness_mute_changed",
+      "data": {
+        "type": "wellness_mute_changed",
+        "muted": true
+      }
+    },
+    {
+      "time": 1793771794.2641408,
+      "type": "wellness_sensitivity_changed",
+      "data": {
+        "type": "wellness_sensitivity_changed",
+        "sensitivity": "conservative"
+      }
+    },
+    {
+      "time": 1793771794.7707112,
+      "type": "wellness_sensitivity_changed",
+      "data": {
+        "type": "wellness_sensitivity_changed",
+        "sensitivity": "sensitive"
+      }
+    },
+    {
+      "time": 1793771795.279082,
+      "type": "wellness_sensitivity_changed",
+      "data": {
+        "type": "wellness_sensitivity_changed",
+        "sensitivity": "balanced"
+      }
+    },
+    {
+      "time": 1793771797.5778759,
+      "type": "wellness_snoozed",
+      "data": {
+        "type": "wellness_snoozed",
+        "minutes": 10.0
+      }
+    },
+    {
+      "time": 1793771800.6770856,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 0,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 0,
+          "ema_score": 1.01,
+          "cooldown_remaining_sec": 596.4,
+          "reason": "system_muted"
+        },
+        "slm_output": {
+          "stress_level": "Moderate (Tier 1)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Vocal Tension Index (HF Energy >1kHz Ratio)=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 Brow Furrow and significant positive pitch shift (+92 Hz) indicate active cognitive load and emotional arousal. This is compounded by a very high Vocal Tension Index, suggesting increased muscular effort in the vocal folds, consistent with moderate stress or focused exertion.",
+          "confidence_score": 0.95,
+          "ambiguity_note": "The low RMS Energy (0.08) suggests the speech is quiet or the recording is very brief, which might slightly mask the intensity of the vocal tension, but the facial and pitch data strongly point toward a moderate stress state."
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    },
+    {
+      "time": 1793771803.6810172,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 0,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 0,
+          "ema_score": 1.01,
+          "cooldown_remaining_sec": 593.8,
+          "reason": "system_muted"
+        },
+        "slm_output": {
+          "stress_level": "Moderate (Tier 1)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Vocal Tension Index (HF Energy >1kHz Ratio)=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 (Brow Furrow) and significant positive pitch shift (+92 Hz) indicate active cognitive load and emotional arousal. This is strongly supported by a high Vocal Tension Index (0.95), suggesting increased muscular tension in the vocal folds, consistent with moderate stress or focused exertion.",
+          "confidence_score": 0.95,
+          "ambiguity_note": "The low RMS Energy (0.08) suggests the vocal output might be quiet, which could be due to low energy or high tension rather than low arousal."
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    },
+    {
+      "time": 1793771806.6826649,
+      "type": "test_wellness_cycle_result",
+      "data": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 0,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 0,
+          "ema_score": 1.01,
+          "cooldown_remaining_sec": 591.0,
+          "reason": "system_muted"
+        },
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92 Hz",
+            "Local Jitter=5.6%",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "The high AU04 (Brow Furrow) and significant positive pitch shift (+92 Hz) indicate intense cognitive load and emotional arousal. This is compounded by high vocal instability metrics, specifically elevated Jitter and a very high Vocal Tension Index, suggesting significant physiological strain and heightened sympathetic nervous system activation.",
+          "confidence_score": 0.98,
+          "ambiguity_note": "None"
+        },
+        "prompt": "[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW (5 SAMPLES)]\n\n--- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---\n- Status: DETECTED (Confidence: 0.98)\n- AU04 Brow Furrow (Eyebrow Tension): 0.98 (0.0=Relaxed, >0.5=Elevated Furrow)\n- AU07 Lid Tightener (Eye Squint/Strain): 0.95 (0.0=Relaxed, >0.5=Squinting)\n- AU15 Lip Depressor (Mouth Corner Drop): 0.65 (0.0=Neutral, >0.4=Depressed)\n- AU20 Lip Stretcher (Jaw Tension): 0.6 (0.0=Neutral, >0.5=Stretched)\n- Eye Aspect Ratio (EAR): 0.22 (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)\n- Head Pose: Pitch=0\u00b0, Yaw=0\u00b0, Roll=0\u00b0\n\n--- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---\n- Status: DETECTED (RMS Energy: 0.08)\n- Pitch Mean (F0): 212 Hz (Baseline: 120 Hz, Delta: +92 Hz)\n- Pitch Variance (F0 SD): 38 Hz (Micro-tremor indicator)\n- Local Jitter (Period Perturbation): 5.6% (Normal <1.5%, High >3.0%)\n- Local Shimmer (Amplitude Perturbation): 6.8% (Normal <2.0%, High >3.5%)\n- Pause Ratio: 0.35 (0.0=Constant Speech, 1.0=Full Silence)\n- Vocal Tension Index (HF Energy >1kHz Ratio): 0.95 (Normal <0.40, High >0.65)\n\nTASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.\n"
+      }
+    }
+  ],
+  "timestamp_end": 1793771806.875283,
+  "total_duration_s": 28.942046880722046
+}

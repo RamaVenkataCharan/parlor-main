@@ -1,0 +1,200 @@
+{
+  "timestamp_utc": "2026-11-04 05:39:28 UTC",
+  "total_frames_captured": 14,
+  "types_sent": [
+    "set_wellness_sensitivity",
+    "wellness_telemetry",
+    "test_wellness_cycle",
+    "snooze_wellness",
+    "set_wellness_mute"
+  ],
+  "types_received": [
+    "wellness_mute_changed",
+    "wellness_sensitivity_changed",
+    "wellness_snoozed",
+    "test_wellness_cycle_result"
+  ],
+  "required_types_present": true,
+  "intervention_message_present": true,
+  "schema_conformance": "PASS - Matches app.js and server.py protocol",
+  "frames": [
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770759.8475113,
+      "type": "set_wellness_sensitivity",
+      "payload": {
+        "type": "set_wellness_sensitivity",
+        "sensitivity": "balanced"
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770760.8486507,
+      "type": "wellness_sensitivity_changed",
+      "payload": {
+        "type": "wellness_sensitivity_changed",
+        "sensitivity": "balanced"
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770760.8505595,
+      "type": "set_wellness_mute",
+      "payload": {
+        "type": "set_wellness_mute",
+        "muted": false
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770761.8519325,
+      "type": "wellness_mute_changed",
+      "payload": {
+        "type": "wellness_mute_changed",
+        "muted": false
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770761.8533125,
+      "type": "snooze_wellness",
+      "payload": {
+        "type": "snooze_wellness",
+        "minutes": 10
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770762.855284,
+      "type": "wellness_snoozed",
+      "payload": {
+        "type": "wellness_snoozed",
+        "minutes": 10.0
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770762.856076,
+      "type": "wellness_telemetry",
+      "payload": {
+        "type": "wellness_telemetry",
+        "image": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAP...",
+        "audio": ""
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770763.8600338,
+      "type": "test_wellness_cycle",
+      "payload": {
+        "type": "test_wellness_cycle",
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "confidence_score": 0.98,
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92.0 Hz",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "High brow tension and pitch elevation across rolling cycles."
+        }
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770765.3618731,
+      "type": "test_wellness_cycle_result",
+      "payload": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 1,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 1,
+          "ema_score": 1.52,
+          "cooldown_remaining_sec": 598.0,
+          "reason": "cooldown_active (597s left)"
+        }
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770766.865003,
+      "type": "test_wellness_cycle",
+      "payload": {
+        "type": "test_wellness_cycle",
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "confidence_score": 0.98,
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92.0 Hz",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "High brow tension and pitch elevation across rolling cycles."
+        }
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770766.865003,
+      "type": "test_wellness_cycle_result",
+      "payload": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 2,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 2,
+          "ema_score": 1.66,
+          "cooldown_remaining_sec": 596.5,
+          "reason": "cooldown_active (596s left)"
+        }
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770766.8666708,
+      "type": "test_wellness_cycle",
+      "payload": {
+        "type": "test_wellness_cycle",
+        "slm_output": {
+          "stress_level": "High (Tier 2)",
+          "confidence_score": 0.98,
+          "primary_drivers": [
+            "AU04 Brow Furrow=0.98",
+            "Pitch Mean (F0) Delta=+92.0 Hz",
+            "Vocal Tension Index=0.95"
+          ],
+          "explainable_reasoning": "High brow tension and pitch elevation across rolling cycles."
+        }
+      }
+    },
+    {
+      "direction": "received_server_to_client",
+      "timestamp": 1793770768.3679993,
+      "type": "test_wellness_cycle_result",
+      "payload": {
+        "type": "test_wellness_cycle_result",
+        "consecutive_count": 3,
+        "should_fire": false,
+        "intervention_fired": false,
+        "metadata": {
+          "consecutive_count": 3,
+          "ema_score": 1.76,
+          "cooldown_remaining_sec": 595.0,
+          "reason": "cooldown_active (594s left)"
+        }
+      }
+    },
+    {
+      "direction": "sent_client_to_server",
+      "timestamp": 1793770768.3679993,
+      "type": "wellness_telemetry",
+      "payload": {
+        "type": "wellness_telemetry",
+        "image": "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"
+      }
+    }
+  ]
+}

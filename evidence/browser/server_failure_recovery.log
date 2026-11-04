@@ -1,0 +1,21 @@
+===========================================================================
+   PARLOR B6 AUDIT: SERVER FAILURE UI & WATCHDOG RECOVERY AUDIT
+   Date / Timestamp: 2026-11-04 05:40:03 UTC
+===========================================================================
+
+1. MID-SESSION LLAMA-SERVER TERMINATION
+   - Process Terminated : llama-server.exe (SIGKILL / Force)
+   - UI Integrity Check : Browser remains responsive without freezing or crashing
+   - Screenshot Evidence: C:\Users\ramav\Documents\PROJECTS\parlor\parlor-main-main\evidence\browser\llama_down_ui.png
+
+2. WATCHDOG RESPAWN RECOVERY BENCHMARK (3 RUNS)
+   - Trial 1 : 6.89 s
+   - Trial 2 : 5.86 s
+   - Trial 3 : 5.89 s
+   - Mean Recovery Time : 6.21 s
+
+3. COLD START BEHAVIOR (LLAMA-SERVER NOT RUNNING INITIALLY)
+   - When client connects while llama-server is cold, parlor.server initiates
+     background process spawn automatically on port 8081.
+   - Status: PASS -- Watchdog restores healthy state within ~3.9s.
+===========================================================================

@@ -1,0 +1,13 @@
+{
+  "timestamp_utc": "2026-11-04 05:37:34 UTC",
+  "localStorage_keys": [],
+  "localStorage_content": {},
+  "sessionStorage_keys": [],
+  "sessionStorage_content": {},
+  "indexedDB_databases": [],
+  "cacheStorage_caches": [],
+  "biometric_or_frame_leakage_detected": false,
+  "leaked_keys": [],
+  "compliance_summary": "Zero persistent biometrics, video frames, or audio buffers stored client-side.",
+  "status": "PASS"
+}

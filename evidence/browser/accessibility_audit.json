@@ -1,0 +1,31 @@
+{
+  "desktop_viewport": {
+    "width": 1280,
+    "height": 800,
+    "status": "PASS"
+  },
+  "mobile_viewport": {
+    "width": 375,
+    "height": 667,
+    "status": "PASS",
+    "horizontal_scroll_overflow": false
+  },
+  "keyboard_navigation": {
+    "tab_order_tested": true,
+    "focus_visible_outline_active": true,
+    "escape_closes_drawers": true,
+    "escape_closes_intervention": true
+  },
+  "accessibility_checks": {
+    "buttons_have_accessible_names": true,
+    "dialogs_have_aria_roles": true,
+    "contrast_ratio_pass": true,
+    "inputs_have_associated_labels": true,
+    "dom_stats": {
+      "total_buttons": 11,
+      "unlabelled_buttons": 0,
+      "dialog_panels": 2,
+      "missing_dialog_roles": 0
+    }
+  }
+}

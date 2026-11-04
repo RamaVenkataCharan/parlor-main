@@ -20,11 +20,17 @@
     --glow: var(--c-loading);
     --glow-dim: var(--c-loading-dim);
 
-    --font-body: 'Instrument Sans', system-ui, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, system-ui, sans-serif;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
   [hidden] { display: none !important; }
+
+  /* Accessibility Focus Rings for Keyboard Navigation */
+  :focus-visible {
+    outline: 2px solid #38bdf8 !important;
+    outline-offset: 2px !important;
+  }
 
   body {
     font-family: var(--font-body);
@@ -755,6 +761,17 @@
     color: var(--c-listen);
     font-weight: 600;
   }
+  .intervention-muted-badge {
+    margin-left: 8px;
+    font-size: 10px;
+    background: rgba(245, 158, 11, 0.2);
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    color: #fbbf24;
+    padding: 1px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
   .intervention-close {
     background: none;
     border: none;
@@ -775,6 +792,22 @@
     font-size: 11.5px;
     color: var(--c-text-dim);
     line-height: 1.4;
+  }
+
+  .intervention-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .driver-chip {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    color: #38bdf8;
   }
 
   .intervention-steps {
@@ -845,6 +878,141 @@
   .intervention-actions .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.08);
     color: var(--c-text-bright);
+  }
+
+  /* ── Interactive 2-Minute Box Breathing UI ── */
+  .exercise-card {
+    position: fixed;
+    bottom: 90px;
+    right: 24px;
+    width: 360px;
+    max-width: calc(100vw - 48px);
+    background: rgba(14, 16, 24, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    backdrop-filter: blur(28px);
+    -webkit-backdrop-filter: blur(28px);
+    border-radius: 18px;
+    padding: 20px;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.75), 0 0 24px rgba(56, 189, 248, 0.2);
+    z-index: 210;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    animation: interventionSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .exercise-card[hidden] {
+    display: none !important;
+  }
+  .exercise-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .exercise-icon {
+    font-size: 28px;
+  }
+  .exercise-title-wrap {
+    flex: 1;
+  }
+  .exercise-title-wrap h4 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--c-text-bright);
+  }
+  .exercise-cycle {
+    font-size: 11px;
+    color: #38bdf8;
+    font-weight: 600;
+  }
+  .exercise-close {
+    background: none;
+    border: none;
+    color: var(--c-text-dim);
+    font-size: 22px;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 6px;
+  }
+  .exercise-close:hover {
+    color: var(--c-text-bright);
+  }
+  .exercise-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .timer-display {
+    font-family: monospace;
+    font-size: 32px;
+    font-weight: 700;
+    color: #38bdf8;
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+  }
+  .exercise-visual {
+    position: relative;
+    width: 140px;
+    height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .breathing-circle {
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(56, 189, 248, 0.3) 0%, rgba(56, 189, 248, 0.05) 70%);
+    border: 2px solid rgba(56, 189, 248, 0.6);
+    transition: transform 3.8s ease-in-out, border-color 0.5s ease;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.25);
+  }
+  .breathing-circle.inhale {
+    transform: scale(1.25);
+    border-color: #38bdf8;
+  }
+  .breathing-circle.hold {
+    transform: scale(1.25);
+    border-color: #4ade80;
+  }
+  .breathing-circle.exhale {
+    transform: scale(0.85);
+    border-color: #a78bfa;
+  }
+  .breathing-phase-text {
+    position: absolute;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f8fafc;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+    pointer-events: none;
+  }
+  .exercise-hint {
+    margin: 0;
+    font-size: 11.5px;
+    color: var(--c-text-dim);
+    text-align: center;
+  }
+  .exercise-actions {
+    display: flex;
+    justify-content: center;
+  }
+  .exercise-actions .btn-primary {
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+    padding: 8px 24px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .exercise-actions .btn-primary:hover {
+    background: rgba(56, 189, 248, 0.28);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
   }
 
   /* ── Toasts / Banners ── */
@@ -1001,6 +1169,47 @@
   }
   input:checked + .slider:before {
     transform: translateX(18px);
+  }
+
+  /* ── Mobile Responsive Rules (Screens <= 640px) ── */
+  @media (max-width: 640px) {
+    header {
+      padding: 10px 14px;
+      gap: 8px;
+    }
+    .header-left h1 {
+      font-size: 18px;
+    }
+    .header-right {
+      gap: 6px;
+    }
+    .diag-btn {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    .status-pill {
+      padding: 3px 8px;
+      font-size: 10px;
+    }
+    .diag-panel {
+      right: 12px;
+      left: 12px;
+      width: calc(100vw - 24px);
+      max-width: none;
+    }
+    .intervention-card,
+    .exercise-card {
+      right: 12px;
+      left: 12px;
+      width: calc(100vw - 24px);
+      bottom: 20px;
+    }
+    .viewport-wrap {
+      max-width: 100%;
+    }
+    .transcript {
+      padding: 12px;
+    }
   }
 
 

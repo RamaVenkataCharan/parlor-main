@@ -145,6 +145,7 @@ All performance statistics reported below were measured directly on the evaluati
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB capacity) | $\le 6.0\text{ GB}$ VRAM | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) | **PASS** |
 | **Host Working Set Memory (RAM)** | **`2.42 GB`** (`llama-server` 1.84GB + `python` 0.61GB) | 16.0 GB RAM (5.24 GB commit) | [`evidence/ram_working_set.txt`](evidence/ram_working_set.txt) | **PASS** |
 | **SQLite Database Storage Rate** | **`132.00 KB / active monitoring hour`** | 300.37 bytes/cycle (1.03 MB/workday) | [`evidence/storage_growth_rate.txt`](evidence/storage_growth_rate.txt) | **PASS** |
+| **Browser DevTools Audit (B1–B12)** | **`12 / 12 Suites Verified`** (0 leaks, 60.2 FPS) | Full Chrome DevTools CDP audit | [`BROWSER_TEST_REPORT.md`](BROWSER_TEST_REPORT.md) | **PASS** |
 | **EMA Ground-Truth Agreement** | **`NOT COLLECTED / REQUIRES HUMAN STUDY`** | Human Protocol Ready | [`docs/EMA_RECOLLECTION_KIT.md`](docs/EMA_RECOLLECTION_KIT.md) | **Kit Packaged** |
 
 *\*Note on Skipped Test:* `test_thinking_pause_is_held` in `tests/test_conversation.py:68` is skipped by design (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).

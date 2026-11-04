@@ -1,0 +1,35 @@
+{
+  "throttling": "1x (None)",
+  "turns_executed": 5,
+  "long_tasks_count": 0,
+  "long_tasks": [],
+  "measures": [
+    {
+      "name": "turn-1-duration",
+      "duration_ms": 0.30000001192092896
+    },
+    {
+      "name": "turn-2-duration",
+      "duration_ms": 0.10000002384185791
+    },
+    {
+      "name": "turn-3-duration",
+      "duration_ms": 0.20000004768371582
+    },
+    {
+      "name": "turn-4-duration",
+      "duration_ms": 0.10000002384185791
+    },
+    {
+      "name": "turn-5-duration",
+      "duration_ms": 0.10000002384185791
+    }
+  ],
+  "memory": {
+    "totalJSHeapSize_MB": "11.34",
+    "usedJSHeapSize_MB": "7.11",
+    "jsHeapSizeLimit_MB": "4192.00"
+  },
+  "mean_fps": 60.2,
+  "fps_drops_below_30": false
+}

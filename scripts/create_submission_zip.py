@@ -81,8 +81,8 @@ def should_exclude(rel_path: str, filename: str) -> bool:
 
     ext = os.path.splitext(filename)[1].lower()
     if ext in EXCLUDED_EXTENSIONS:
-        if "web" in parts and "static" in parts and "vad" in parts:
-            return False  # Keep vendored offline VAD worklet
+        if "web" in parts and "static" in parts and ("vendor" in parts or "vad" in filename):
+            return False  # Keep vendored offline VAD and ONNX assets
         return True
 
     return False

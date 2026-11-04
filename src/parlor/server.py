@@ -807,26 +807,40 @@ async def _run_session(ws: WebSocket):
                 continue
 
             if msg.get("type") == "test_wellness_cycle":
-                slm_input = msg.get("slm_output", {
-                    "stress_level": "High (Tier 2)",
-                    "primary_drivers": ["AU04 Brow Furrow=0.92", "Pitch Delta=+65Hz"],
-                    "explainable_reasoning": "Sustained high facial strain and severe acoustic frequency perturbation.",
-                    "confidence_score": 0.95,
-                    "ambiguity_note": None
-                })
+                print("[TEST CYCLE] Received test_wellness_cycle request")
+                vector = msg.get("vector")
+                prompt_used = None
+                if vector and wellness_service:
+                    prompt_used = wellness_service.fusion_engine.format_prompt(vector)
+                    print("[TEST CYCLE] Invoking live SLM reasoning...")
+                    slm_input = await wellness_service._call_slm_reasoning(prompt_used)
+                    print(f"[TEST CYCLE] SLM result: {slm_input.get('stress_level')}")
+                else:
+                    slm_input = msg.get("slm_output", {
+                        "stress_level": "High (Tier 2)",
+                        "primary_drivers": ["AU04 Brow Furrow=0.92", "Pitch Delta=+65Hz"],
+                        "explainable_reasoning": "Sustained high facial strain and severe acoustic frequency perturbation.",
+                        "confidence_score": 0.95,
+                        "ambiguity_note": None
+                    })
                 if wellness_service:
                     should_fire, category, meta = wellness_service.trigger_manager.evaluate(slm_input)
                     intervention_pkg = None
                     if should_fire:
                         intervention_pkg = wellness_service.intervention_generator.generate(category, slm_input)
                         await dispatch_wellness_intervention(intervention_pkg)
-                    await send_json(ws, {
+                    resp = {
                         "type": "test_wellness_cycle_result",
                         "consecutive_count": wellness_service.trigger_manager.consecutive_high_stress_count,
                         "should_fire": should_fire,
                         "intervention_fired": intervention_pkg is not None,
-                        "metadata": meta
-                    })
+                        "metadata": meta,
+                        "slm_output": slm_input,
+                        "prompt": prompt_used
+                    }
+                    print("[TEST CYCLE] Sending response back to client...")
+                    await send_json(ws, resp)
+                    print("[TEST CYCLE] Response successfully sent!")
                 continue
 
             if msg.get("type") == "wellness_telemetry":

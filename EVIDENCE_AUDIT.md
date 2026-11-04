@@ -97,3 +97,26 @@ The following items cannot and will not be filled with synthetic data:
 3. **Formal Institutional Declarations & Certificates:**
    - **Placeholders Provided:** `docs/FINAL_PROJECT_REPORT.md`.
    - **Action Required:** Physical signatures from student team members and project guide Mrs. V. Aruna.
+4. **Physical Camera Disconnect Mid-Session Verification:**
+   - **Protocol Documented:** `evidence/browser/permissions_audit.log` and `BROWSER_TEST_REPORT.md`.
+   - **Action Required:** Physical unplug of USB webcam cable during viva examination to confirm `MediaStreamTrack.onended` handling.
+
+---
+
+## 4. Browser DevTools Suite Audit (B1–B12)
+
+| Suite ID | Tested Functional Area | Measured Value / Evidence | Raw Evidence File |
+|:---|:---|:---|:---|
+| **B1** | Load & Console Integrity | Page load: **0.887 s**, Errors: **0**, Warnings: **0** | `evidence/browser/console_load.log` |
+| **B2** | Network Privacy HAR Audit | **0 external hosts contacted** (Air-gapped; Google Fonts CDN leak removed) | `evidence/browser/session_privacy.har`, `evidence/browser/network_privacy_audit.json` |
+| **B3** | Offline Execution | 100% offline capability (vendored ONNX/WASM/VAD) | `evidence/browser/offline_test.log`, `evidence/browser/offline_mode.png` |
+| **B4** | WebSocket Schema Conformance | Chronological CDP frame capture across all commands/events | `evidence/browser/ws_frames_trace.json` |
+| **B5** | Single-Session Policy | Tab 2 rejected with Close Code **4001**; no reconnect thrashing | `evidence/browser/single_session.log`, `evidence/browser/single_session_rejected.png` |
+| **B6** | Watchdog Respawn Latency | **6.21 s mean** across 3 trials (6.89s, 5.86s, 5.89s) | `evidence/browser/server_failure_recovery.log`, `evidence/browser/llama_down_ui.png` |
+| **B7** | Live-Model Card Trigger | Vector B07_V10 $\times$ 3 cycles $\rightarrow$ Tier 2 card, 2-min box breathing UI | `evidence/browser/b7_card_live_model_trace.json`, 6 PNG screenshots |
+| **B8** | Performance & 4x CPU Throttle | **0 long tasks**, **60.2 FPS** (1x), **60.0 FPS** (4x throttle), **7.11 MB** JS Heap | `evidence/browser/performance_5turns.json`, `evidence/browser/performance_throttled.json` |
+| **B9** | Client Storage Zero-Leak | **0.00 KB** stored across localStorage, sessionStorage, IndexedDB | `evidence/browser/application_storage_audit.json` |
+| **B10** | Permissions & Edge Cases | Camera/Mic denied and Camera Busy handled gracefully | `evidence/browser/permissions_audit.log`, 3 PNG screenshots |
+| **B11** | Responsive & Accessibility | 1280x800 & 375x667 viewports (0 overflow), focus rings, Escape dismissal | `evidence/browser/viewport_desktop.png`, `viewport_mobile.png`, `accessibility_audit.json` |
+| **B12** | Repeatable Media Fixtures | Synthetic Y4M face (30 FPS) and WAV speech fixtures generated | `evidence/media/synthetic_face_test.y4m`, `evidence/media/synthetic_speech_test.wav` |
+

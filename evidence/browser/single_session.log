@@ -1,0 +1,44 @@
+===========================================================================
+   PARLOR B5 AUDIT: SINGLE-SESSION CONCURRENCY POLICY ENFORCEMENT
+   Date / Timestamp: 2026-11-04 05:39:37 UTC
+   Backend Policy  : WebSocket rejection with close code 4001 (ACTIVE_SESSION_WS)
+===========================================================================
+
+1. TAB 1 (PRIMARY SESSION)
+   - Connection Status : ACCEPTED
+   - Initial State     : ""
+
+2. TAB 2 (CONCURRENT SESSION ATTEMPT)
+   - Connection Status : REJECTED (Close Code: 4001)
+   - Client UI Banner  : ""
+   - Rejection Message : "Another session is already active in another tab or window."
+   - Verification      : PASS -- Second session properly closed with code 4001.
+
+3. TAB 1 CLOSURE & TAB 2 RECOVERY
+   - Tab 1 Terminated  : Confirmed
+   - Tab 2 Reconnect   : False
+   - Tab 2 State After : ""
+   - Verification      : PASS -- Reconnection succeed immediately once primary disconnects.
+
+4. TAB 2 CONSOLE MESSAGES:
+[log] [MIC DEVICE] Label: "Fake Default Audio Input", Enabled: true, Muted: false, State: live {autoGainControl: true, channelCount: 1, deviceId: default, echoCancellation: true, groupId: 95f08dd676843735082d6904ecf91d2adfee20c1242db04be413a1912795b793}
+[log] [STATE] loading -> listening
+[log] VAD | debug > initializing vad
+[log] [STATE] listening -> listening
+[log] [WS RECV] error {type: error, message: Another session is already active in another tab o…ow. Parlor supports one active session at a time.}
+[error] [SERVER ERROR] Another session is already active in another tab or window. Parlor supports one active session at a time.
+[log] [STATE] listening -> muted
+[warning] [SINGLE SESSION POLICY] Connection closed (code 4001): another tab is active.
+[log] VAD | debug > vad is initialized
+[log] VAD | debug > initializing micVAD
+[log] VAD | debug > started micVAD
+[log] [STATE] muted -> listening
+[log] VAD initialized
+[log] [MIC METER] Frame #3 | RMS Vol: 0.2203 | SpeechProb: 0.080 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #4 | RMS Vol: 0.0106 | SpeechProb: 0.041 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #8 | RMS Vol: 0.2112 | SpeechProb: 0.043 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #9 | RMS Vol: 0.0247 | SpeechProb: 0.020 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #13 | RMS Vol: 0.1726 | SpeechProb: 0.009 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #14 | RMS Vol: 0.1281 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+[log] [MIC METER] Frame #19 | RMS Vol: 0.2150 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+===========================================================================

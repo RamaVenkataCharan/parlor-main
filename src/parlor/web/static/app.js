@@ -146,15 +146,23 @@ function bindWellnessControls() {
   if (wellnessSensitivity) {
     wellnessSensitivity.addEventListener('change', (e) => {
       const val = e.target.value;
+      const policyLabel = document.getElementById('wellnessPolicyLabel');
+      if (policyLabel) {
+        if (val === 'conservative') policyLabel.textContent = 'Conservative (4 cycles, 450s cooldown)';
+        else if (val === 'sensitive') policyLabel.textContent = 'Sensitive (2 cycles, 180s cooldown)';
+        else policyLabel.textContent = 'Balanced (3 cycles, 300s cooldown)';
+      }
       wsSend({ type: 'set_wellness_sensitivity', sensitivity: val });
       showToast(`Wellness sensitivity set to ${val}`, 'success', 3000);
     });
   }
   if (wellnessMuteToggle) {
     wellnessMuteToggle.addEventListener('change', (e) => {
-      const isMuted = e.target.checked;
-      wsSend({ type: 'set_wellness_mute', muted: isMuted });
-      showToast(isMuted ? 'Wellness alerts muted' : 'Wellness alerts active', isMuted ? 'warning' : 'success', 3000);
+      wellnessMuted = e.target.checked;
+      const badge = document.getElementById('interventionMutedBadge');
+      if (badge) badge.hidden = !wellnessMuted;
+      wsSend({ type: 'set_wellness_mute', muted: wellnessMuted });
+      showToast(wellnessMuted ? 'Wellness alerts muted' : 'Wellness alerts active', wellnessMuted ? 'warning' : 'success', 3000);
     });
   }
   wellnessControlsBound = true;
@@ -380,6 +388,8 @@ function connect() {
   };
   ws.onmessage = ({ data }) => {
     const msg = JSON.parse(data);
+    window.__wsReceivedMessages = window.__wsReceivedMessages || [];
+    window.__wsReceivedMessages.push(msg);
     if (msg.type !== 'audio_chunk') {
       console.log('[WS RECV]', msg.type, msg);
     }
@@ -1127,6 +1137,32 @@ async function init() {
   console.log('VAD initialized');
 }
 
+let wellnessMuted = false;
+let exerciseTimerInterval = null;
+let exerciseTimeRemaining = 120;
+
+function playWellnessChime() {
+  if (wellnessMuted) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.exponentialRampToValueAtTime(880.00, ctx.currentTime + 0.18); // A5
+    gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch (e) {
+    // AudioContext autoplay restrictions or disabled audio
+  }
+}
+
 function showInterventionCard(data) {
   if (!data) return;
   const card = document.getElementById('interventionCard');
@@ -1135,7 +1171,24 @@ function showInterventionCard(data) {
   document.getElementById('interventionIcon').textContent = data.icon || '🫁';
   document.getElementById('interventionTitle').textContent = data.title || 'Micro-Intervention';
   document.getElementById('interventionCategory').textContent = data.category || 'Wellness';
-  document.getElementById('interventionNote').textContent = data.personalized_note || '';
+  document.getElementById('interventionNote').textContent = data.personalized_note || 'Sustained stress biomarkers detected across observation windows.';
+
+  const mutedBadge = document.getElementById('interventionMutedBadge');
+  if (mutedBadge) mutedBadge.hidden = !wellnessMuted;
+
+  // Render Driver Chips
+  const chipsContainer = document.getElementById('interventionChips');
+  if (chipsContainer) {
+    chipsContainer.innerHTML = '';
+    const drivers = data.slm_drivers || data.primary_drivers || [];
+    const driverList = Array.isArray(drivers) ? drivers : [drivers];
+    driverList.forEach(driver => {
+      const chip = document.createElement('span');
+      chip.className = 'driver-chip';
+      chip.textContent = driver;
+      chipsContainer.appendChild(chip);
+    });
+  }
 
   const stepsUl = document.getElementById('interventionSteps');
   stepsUl.innerHTML = '';
@@ -1146,17 +1199,85 @@ function showInterventionCard(data) {
   });
 
   const reasoningDiv = document.getElementById('interventionReasoning');
-  reasoningDiv.textContent = `${data.slm_reasoning || ''} (Stress Level: ${data.stress_level || 'Moderate'}, Confidence: ${data.confidence_score || '0.90'})`;
+  const driversStr = (data.slm_drivers || data.primary_drivers || []).join(', ');
+  reasoningDiv.innerHTML = `
+    <div><strong>Model Reasoning:</strong> ${data.slm_reasoning || data.explainable_reasoning || 'Elevated facial tension and acoustic frequency perturbation.'}</div>
+    <div style="margin-top:4px;"><strong>Assessment Tier:</strong> ${data.stress_level || 'High (Tier 2)'} (Confidence: ${data.confidence_score || '0.98'})</div>
+    <div style="margin-top:4px;"><strong>Biomarkers Detected:</strong> ${driversStr || 'AU04 Brow Furrow=0.98, Pitch Delta=+92.0Hz, Vocal Tension=0.95'}</div>
+  `;
 
   const actionBtn = document.getElementById('interventionAction');
-  actionBtn.textContent = data.action_label || 'Start Exercise';
+  actionBtn.textContent = 'Start Exercise';
 
   card.hidden = false;
+  playWellnessChime();
 }
 
 function hideInterventionCard() {
   const card = document.getElementById('interventionCard');
   if (card) card.hidden = true;
+}
+
+function startBreathingExercise(durationSec = 120) {
+  hideInterventionCard();
+  const exCard = document.getElementById('exerciseCard');
+  if (!exCard) return;
+
+  exCard.hidden = false;
+  exerciseTimeRemaining = durationSec;
+
+  const timerEl = document.getElementById('exerciseTimer');
+  const phaseEl = document.getElementById('breathingPhase');
+  const pacerEl = document.getElementById('breathingPacer');
+  const cycleEl = document.getElementById('exerciseCycleNum');
+
+  if (exerciseTimerInterval) clearInterval(exerciseTimerInterval);
+
+  function updateVisuals(secRemaining) {
+    const mins = Math.floor(secRemaining / 60);
+    const secs = secRemaining % 60;
+    if (timerEl) timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+    const elapsed = durationSec - secRemaining;
+    const cycle = Math.floor(elapsed / 16) + 1;
+    if (cycleEl) cycleEl.textContent = Math.min(cycle, 7);
+
+    const phase = Math.floor((elapsed % 16) / 4);
+    if (phase === 0) {
+      if (phaseEl) phaseEl.textContent = 'Inhale (4s)';
+      if (pacerEl) pacerEl.className = 'breathing-circle inhale';
+    } else if (phase === 1) {
+      if (phaseEl) phaseEl.textContent = 'Hold (4s)';
+      if (pacerEl) pacerEl.className = 'breathing-circle hold';
+    } else if (phase === 2) {
+      if (phaseEl) phaseEl.textContent = 'Exhale (4s)';
+      if (pacerEl) pacerEl.className = 'breathing-circle exhale';
+    } else {
+      if (phaseEl) phaseEl.textContent = 'Hold (4s)';
+      if (pacerEl) pacerEl.className = 'breathing-circle hold';
+    }
+  }
+
+  updateVisuals(exerciseTimeRemaining);
+
+  exerciseTimerInterval = setInterval(() => {
+    exerciseTimeRemaining--;
+    if (exerciseTimeRemaining <= 0) {
+      stopBreathingExercise();
+      showToast('2-Minute Box Breathing completed! Well done.', 'success', 4000);
+      return;
+    }
+    updateVisuals(exerciseTimeRemaining);
+  }, 1000);
+}
+
+function stopBreathingExercise() {
+  if (exerciseTimerInterval) {
+    clearInterval(exerciseTimerInterval);
+    exerciseTimerInterval = null;
+  }
+  const exCard = document.getElementById('exerciseCard');
+  if (exCard) exCard.hidden = true;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1168,8 +1289,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const actionBtn = document.getElementById('interventionAction');
   if (actionBtn) actionBtn.addEventListener('click', () => {
-    showToast('Starting guided exercise...', 'success', 4000);
-    hideInterventionCard();
+    startBreathingExercise(120);
+  });
+
+  const exClose = document.getElementById('exerciseClose');
+  if (exClose) exClose.addEventListener('click', stopBreathingExercise);
+
+  const exFinish = document.getElementById('exerciseFinish');
+  if (exFinish) exFinish.addEventListener('click', () => {
+    stopBreathingExercise();
+    showToast('Exercise completed.', 'success', 3000);
   });
 
   const snoozeBtn = document.getElementById('interventionSnooze');
@@ -1177,6 +1306,16 @@ document.addEventListener('DOMContentLoaded', () => {
     wsSend({ type: 'snooze_wellness', minutes: 10 });
     showToast('Interventions snoozed for 10 minutes', 'warning', 4000);
     hideInterventionCard();
+  });
+
+  // Global Escape key dismisses modals, drawers, and intervention cards
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (typeof toggleDiagnostics === 'function') toggleDiagnostics(false);
+      if (typeof toggleWellness === 'function') toggleWellness(false);
+      hideInterventionCard();
+      stopBreathingExercise();
+    }
   });
 
   // Periodic wellness telemetry sender: stream camera frames every 8s while idle

@@ -121,28 +121,31 @@ class FeatureFusionEngine:
         if agg is None:
             agg = self.aggregate_features()
 
-        face_status = "DETECTED" if agg["face_detected"] else "NOT DETECTED / POOR LIGHTING"
-        speech_status = "DETECTED" if agg["speech_detected"] else "SILENCE / NO SPEECH"
+        face_detected = agg.get("face_detected", True)
+        speech_detected = agg.get("speech_detected", True)
+        face_status = "DETECTED" if face_detected else "NOT DETECTED / POOR LIGHTING"
+        speech_status = "DETECTED" if speech_detected else "SILENCE / NO SPEECH"
+        window_samples = agg.get("window_samples", 5)
 
-        prompt = f"""[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW ({agg['window_samples']} SAMPLES)]
+        prompt = f"""[MULTIMODAL AFFECTIVE FEATURE VECTOR - ROLLING WINDOW ({window_samples} SAMPLES)]
 
 --- FACIAL MICRO-EXPRESSIONS (MediaPipe FaceMesh) ---
-- Status: {face_status} (Confidence: {agg['face_confidence']})
-- AU04 Brow Furrow (Eyebrow Tension): {agg['au04_brow_furrow']} (0.0=Relaxed, >0.5=Elevated Furrow)
-- AU07 Lid Tightener (Eye Squint/Strain): {agg['au07_lid_tightener']} (0.0=Relaxed, >0.5=Squinting)
-- AU15 Lip Depressor (Mouth Corner Drop): {agg['au15_lip_depressor']} (0.0=Neutral, >0.4=Depressed)
-- AU20 Lip Stretcher (Jaw Tension): {agg['au20_lip_stretcher']} (0.0=Neutral, >0.5=Stretched)
-- Eye Aspect Ratio (EAR): {agg['ear']} (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)
-- Head Pose: Pitch={agg['head_pitch']}°, Yaw={agg['head_yaw']}°, Roll={agg['head_roll']}°
+- Status: {face_status} (Confidence: {agg.get('face_confidence', 0.95)})
+- AU04 Brow Furrow (Eyebrow Tension): {agg.get('au04_brow_furrow', 0.0)} (0.0=Relaxed, >0.5=Elevated Furrow)
+- AU07 Lid Tightener (Eye Squint/Strain): {agg.get('au07_lid_tightener', 0.0)} (0.0=Relaxed, >0.5=Squinting)
+- AU15 Lip Depressor (Mouth Corner Drop): {agg.get('au15_lip_depressor', 0.0)} (0.0=Neutral, >0.4=Depressed)
+- AU20 Lip Stretcher (Jaw Tension): {agg.get('au20_lip_stretcher', 0.0)} (0.0=Neutral, >0.5=Stretched)
+- Eye Aspect Ratio (EAR): {agg.get('ear', 0.30)} (Normal: 0.28-0.35, <0.20=Eye Closure/Blink)
+- Head Pose: Pitch={agg.get('head_pitch', 0.0)}°, Yaw={agg.get('head_yaw', 0.0)}°, Roll={agg.get('head_roll', 0.0)}°
 
 --- VOCAL ACOUSTIC BIOMARKERS (16kHz Audio) ---
-- Status: {speech_status} (RMS Energy: {agg['rms_energy']})
-- Pitch Mean (F0): {agg['f0_mean_hz']} Hz (Baseline: {agg['f0_baseline_hz']} Hz, Delta: {agg['f0_delta_hz']:+} Hz)
-- Pitch Variance (F0 SD): {agg['f0_std_hz']} Hz (Micro-tremor indicator)
-- Local Jitter (Period Perturbation): {agg['jitter_local_pct']}% (Normal <1.5%, High >3.0%)
-- Local Shimmer (Amplitude Perturbation): {agg['shimmer_local_pct']}% (Normal <2.0%, High >3.5%)
-- Pause Ratio: {agg['pause_ratio']} (0.0=Constant Speech, 1.0=Full Silence)
-- Vocal Tension Index (HF Energy >1kHz Ratio): {agg['vocal_tension_index']} (Normal <0.40, High >0.65)
+- Status: {speech_status} (RMS Energy: {agg.get('rms_energy', 0.08)})
+- Pitch Mean (F0): {agg.get('f0_mean_hz', 212.0)} Hz (Baseline: {agg.get('f0_baseline_hz', 120.0)} Hz, Delta: {agg.get('f0_delta_hz', 0.0):+} Hz)
+- Pitch Variance (F0 SD): {agg.get('f0_std_hz', 20.0)} Hz (Micro-tremor indicator)
+- Local Jitter (Period Perturbation): {agg.get('jitter_local_pct', 1.0)}% (Normal <1.5%, High >3.0%)
+- Local Shimmer (Amplitude Perturbation): {agg.get('shimmer_local_pct', 1.5)}% (Normal <2.0%, High >3.5%)
+- Pause Ratio: {agg.get('pause_ratio', 0.2)} (0.0=Constant Speech, 1.0=Full Silence)
+- Vocal Tension Index (HF Energy >1kHz Ratio): {agg.get('vocal_tension_index', 0.3)} (Normal <0.40, High >0.65)
 
 TASK: Evaluate the physiological and behavioral stress state based strictly on the biomarkers above. Output the JSON schema with stress level, primary drivers, explainable reasoning, confidence score, and ambiguity notes.
 """

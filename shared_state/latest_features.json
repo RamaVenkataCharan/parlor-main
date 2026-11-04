@@ -1,5 +1,5 @@
 {
-  "timestamp": 1793728136.3877695,
+  "timestamp": 1793772357.2469907,
   "face": {
     "face_detected": false,
     "au04_brow_furrow": 0.0,
@@ -10,12 +10,12 @@
     "confidence": 0.0
   },
   "audio": {
-    "voice_detected": true,
-    "pitch_delta": 64.1,
-    "pitch_variance": 39.9,
-    "jitter": 6.22,
-    "shimmer": 15.02,
-    "pause_ratio": 0.42,
-    "vocal_tension": 0.156
+    "voice_detected": false,
+    "pitch_delta": 0.0,
+    "pitch_variance": 0.0,
+    "jitter": 0.0,
+    "shimmer": 0.0,
+    "pause_ratio": 1.0,
+    "vocal_tension": 0.0
   }
 }

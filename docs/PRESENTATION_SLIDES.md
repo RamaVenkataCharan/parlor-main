@@ -164,10 +164,17 @@
 
 ---
 
-### Slide 14: Privacy Architecture & Local Network Audit
+### Slide 14: Privacy Architecture & Browser DevTools Audit (B1–B12)
 - **Zero Outbound Data Transmission:** Socket inspection confirmed **0.00 KB** outbound network traffic during live operation.
 - **Strict Local Loopback:** Binds strictly to `127.0.0.1:8000` (FastAPI) and `127.0.0.1:8081` (`llama-server`).
-- **Vendored Offline VAD:** Local Silero VAD (`ort.js`, `silero_vad.onnx`, `vad.worklet.bundle.min.js`) completely removes external CDN dependencies (`cdn.jsdelivr.net` removed).
+- **Vendored Offline VAD & Clean HAR:** Vendored Silero VAD and removed Google Fonts CDN leak. Verified 100% offline air-gapped execution via session HAR export (`evidence/browser/session_privacy.har`).
+- **Browser Performance & Reliability (B1–B12):**
+  - Clean page load in **0.887 s** with 0 console errors.
+  - Single-session WebSocket policy (Code 4001 rejects concurrent tab without reconnect loops).
+  - Watchdog respawn latency: **6.21 s mean** across 3 mid-session kill trials.
+  - UI frame rate: **60.2 FPS** (1x) and **60.0 FPS** (4x CPU throttle), zero frame drops below 30 FPS.
+  - Client storage audit: **0.00 KB** biometric data retained in localStorage or IndexedDB.
+  - Live model card proof: 3 cycles of Vector B07_V10 $\rightarrow$ Tier 2 card, driver chips, 2-min box breathing UI countdown timer, snooze 10m, mute toggle, sensitivity switching, and cooldown blocking.
 - **Data Ephemerality:** Raw video frames and audio buffers are processed in volatile memory and immediately discarded. Only anonymized scalar feature vectors and clinical reasoning strings are stored in local SQLite.
 
 ---

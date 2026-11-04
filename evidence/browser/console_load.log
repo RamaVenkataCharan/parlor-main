@@ -1,0 +1,46 @@
+===========================================================================
+   PARLOR B1 AUDIT: PAGE LOAD & CONSOLE INTEGRITY LOG
+   Date / Timestamp: 2026-11-04 05:37:34 UTC
+   Target URL      : http://127.0.0.1:8000
+   Total Messages  : 36
+   Errors          : 0
+   Warnings        : 0
+===========================================================================
+
+--- CONSOLE ENTRIES ---
+[LOG    ] app.js:732 -> [MIC DEVICE] Label: "Fake Default Audio Input", Enabled: true, Muted: false, State: live {autoGainControl: true, channelCount: 1, deviceId: default, echoCancellation: true, groupId: 96e62990eea79d0929e7ab33116decfec40be045838b1bea83a93a6d09bf2d91}
+[LOG    ] app.js:245 -> [STATE] loading -> listening
+[LOG    ] bundle.min.js:1 -> VAD | debug > initializing vad
+[LOG    ] app.js:245 -> [STATE] listening -> listening
+[LOG    ] bundle.min.js:1 -> VAD | debug > vad is initialized
+[LOG    ] bundle.min.js:1 -> VAD | debug > initializing micVAD
+[LOG    ] bundle.min.js:1 -> VAD | debug > started micVAD
+[LOG    ] app.js:245 -> [STATE] listening -> listening
+[LOG    ] app.js:1126 -> VAD initialized
+[LOG    ] app.js:803 -> [MIC METER] Frame #1 | RMS Vol: 0.2190 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #2 | RMS Vol: 0.0263 | SpeechProb: 0.002 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #6 | RMS Vol: 0.0441 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #7 | RMS Vol: 0.2080 | SpeechProb: 0.010 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #12 | RMS Vol: 0.2149 | SpeechProb: 0.022 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #13 | RMS Vol: 0.0073 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #17 | RMS Vol: 0.2148 | SpeechProb: 0.020 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #18 | RMS Vol: 0.0111 | SpeechProb: 0.003 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #22 | RMS Vol: 0.2139 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #23 | RMS Vol: 0.0206 | SpeechProb: 0.002 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #27 | RMS Vol: 0.1948 | SpeechProb: 0.002 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #28 | RMS Vol: 0.0904 | SpeechProb: 0.003 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #30 | RMS Vol: 0.0004 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #33 | RMS Vol: 0.2146 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #34 | RMS Vol: 0.0054 | SpeechProb: 0.006 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:330 -> [STAGE 1] [WS SEND] set_wellness_sensitivity payload size: 60
+[LOG    ] app.js:383 -> [WS RECV] wellness_sensitivity_changed {type: wellness_sensitivity_changed, sensitivity: balanced}
+[LOG    ] app.js:330 -> [STAGE 1] [WS SEND] set_wellness_mute payload size: 42
+[LOG    ] app.js:383 -> [WS RECV] wellness_mute_changed {type: wellness_mute_changed, muted: false}
+[LOG    ] app.js:803 -> [MIC METER] Frame #38 | RMS Vol: 0.2145 | SpeechProb: 0.012 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #39 | RMS Vol: 0.0083 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #43 | RMS Vol: 0.2143 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #44 | RMS Vol: 0.0121 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #48 | RMS Vol: 0.2131 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #49 | RMS Vol: 0.0249 | SpeechProb: 0.004 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #53 | RMS Vol: 0.1721 | SpeechProb: 0.007 | Thresh: 0.5 | State: listening
+[LOG    ] app.js:803 -> [MIC METER] Frame #54 | RMS Vol: 0.1281 | SpeechProb: 0.005 | Thresh: 0.5 | State: listening

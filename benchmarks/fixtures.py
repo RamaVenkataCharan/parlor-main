@@ -172,6 +172,19 @@ FIXTURES = {
         "Can you give me a one minute timer for the tea?",
         ["timer"],
     ),
+    # One-off translation request: asks how to say a word — should NOT switch
+    # to translate mode (the user is asking a question, not requesting live
+    # interpretation of everything they say).
+    "one_off_translation": (
+        "How do I say hello in French?",
+        ["french", "hello"],
+    ),
+    # Live-info question: should elicit a "can't look that up" response when
+    # Research Mode is off (CAPABILITY_NOTE governs this).
+    "live_info_question": (
+        "What is the weather like in London right now?",
+        ["weather", "london"],
+    ),
 }
 
 # Synthesis kwargs (see _synthesize) for base fixtures that need them.

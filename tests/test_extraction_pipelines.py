@@ -99,7 +99,17 @@ def test_no_media_written_to_disk(tmp_path):
              patch.object(service, "_call_slm_reasoning", return_value=mock_slm_output):
             await service.step_cycle()
 
-    asyncio.run(_run_wellness_cycle())
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            pool.submit(asyncio.run, _run_wellness_cycle()).result()
+    else:
+        asyncio.run(_run_wellness_cycle())
 
     # 4. Check for any newly created media files across the workspace and temp dir
     media_after = {

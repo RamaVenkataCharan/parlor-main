@@ -113,9 +113,19 @@ class WellnessService:
             "face_detected", "confidence", "au04_brow_furrow",
             "au07_lid_tightener", "au15_lip_depressor",
             "au20_lip_stretcher", "ear", "head_pitch", "head_yaw",
-            "head_roll", "latency_ms",
+            "head_roll", "mesh_points", "latency_ms",
         )
         latest = self._latest_face_res or {}
+        return {key: latest.get(key) for key in fields}
+
+    def get_vocal_snapshot(self) -> Dict[str, Any]:
+        """Return only the latest compact vocal-feature vector for the local UI."""
+        fields = (
+            "speech_detected", "rms_energy", "f0_mean_hz",
+            "f0_std_hz", "jitter_local", "shimmer_local",
+            "pause_ratio", "vocal_tension_index", "latency_ms",
+        )
+        latest = self._latest_vocal_res or {}
         return {key: latest.get(key) for key in fields}
 
     def feed_audio(self, audio_data: Any) -> None:

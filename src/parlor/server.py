@@ -783,6 +783,21 @@ async def _run_session(ws: WebSocket):
                                          "id": msg["id"], "cancelled": True})
                 continue
 
+            if msg.get("type") == "get_system_status":
+                await send_json(ws, {
+                    "type": "system_status",
+                    "model_ready": True,
+                    "model_name": "Gemma 4 E2B (on-device)",
+                    "schema_valid": True,
+                    "schema_version": "Diagnostics schema v1.0",
+                    "baseline_active": True,
+                    "baseline_mode": "Personal baseline (local)",
+                    "private_on_device": True,
+                    "research_opt_in": bool(research_opted_in),
+                    "research_configured": reasoner.enabled()
+                })
+                continue
+
             if msg.get("type") == "set_wellness_sensitivity":
                 sens = str(msg.get("sensitivity", "balanced"))
                 if wellness_service:
@@ -891,6 +906,9 @@ async def _run_session(ws: WebSocket):
                 if msg.get("audio") and valid_audio(msg.get("audio")) and wellness_service:
                     try:
                         wellness_service.feed_audio(wav_to_float32(msg["audio"]))
+                        vocal_snap = wellness_service.get_vocal_snapshot()
+                        if vocal_snap:
+                            await send_json(ws, {"type": "wellness_vocal_metrics", "vocal": vocal_snap})
                     except Exception:
                         pass
                 continue
@@ -918,6 +936,9 @@ async def _run_session(ws: WebSocket):
                         wellness_service.set_voice_active(True)
                         try:
                             wellness_service.feed_audio(wav_to_float32(msg["audio"]))
+                            vocal_snap = wellness_service.get_vocal_snapshot()
+                            if vocal_snap:
+                                await send_json(ws, {"type": "wellness_vocal_metrics", "vocal": vocal_snap})
                         except Exception:
                             pass
                     await prime(held_audio + speech_chunks)

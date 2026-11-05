@@ -17,6 +17,18 @@ from parlor.wellness import WellnessService
 from parlor import db, triggers, interventions
 
 
+def _run_async(coro):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor() as pool:
+            return pool.submit(asyncio.run, coro).result()
+    return asyncio.run(coro)
+
+
 def test_insufficient_signal_honesty(tmp_path):
     """Verify system remains silent and honest when neither face nor audio is detected."""
     async def _test():
@@ -39,7 +51,7 @@ def test_insufficient_signal_honesty(tmp_path):
             assert latest["confidence"] == 0.0
             assert "no_signals" in str(latest["metadata"])
 
-    asyncio.run(_test())
+    _run_async(_test())
 
 
 def test_graceful_degradation_when_slm_offline(tmp_path):
@@ -63,7 +75,7 @@ def test_graceful_degradation_when_slm_offline(tmp_path):
             assert res2 is None
             assert service._consecutive_slm_errors == 2  # Still alive, did not crash
 
-    asyncio.run(_test())
+    _run_async(_test())
 
 
 def test_consecutive_stress_triggers_intervention(tmp_path):
@@ -132,7 +144,7 @@ def test_consecutive_stress_triggers_intervention(tmp_path):
             assert latest_record["intervention_fired"] == 1
             assert latest_record["numeric_score"] == 2.0
 
-    asyncio.run(_test())
+    _run_async(_test())
 
 
 def test_sensitivity_modes_and_mute():

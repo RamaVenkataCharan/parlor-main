@@ -41,6 +41,22 @@ class FacialExtractor:
     # Eyebrow Inner Left: 70, Right: 300
     # Mouth Left: 61, Right: 291, Top: 13, Bottom: 14, Nose Tip: 1
 
+    # Key landmark indices (canonical MediaPipe Face Mesh schema) for subtle visual overlay
+    KEY_MESH_INDICES = [
+        # Face contour / perimeter
+        10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
+        400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21,
+        54, 103, 67, 109,
+        # Left & right eyebrows
+        70, 63, 105, 66, 107, 336, 296, 334, 293, 300,
+        # Eyes
+        33, 160, 158, 133, 153, 144, 362, 385, 387, 263, 373, 380,
+        # Nose bridge & tip
+        168, 6, 197, 195, 5, 4, 1, 19, 94, 2,
+        # Lips
+        61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146,
+    ]
+
     def __init__(self, max_faces: int = 1, min_detection_confidence: float = 0.5):
         self.mp_available = MP_AVAILABLE
         self.face_mesh = None
@@ -96,6 +112,7 @@ class FacialExtractor:
             "head_pitch": 0.0,
             "head_yaw": 0.0,
             "head_roll": 0.0,
+            "mesh_points": [],
             "latency_ms": 0.0
         }
 
@@ -201,6 +218,12 @@ class FacialExtractor:
                 angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
                 pitch, yaw, roll = float(angles[0]), float(angles[1]), float(angles[2])
 
+            mesh_points = [
+                [round(landmarks[idx].x, 3), round(landmarks[idx].y, 3)]
+                for idx in self.KEY_MESH_INDICES
+                if idx < len(landmarks)
+            ]
+
             latency = round((time.time() - t0) * 1000, 2)
             return {
                 "face_detected": True,
@@ -213,6 +236,7 @@ class FacialExtractor:
                 "head_pitch": round(pitch, 2),
                 "head_yaw": round(yaw, 2),
                 "head_roll": round(roll, 2),
+                "mesh_points": mesh_points,
                 "latency_ms": latency
             }
         except Exception as e:

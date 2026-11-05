@@ -32,3 +32,11 @@ default.profraw
 .idea/
 .vscode/
 .env
+
+# Personal data and runtime databases
+shared_state/wellness_history.db
+shared_state/*.db
+
+# Evidence artifacts that may contain session data
+evidence/browser/session_privacy.har
+evidence/*.har

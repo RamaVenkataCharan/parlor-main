@@ -12,7 +12,7 @@
 <header>
   <div class="logo">
     <div class="logo-mark"></div>
-    <h1>Parlor</h1>
+    <div class="logo-copy"><h1>Parlor</h1><span class="brand-caption">EMOTIONAL WELLNESS ASSISTANT</span></div>
   </div>
   <div class="header-right">
     <label class="demo-toggle-wrap" title="Toggle Demo Mode (Injects simulated stress biomarkers)">
@@ -142,7 +142,7 @@
     <div id="cameraPlaceholder" class="camera-placeholder">
       <div class="placeholder-icon">📷</div>
       <div id="placeholderTitle" class="placeholder-title">Webcam Monitoring</div>
-      <div id="placeholderSubtext" class="placeholder-subtext">Allow camera and microphone access when prompted by your browser to enable live stress and fatigue tracking.</div>
+      <div id="placeholderSubtext" class="placeholder-subtext">Start a private session to read facial movement and voice cues. Pause the camera whenever you like.</div>
     </div>
   </div>
 
@@ -165,11 +165,52 @@
       <div id="stateDot" class="dot loading"></div>
       <span id="stateText">Loading...</span>
     </div>
-    <span class="on-device-pill" title="100% Local On-Device Edge Execution — Zero Cloud Telemetry">
+    <span class="on-device-pill" title="Face, voice, and reasoning run locally. Research mode can contact an external service only when enabled.">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       On-device
     </span>
   </div>
+
+  <aside class="signal-rail" aria-label="Facial signal details">
+    <section class="signal-panel face-signal-panel" aria-labelledby="faceSignalHeading">
+      <div class="signal-panel-head">
+        <div>
+          <div class="rail-eyebrow">LOCAL FEATURE MAP</div>
+          <h2 id="faceSignalHeading">Face signals</h2>
+        </div>
+        <span class="model-tag">478 <small>POINT MESH</small></span>
+      </div>
+      <div class="face-map" aria-hidden="true">
+        <svg viewBox="0 0 240 178" role="presentation">
+          <defs><linearGradient id="meshStroke" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#79efc6"/><stop offset=".55" stop-color="#80bdff"/><stop offset="1" stop-color="#b19aff"/></linearGradient></defs>
+          <path class="mesh-outline" d="M120 17c-35 0-61 24-61 62v20c0 33 23 61 61 66 38-5 61-33 61-66V79c0-38-26-62-61-62Z"/>
+          <path class="mesh-line" d="M64 76 91 62l29-6 29 6 27 14M65 86l28 4 27-2 27 2 28-4M83 121l37 4 37-4M100 147l20 4 20-4M120 56v95M91 62l29 25 29-25M93 90l27 31 27-31M82 121l38-34 38 34"/>
+          <path class="mesh-brow" d="M76 74c12-8 24-9 37-3m14 0c13-6 25-5 37 3"/>
+          <path class="mesh-eye" d="M76 90c10-8 23-8 33 0-10 8-23 8-33 0Zm39 0c10-8 23-8 33 0-10 8-23 8-33 0Z"/>
+          <path class="mesh-mouth" d="M99 122c13-5 29-5 42 0-12 11-30 11-42 0Z"/>
+          <g class="mesh-points"><circle cx="91" cy="62" r="2"/><circle cx="120" cy="56" r="2.2"/><circle cx="149" cy="62" r="2"/><circle cx="76" cy="74" r="2"/><circle cx="113" cy="71" r="2"/><circle cx="127" cy="71" r="2"/><circle cx="164" cy="74" r="2"/><circle cx="76" cy="90" r="2"/><circle cx="109" cy="90" r="2"/><circle cx="115" cy="90" r="2"/><circle cx="148" cy="90" r="2"/><circle cx="120" cy="105" r="2"/><circle cx="99" cy="122" r="2"/><circle cx="120" cy="126" r="2"/><circle cx="141" cy="122" r="2"/><circle cx="100" cy="147" r="2"/><circle cx="120" cy="151" r="2"/><circle cx="140" cy="147" r="2"/></g>
+        </svg>
+        <span class="map-label brow-label">BROW</span><span class="map-label eye-label">EYE</span><span class="map-label mouth-label">MOUTH</span>
+      </div>
+      <div id="faceRailStatus" class="face-rail-status waiting"><i></i><span>Waiting for camera frames</span></div>
+      <div class="face-feature-list">
+        <div class="face-feature"><div class="feature-meta"><span class="feature-code">AU04</span><span class="feature-name">Brow furrow</span><span id="faceAU04Value" class="feature-value">—</span></div><div class="feature-track"><i id="faceAU04Bar"></i></div></div>
+        <div class="face-feature"><div class="feature-meta"><span class="feature-code">AU07</span><span class="feature-name">Lid tightening</span><span id="faceAU07Value" class="feature-value">—</span></div><div class="feature-track"><i id="faceAU07Bar"></i></div></div>
+        <div class="face-feature"><div class="feature-meta"><span class="feature-code">AU15</span><span class="feature-name">Lip depression</span><span id="faceAU15Value" class="feature-value">—</span></div><div class="feature-track"><i id="faceAU15Bar"></i></div></div>
+        <div class="face-feature"><div class="feature-meta"><span class="feature-code">AU20</span><span class="feature-name">Lip stretch</span><span id="faceAU20Value" class="feature-value">—</span></div><div class="feature-track"><i id="faceAU20Bar"></i></div></div>
+      </div>
+      <div class="pose-readout"><span>HEAD POSE</span><strong id="facePoseValue">P —° &nbsp; Y —° &nbsp; R —°</strong></div>
+      <p class="signal-caveat">Movement cues vary by person and lighting. They are not an emotion label or diagnosis.</p>
+    </section>
+
+    <section class="signal-panel fusion-panel" aria-labelledby="fusionHeading">
+      <div class="signal-panel-head compact-head"><div><div class="rail-eyebrow">HOW PARLOR CHECKS IN</div><h2 id="fusionHeading">Signal fusion</h2></div><span class="local-chip"><i></i> LOCAL</span></div>
+      <div class="fusion-step"><span class="fusion-icon face-icon">⌁</span><div><strong>Facial movement</strong><small>Brow · eyelids · lips · head pose</small></div><span id="faceFusionState" class="fusion-state">IDLE</span></div>
+      <div class="fusion-step"><span class="fusion-icon voice-icon">∿</span><div><strong>Voice features</strong><small>Pitch · pace · steadiness</small></div><span id="voiceFusionState" class="fusion-state">STARTING</span></div>
+      <div class="fusion-step"><span class="fusion-icon reason-icon">✳</span><div><strong>Local reasoning</strong><small>Explains patterns against baseline</small></div><span id="reasonFusionState" class="fusion-state">IDLE</span></div>
+      <div class="fusion-note"><span>i</span><p>Parlor waits for enough signal and keeps camera processing on your device.</p></div>
+    </section>
+  </aside>
 </div>
 
 <script src="/static/vendor/ort.min.js"></script>

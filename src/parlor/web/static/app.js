@@ -16,6 +16,8 @@ let ws, mediaStream, myvad;
 let diagnosticsBound = false;
 let wellnessControlsBound = false;
 let cameraEnabled = true;
+let lastFaceSnapshotAt = 0;
+let lastFaceDetectionState = null;
 let audioCtx;
 let state = 'loading';
 let ignoreIncomingAudio = false;
@@ -65,7 +67,93 @@ function showToast(message, type = 'warning', durationMs = 6000) {
   return toast;
 }
 
+function setFaceRailStatus(kind, label) {
+  const status = document.getElementById('faceRailStatus');
+  if (!status) return;
+  status.className = `face-rail-status ${kind}`;
+  const text = status.querySelector('span');
+  if (text) text.textContent = label;
+}
+
+function clearFaceMetrics() {
+  lastFaceSnapshotAt = 0;
+  lastFaceDetectionState = null;
+  for (const key of ['AU04', 'AU07', 'AU15', 'AU20']) {
+    const value = document.getElementById(`face${key}Value`);
+    const bar = document.getElementById(`face${key}Bar`);
+    if (value) value.textContent = '—';
+    if (bar) bar.style.width = '0%';
+  }
+  const pose = document.getElementById('facePoseValue');
+  if (pose) pose.textContent = 'P —°  Y —°  R —°';
+}
+
+function updateFaceMetrics(face, simulated = false) {
+  if (!face || !face.face_detected) {
+    clearFaceMetrics();
+    lastFaceSnapshotAt = Date.now();
+    lastFaceDetectionState = 'no-face';
+    setFaceRailStatus('no-face', cameraEnabled ? 'Face not detected · adjust position' : 'Camera paused');
+    return;
+  }
+
+  lastFaceSnapshotAt = Date.now();
+  lastFaceDetectionState = 'face';
+  const fields = [
+    ['AU04', face.au04_brow_furrow],
+    ['AU07', face.au07_lid_tightener],
+    ['AU15', face.au15_lip_depressor],
+    ['AU20', face.au20_lip_stretcher],
+  ];
+  for (const [key, raw] of fields) {
+    const value = Number(raw);
+    const score = Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value * 100))) : null;
+    const valueEl = document.getElementById(`face${key}Value`);
+    const bar = document.getElementById(`face${key}Bar`);
+    if (valueEl) valueEl.textContent = score === null ? '—' : `${score}%`;
+    if (bar) bar.style.width = `${score ?? 0}%`;
+  }
+  const pose = document.getElementById('facePoseValue');
+  if (pose) {
+    const degrees = (value) => Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°` : '—°';
+    pose.textContent = `P ${degrees(face.head_pitch)}  Y ${degrees(face.head_yaw)}  R ${degrees(face.head_roll)}`;
+  }
+  setFaceRailStatus(simulated || demoModeActive ? 'demo' : 'active', simulated || demoModeActive ? 'Simulated sample · demo mode' : 'Local face features · updated now');
+}
+
+function updateFaceRailStatus() {
+  const voice = document.getElementById('voiceFusionState');
+  const face = document.getElementById('faceFusionState');
+  const reason = document.getElementById('reasonFusionState');
+  const videoReady = Boolean(mediaStream && mediaStream.getVideoTracks().some(track => track.readyState === 'live'));
+  const audioReady = Boolean(mediaStream && mediaStream.getAudioTracks().some(track => track.readyState === 'live' && track.enabled));
+
+  if (voice) voice.textContent = audioReady ? (myvad ? 'READY' : 'STARTING') : 'PAUSED';
+  if (reason) reason.textContent = state === 'processing' ? 'RUNNING' : (wsOpen() ? 'READY' : 'OFFLINE');
+  if (face) face.textContent = demoModeActive ? 'DEMO' : (cameraEnabled && videoReady ? 'ACTIVE' : 'IDLE');
+
+  if (demoModeActive) {
+    setFaceRailStatus('demo', 'Simulated sample · demo mode');
+  } else if (!cameraEnabled || !videoReady) {
+    if (lastFaceSnapshotAt) clearFaceMetrics();
+    setFaceRailStatus('paused', 'Camera paused');
+  } else if (!wsOpen()) {
+    setFaceRailStatus('waiting', 'Waiting for local service');
+  } else if (!lastFaceSnapshotAt) {
+    setFaceRailStatus('waiting', 'Waiting for camera frames');
+  } else {
+    const age = Math.max(0, Math.floor((Date.now() - lastFaceSnapshotAt) / 1000));
+    if (age > 20) {
+      clearFaceMetrics();
+      setFaceRailStatus('waiting', 'Waiting for a fresh frame');
+    }
+    else if (lastFaceDetectionState === 'no-face') setFaceRailStatus('no-face', 'Face not detected · adjust position');
+    else setFaceRailStatus('active', `Local face features · ${age}s ago`);
+  }
+}
+
 function updateDiagnostics() {
+  updateFaceRailStatus();
   if (!diagMic) return;
   // Mic
   if (!mediaStream || !mediaStream.getAudioTracks().length) {
@@ -468,6 +556,10 @@ function connect() {
       }
       return;
     }
+    if (msg.type === 'wellness_face_metrics') {
+      if (!demoModeActive) updateFaceMetrics(msg.face || {});
+      return;
+    }
     if (msg.type === 'intervention_triggered') {
       showInterventionCard(msg.intervention);
       return;
@@ -559,7 +651,20 @@ function connect() {
       }
     } else if (msg.type === 'research_opt_in_changed') {
       const toggle = $('researchOptInToggle');
-      if (toggle) toggle.checked = Boolean(msg.enabled);
+      if (toggle) {
+        toggle.checked = Boolean(msg.enabled);
+        // If the server reports no API key is configured, disable the toggle
+        // and update the sublabel so the user knows why it stays off.
+        const configured = msg.configured !== false; // absent → assume configured (back-compat)
+        toggle.disabled = !configured;
+        const row = toggle.closest('.diag-row') || toggle.parentElement;
+        const sublabel = row && row.querySelector('.diag-sublabel');
+        if (sublabel) {
+          sublabel.textContent = configured
+            ? 'Sends spoken queries to external API for live web answers (Off by default)'
+            : 'No API key configured — research mode unavailable';
+        }
+      }
     }
   };
 }
@@ -798,6 +903,7 @@ async function startCamera() {
   } catch (e) {
     console.warn('Video+audio getUserMedia failed, attempting audio-only fallback:', e.message);
     cameraEnabled = false;
+      updateFaceRailStatus();
     if (placeholder) {
       placeholder.classList.remove('hidden');
       if (placeholderTitle) placeholderTitle.textContent = 'Camera Inactive (Voice Mode)';
@@ -1151,6 +1257,8 @@ $('modeStop').addEventListener('click', () => {
 
 cameraToggle.addEventListener('click', () => {
   cameraEnabled = !cameraEnabled;
+  if (!cameraEnabled && demoModeActive) updateFaceMetrics(DEMO_VECTOR_B07_V10, true);
+  else if (!cameraEnabled) clearFaceMetrics();
   cameraToggle.classList.toggle('active', cameraEnabled);
   cameraToggle.textContent = cameraEnabled ? 'Camera On' : 'Camera Off';
   video.style.opacity = cameraEnabled ? 1 : 0.3;
@@ -1166,6 +1274,7 @@ cameraToggle.addEventListener('click', () => {
       placeholder.classList.add('hidden');
     }
   }
+  updateFaceRailStatus();
 });
 
 // ── Init ──
@@ -1299,6 +1408,8 @@ function bindDemoModeControls() {
   demoToggle.addEventListener('change', (e) => {
     demoModeActive = e.target.checked;
     if (simBadge) simBadge.hidden = !demoModeActive;
+    if (demoModeActive) updateFaceMetrics(DEMO_VECTOR_B07_V10, true);
+    else { clearFaceMetrics(); updateFaceRailStatus(); }
 
     wsSend({ type: 'set_demo_mode', enabled: demoModeActive });
 
@@ -1450,6 +1561,7 @@ document.addEventListener('DOMContentLoaded', () => {
   bindDiagnosticsControls();
   bindWellnessControls();
   bindDemoModeControls();
+  setInterval(updateFaceRailStatus, 3000);
 
   const closeBtn = document.getElementById('interventionClose');
   if (closeBtn) closeBtn.addEventListener('click', hideInterventionCard);

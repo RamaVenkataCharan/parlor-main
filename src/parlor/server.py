@@ -74,7 +74,10 @@ CAPABILITY_NOTE = (
     "asks for one of these, confirm it in one short natural sentence — a "
     "separate system watches the conversation and actually performs it, "
     "so never say you can't, and never invent its results. "
-    "Answer greetings, chat, and general knowledge questions directly and completely yourself from memory."
+    "Answer greetings, chat, and general knowledge questions directly and completely yourself from memory. "
+    "If the user asks about anything current or changing — today's weather, live prices, "
+    "breaking news, or current scores — tell them honestly that you cannot look that up "
+    "right now and they should check a live source."
 )
 
 # Appended only when a reasoner endpoint is configured (.env REASONER_*):
@@ -102,7 +105,7 @@ TRANSLATE_PROMPT = (
     "followed by the exact words the user said in this message's audio, in "
     "their original language. Then, on a new line, write ONLY the English "
     "translation or restatement of those words. Write exactly ONE sentence and STOP. "
-    "Never answer questions, provide answers, or offer commentary (for example, if the user asks \"What is the capital of France?\", restate \"What is the capital of France?\", never say \"Paris\"). "
+    "Never answer questions, provide answers, or offer commentary (for example, if the user says \"Tell me about the weather today\", restate \"Tell me about the weather today\", do not answer it). "
     "If they already spoke English, restate their question or words in clear English without answering it. "
     "If the audio has no clear words, write ###TRANSCRIPT: (no speech) "
     "and nothing else."
@@ -810,15 +813,19 @@ async def _run_session(ws: WebSocket):
 
             if msg.get("type") == "set_research_opt_in":
                 opt_in = bool(msg.get("enabled", False))
-                research_opted_in = opt_in and reasoner.enabled()
+                is_configured = reasoner.enabled()
+                research_opted_in = opt_in and is_configured
                 delegation = research_opted_in
                 clock = time.strftime("%A at %I:%M %p").replace(" 0", " ")
                 system = (SYSTEM_PROMPT + SESSION_CLOCK.format(clock=clock)
                           + CAPABILITY_NOTE + (RESEARCH_NOTE if delegation else ""))
                 if history and history[0].get("role") == "system":
                     history[0]["content"] = system
-                print(f"[RESEARCH MODE] User opt-in {'ENABLED' if delegation else 'DISABLED'}")
-                await send_json(ws, {"type": "research_opt_in_changed", "enabled": delegation})
+                print(f"[RESEARCH MODE] User opt-in {'ENABLED' if delegation else 'DISABLED'} "
+                      f"(configured={is_configured})")
+                await send_json(ws, {"type": "research_opt_in_changed",
+                                     "enabled": delegation,
+                                     "configured": is_configured})
                 continue
 
             if msg.get("type") == "set_demo_mode":
@@ -878,6 +885,9 @@ async def _run_session(ws: WebSocket):
             if msg.get("type") == "wellness_telemetry":
                 if msg.get("image") and wellness_service:
                     wellness_service.feed_frame(msg["image"])
+                    face_snap = wellness_service.get_face_snapshot()
+                    if face_snap:
+                        await send_json(ws, {"type": "wellness_face_metrics", "face": face_snap})
                 if msg.get("audio") and valid_audio(msg.get("audio")) and wellness_service:
                     try:
                         wellness_service.feed_audio(wav_to_float32(msg["audio"]))
@@ -889,6 +899,9 @@ async def _run_session(ws: WebSocket):
                 if msg.get("image"):
                     if wellness_service:
                         wellness_service.feed_frame(msg["image"])
+                        face_snap = wellness_service.get_face_snapshot()
+                        if face_snap:
+                            await send_json(ws, {"type": "wellness_face_metrics", "face": face_snap})
                     if mode.wants_camera:
                         frame_image = msg["image"]
                         speech_chunks = []

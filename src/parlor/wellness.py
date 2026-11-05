@@ -107,6 +107,17 @@ class WellnessService:
         except Exception as e:
             print(f"[WELLNESS] Error extracting facial features: {e}")
 
+    def get_face_snapshot(self) -> Dict[str, Any]:
+        """Return only the latest compact face-feature vector for the local UI."""
+        fields = (
+            "face_detected", "confidence", "au04_brow_furrow",
+            "au07_lid_tightener", "au15_lip_depressor",
+            "au20_lip_stretcher", "ear", "head_pitch", "head_yaw",
+            "head_roll", "latency_ms",
+        )
+        latest = self._latest_face_res or {}
+        return {key: latest.get(key) for key in fields}
+
     def feed_audio(self, audio_data: Any) -> None:
         """Ingest live audio PCM chunk from WebSocket."""
         try:

@@ -308,7 +308,7 @@ Place: [City Placeholder]</p>
 <li><strong>Speech Cadence &amp; Pause Ratios:</strong> Under acute cognitive demand, speech rate accelerates while pause duration ratios become erratic.</li>
 </ul>
 <h3>2.4 Evolution of Edge AI and Small Language Models (SLMs)</h3>
-<p>Historically, qualitative clinical reasoning required large foundational models hosted in centralized datacenters. However, recent breakthroughs in model architecture, quantization techniques (such as <code>llama.cpp</code> GGML/GGUF quantization), and compact architectures—exemplified by Google's <strong>Gemma</strong> family (Gemma Team, 2024) and Meta's <strong>Llama 3</strong> (AI@Meta, 2024)—demonstrate that 2-billion to 4-billion parameter models can perform sophisticated structured reasoning locally on consumer GPUs. Constraining model outputs via context-free grammar-forced JSON schemas guarantees deterministic output parsing, making SLMs practical for safety-critical background control loops.</p>
+<p>Historically, qualitative clinical reasoning required large foundational models hosted in centralized datacenters. However, recent breakthroughs in model architecture, quantization techniques (such as <code>llama.cpp</code> GGML/GGUF quantization), and compact architectures—exemplified by Google's <strong>Gemma</strong> family (Gemma Team, 2024) and Meta's <strong>Llama 3</strong> (AI@Meta, 2024)—demonstrate that 2-billion to 4-billion parameter models can perform sophisticated structured reasoning locally on consumer GPUs. Requesting JSON output via schema, while the parser tolerates extra text before the JSON object, makes SLMs practical for safety-critical background control loops.</p>
 <h3>2.5 Ecological Momentary Assessment (EMA) Methodologies</h3>
 <p>Laboratory stress studies frequently utilize standardized stressors such as the Trier Social Stress Test (TSST) or the Stroop color-word interference task. However, laboratory affect often fails to generalize to naturalistic office environments. Ecological Momentary Assessment (EMA) addresses this ecological validity gap by collecting real-time, in-situ self-reports immediately following active task windows (Stone &amp; Shiffman, 1994). Mapping continuous Likert ratings to discrete ordinal stress tiers establishes an objective ground truth for validating automated affect recognition systems.</p>
 <hr />
@@ -549,7 +549,7 @@ Intervention cards display the clinical reasoning and allow expanding an <em>&qu
 <td style="text-align:left"><strong>Action Decider</strong></td>
 <td style="text-align:left"><code>src/parlor/actions.py</code></td>
 <td style="text-align:center">185</td>
-<td style="text-align:left">Grammar-forced JSON action routing (mode switches, timers, delegation).</td>
+<td style="text-align:left">JSON action routing via schema (mode switches, timers, delegation).</td>
 </tr>
 <tr>
 <td style="text-align:left"><strong>Database Host</strong></td>

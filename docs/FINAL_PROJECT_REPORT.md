@@ -176,7 +176,7 @@ Speech production is intrinsically coupled to the autonomic nervous system. Unde
 - **Speech Cadence & Pause Ratios:** Under acute cognitive demand, speech rate accelerates while pause duration ratios become erratic.
 
 ### 2.4 Evolution of Edge AI and Small Language Models (SLMs)
-Historically, qualitative clinical reasoning required large foundational models hosted in centralized datacenters. However, recent breakthroughs in model architecture, quantization techniques (such as `llama.cpp` GGML/GGUF quantization), and compact architectures—exemplified by Google's **Gemma** family (Gemma Team, 2024) and Meta's **Llama 3** (AI@Meta, 2024)—demonstrate that 2-billion to 4-billion parameter models can perform sophisticated structured reasoning locally on consumer GPUs. Constraining model outputs via context-free grammar-forced JSON schemas guarantees deterministic output parsing, making SLMs practical for safety-critical background control loops.
+Historically, qualitative clinical reasoning required large foundational models hosted in centralized datacenters. However, recent breakthroughs in model architecture, quantization techniques (such as `llama.cpp` GGML/GGUF quantization), and compact architectures—exemplified by Google's **Gemma** family (Gemma Team, 2024) and Meta's **Llama 3** (AI@Meta, 2024)—demonstrate that 2-billion to 4-billion parameter models can perform sophisticated structured reasoning locally on consumer GPUs. Requesting JSON output via schema, while the parser tolerates extra text before the JSON object, makes SLMs practical for safety-critical background control loops.
 
 ### 2.5 Ecological Momentary Assessment (EMA) Methodologies
 Laboratory stress studies frequently utilize standardized stressors such as the Trier Social Stress Test (TSST) or the Stroop color-word interference task. However, laboratory affect often fails to generalize to naturalistic office environments. Ecological Momentary Assessment (EMA) addresses this ecological validity gap by collecting real-time, in-situ self-reports immediately following active task windows (Stone & Shiffman, 1994). Mapping continuous Likert ratings to discrete ordinal stress tiers establishes an objective ground truth for validating automated affect recognition systems.
@@ -380,7 +380,7 @@ CREATE TABLE IF NOT EXISTS stress_assessments (
 | **Trigger Manager** | `src/parlor/triggers.py` | 105 | Multi-cycle consecutive evaluation, cooldown clocks, sensitivity scaling. |
 | **Interventions** | `src/parlor/interventions.py`| 105 | Provenance disclosure generation, personalized empathetic micro-interventions. |
 | **LLM Process Host** | `src/parlor/llama.py` | 304 | `llama-server` process management, GGUF parameter compiling, health watchdog probes. |
-| **Action Decider** | `src/parlor/actions.py` | 185 | Grammar-forced JSON action routing (mode switches, timers, delegation). |
+| **Action Decider** | `src/parlor/actions.py` | 185 | JSON action routing via schema (mode switches, timers, delegation). |
 | **Database Host** | `src/parlor/db.py` | 135 | SQLite transaction manager, assessment history indexing, rolling trend queries. |
 
 ### 4.3 On-Device Model Integration and Quantization Strategy

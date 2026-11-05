@@ -668,6 +668,26 @@
     font-size: 11.5px;
   }
 
+  .diag-optin-row {
+    align-items: flex-start;
+    padding-top: 6px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.08);
+  }
+
+  .diag-label-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 220px;
+  }
+
+  .diag-sublabel {
+    font-size: 10px;
+    color: var(--c-text-dim);
+    line-height: 1.3;
+    opacity: 0.8;
+  }
+
   .diag-label {
     color: var(--c-text-dim);
   }

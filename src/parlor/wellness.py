@@ -141,7 +141,9 @@ class WellnessService:
 
         # Parse JSON response
         cleaned = raw_response.strip()
-        if cleaned.startswith("```json"):
+        if "{" in cleaned and "}" in cleaned:
+            cleaned = cleaned[cleaned.find("{"):cleaned.rfind("}") + 1]
+        elif cleaned.startswith("```json"):
             cleaned = cleaned[7:]
         elif cleaned.startswith("```"):
             cleaned = cleaned[3:]

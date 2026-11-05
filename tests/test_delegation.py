@@ -16,6 +16,8 @@ def delegate_turn(session, fixture):
     to reproduce the identical tagless completion (cached prefix), so
     only different words give an independent sample. Two misses across
     two phrasings of a MUST-delegate ask is a real regression."""
+    session.send({"type": "set_research_opt_in", "enabled": True})
+    session.wait_for("research_opt_in_changed", timeout=5)
     for name in (fixture, f"{fixture}_alt"):
         t = session.turn(util.audio(name))
         if t.marker == "incomplete":
@@ -89,3 +91,12 @@ def test_plain_question_is_not_delegated(server, session):
     t = session.turn(util.audio("capital_france"))
     assert "paris" in t.text.lower()
     assert session.wait_for("delegation_started", timeout=3) is None
+
+
+def test_research_mode_disabled_by_default(server, session, reasoner_mock):
+    server.require_managed()
+    requests_before = len(reasoner_mock.requests)
+    # Without sending set_research_opt_in, asking for live research stays strictly local
+    t = session.turn(util.audio("delegate_pizza"))
+    assert session.wait_for("delegation_started", timeout=3) is None
+    assert len(reasoner_mock.requests) == requests_before

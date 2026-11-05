@@ -54,7 +54,7 @@ _HEAD_COMMON = (
 )
 _MODE_CLAUSES = {
     "conversation": (
-        "mode: 'translate' if the user asked to translate what they say (e.g. 'translate everything I say'), "
+        "mode: 'translate' if the user asked to translate what they say (e.g. 'translate everything I say', 'translate from now on', 'translate into English'), "
         "'listen' if they asked the assistant to just listen quietly, be quiet, or stop responding, "
         "otherwise 'none'."),
     "translate": (
@@ -142,21 +142,21 @@ def decide_before(history: list, content: list, current_mode: str) -> ActionDeci
     if current_mode == "listen":
         prompt = (
             "Do not think or reason. Immediately output the JSON action.\n"
-            "System note (not user audio): you are the action decider in 'listen' mode. The user is monologuing or thinking out loud.\n"
-            "If the user is sharing thoughts, telling a story, or speaking casually (e.g. talking about pets, dogs, colors, recipes, or hobbies), output mode: 'none'.\n"
-            "ONLY if the user explicitly addresses the assistant to end listening or asks the assistant for feedback "
-            "(e.g. 'I'm done thinking out loud. What do you think about all of that?', 'Stop listening', 'What do you think?'), output mode: 'conversation'.\n"
-            "Otherwise, mode MUST be 'none'.\n"
+            "System note (not user audio): you are the action decider in 'listen' mode.\n"
+            "1. If the user indicates they are done thinking, finished talking, asks what you think, asks for feedback, or tells you to stop listening "
+            "(e.g. 'I'm done thinking out loud. What do you think about all of that?', 'What do you think?', 'Stop listening', 'I\\'m done'), you MUST output mode: 'conversation'.\n"
+            "2. Otherwise, if the user is just monologuing, telling a story, or speaking casually without addressing you (e.g. talking about pets, sourdough, colors, recipes), output mode: 'none'.\n"
             "timer_seconds: 0. timer_label: \"\". research_task: \"\"."
         )
         def build_listen(p: str) -> list:
             text = {"type": "text", "text": p}
             return history + [{"role": "user", "content": content + [text]}]
         try:
-            raw = llama.chat_blocking(build_listen(prompt), max_tokens=256,
+            raw = llama.chat_blocking(build_listen(prompt), max_tokens=512,
                                       temperature=0.0, json_schema=HEAD_SCHEMA)
             print(f"[decide_before listen raw output]: {raw}")
-            head = json.loads(raw)
+            cleaned = raw[raw.find("{"):raw.rfind("}") + 1] if "{" in raw and "}" in raw else raw
+            head = json.loads(cleaned)
             mode = "conversation" if head.get("mode") == "conversation" else None
             return ActionDecision(mode=mode)
         except Exception as e:
@@ -181,7 +181,8 @@ def _decide(build, current_mode: str) -> ActionDecision:
         raw = llama.chat_blocking(build(head_prompt), max_tokens=512,
                                   temperature=0.0, json_schema=HEAD_SCHEMA)
         print(f"[_decide raw output] current_mode={current_mode}: {raw}")
-        head = json.loads(raw)
+        cleaned = raw[raw.find("{"):raw.rfind("}") + 1] if "{" in raw and "}" in raw else raw
+        head = json.loads(cleaned)
     except Exception as e:
         print(f"Action decider failed: {e}")
         return NONE

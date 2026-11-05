@@ -181,6 +181,20 @@ function bindWellnessControls() {
       showToast(wellnessMuted ? 'Wellness alerts muted' : 'Wellness alerts active', wellnessMuted ? 'warning' : 'success', 3000);
     });
   }
+  const researchOptInToggle = $('researchOptInToggle');
+  if (researchOptInToggle) {
+    researchOptInToggle.addEventListener('change', (e) => {
+      const enabled = e.target.checked;
+      wsSend({ type: 'set_research_opt_in', enabled });
+      showToast(
+        enabled
+          ? 'Research Mode enabled: search queries may contact external frontier API'
+          : 'Research Mode disabled: 100% on-device operation',
+        enabled ? 'warning' : 'success',
+        4000
+      );
+    });
+  }
   wellnessControlsBound = true;
 }
 
@@ -543,6 +557,9 @@ function connect() {
         currentAssistantEl = null;
         if (state === 'listening') goProcessing();
       }
+    } else if (msg.type === 'research_opt_in_changed') {
+      const toggle = $('researchOptInToggle');
+      if (toggle) toggle.checked = Boolean(msg.enabled);
     }
   };
 }

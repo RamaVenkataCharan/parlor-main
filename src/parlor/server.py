@@ -73,7 +73,8 @@ CAPABILITY_NOTE = (
     "or just listen quietly while they think out loud. When the user "
     "asks for one of these, confirm it in one short natural sentence — a "
     "separate system watches the conversation and actually performs it, "
-    "so never say you can't, and never invent its results."
+    "so never say you can't, and never invent its results. "
+    "Answer greetings, chat, and general knowledge questions directly and completely yourself from memory."
 )
 
 # Appended only when a reasoner endpoint is configured (.env REASONER_*):
@@ -96,11 +97,13 @@ RESEARCH_NOTE = (
 # its concern: the action decider judges every utterance BEFORE this
 # prompt runs (see the turn loop), so the prompt stays a pure interpreter.
 TRANSLATE_PROMPT = (
-    "Live translation mode. Begin your reply with one line: ###TRANSCRIPT: "
+    "Live translation mode: you are an interpreter, NOT a conversation partner. "
+    "Begin your reply with one line: ###TRANSCRIPT: "
     "followed by the exact words the user said in this message's audio, in "
     "their original language. Then, on a new line, write ONLY the English "
-    "translation or restatement of those words. Write exactly ONE sentence and STOP. Absolutely never answer questions or provide facts or commentary. "
-    "If they already spoke English, restate their question/words in clear English without answering it. "
+    "translation or restatement of those words. Write exactly ONE sentence and STOP. "
+    "Never answer questions, provide answers, or offer commentary (for example, if the user asks \"What is the capital of France?\", restate \"What is the capital of France?\", never say \"Paris\"). "
+    "If they already spoke English, restate their question or words in clear English without answering it. "
     "If the audio has no clear words, write ###TRANSCRIPT: (no speech) "
     "and nothing else."
 )
@@ -410,10 +413,13 @@ async def websocket_endpoint(ws: WebSocket):
 
 
 async def _run_session(ws: WebSocket):
-    delegation = reasoner.enabled()
+    # Research Mode is OFF by default to preserve strict local privacy.
+    # An explicit user opt-in is required before any query text is sent to an external API.
+    research_opted_in = False
+    delegation = False
     clock = time.strftime("%A at %I:%M %p").replace(" 0", " ")
     system = (SYSTEM_PROMPT + SESSION_CLOCK.format(clock=clock)
-              + CAPABILITY_NOTE + (RESEARCH_NOTE if delegation else ""))
+              + CAPABILITY_NOTE)
     history: list = [{"role": "system", "content": system}]
     mode = MODES["conversation"]
 
@@ -800,6 +806,19 @@ async def _run_session(ws: WebSocket):
                 if wellness_service:
                     wellness_service.concurrency_mitigation_enabled = mitigated
                 await send_json(ws, {"type": "concurrency_mitigation_changed", "enabled": mitigated})
+                continue
+
+            if msg.get("type") == "set_research_opt_in":
+                opt_in = bool(msg.get("enabled", False))
+                research_opted_in = opt_in and reasoner.enabled()
+                delegation = research_opted_in
+                clock = time.strftime("%A at %I:%M %p").replace(" 0", " ")
+                system = (SYSTEM_PROMPT + SESSION_CLOCK.format(clock=clock)
+                          + CAPABILITY_NOTE + (RESEARCH_NOTE if delegation else ""))
+                if history and history[0].get("role") == "system":
+                    history[0]["content"] = system
+                print(f"[RESEARCH MODE] User opt-in {'ENABLED' if delegation else 'DISABLED'}")
+                await send_json(ws, {"type": "research_opt_in_changed", "enabled": delegation})
                 continue
 
             if msg.get("type") == "set_demo_mode":

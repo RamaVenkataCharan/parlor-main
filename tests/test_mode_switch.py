@@ -3,6 +3,7 @@
   listen, and back to conversation mode.
 - Asserts that second utterances immediately following mode switches are correctly processed.
 - Verifies processing and speaking watchdog timeouts force state recovery to listening.
+- Verifies one-off translation requests (asking HOW to say something) do NOT switch mode.
 """
 
 import json
@@ -123,6 +124,19 @@ def test_mode_switch_clears_floor_busy_mid_buffered_audio(server, session):
     # 4. Verify session is fully responsive and floor_busy() is not stuck True
     t_second = session.turn(util.audio("capital_france"), timeout=15)
     assert t_second.marker in ("complete", "released"), f"Session floor remained stuck after mode switch: {t_second}"
+
+
+def test_one_off_translation_request_does_not_switch_mode(server, session):
+    """A one-off translation question in conversation mode ('how do I say hello in French')
+    must be answered as conversation and must NOT switch the session into translate mode."""
+    server.require_managed()
+    t = session.turn({"text": "How do I say hello in French?"})
+    assert t.marker == "complete", f"Turn failed: {t}"
+    assert session.wait_for("mode_changed", timeout=3) is None, "One-off translation switched session mode"
+    # Verify session remains in conversation mode and continues normal conversation
+    t2 = session.turn(util.audio("capital_france"))
+    assert t2.marker == "complete" and "paris" in t2.text.lower()
+
 
 
 

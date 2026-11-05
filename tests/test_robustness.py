@@ -72,3 +72,17 @@ def test_context_rotation_survives(server, session):
     assert rotated, "context rotation never triggered"
     t = session.turn(audio("capital_france"))
     assert t.marker == "complete" and "paris" in t.text.lower()
+
+
+def test_live_info_request_without_research_mode_declines(server, session):
+    """Without research opt-in, asking about current or live info elicits an honest
+    statement that it cannot look it up right now, rather than inventing or delegating."""
+    server.require_managed()
+    t = session.turn({"text": "What is the weather like in London right now?"})
+    assert t.marker == "complete", f"Turn failed: {t}"
+    assert session.wait_for("delegation_started", timeout=3) is None
+    lowered = t.text.lower()
+    assert any(w in lowered for w in ("cannot", "can't", "check", "live", "not able", "don't have", "unable", "look")), (
+        f"Expected refusal to look up live weather, got: {t.text!r}"
+    )
+

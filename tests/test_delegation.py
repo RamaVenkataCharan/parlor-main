@@ -100,3 +100,14 @@ def test_research_mode_disabled_by_default(server, session, reasoner_mock):
     t = session.turn(util.audio("delegate_pizza"))
     assert session.wait_for("delegation_started", timeout=3) is None
     assert len(reasoner_mock.requests) == requests_before
+
+
+def test_research_toggle_reports_configuration_status(server, session):
+    server.require_managed()
+    session.send({"type": "set_research_opt_in", "enabled": True})
+    msg = session.wait_for("research_opt_in_changed", timeout=5)
+    assert msg is not None, "Did not receive research_opt_in_changed event"
+    assert "configured" in msg
+    assert msg.get("configured") in (True, False)
+    assert msg.get("enabled") in (True, False)
+

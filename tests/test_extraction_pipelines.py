@@ -55,11 +55,14 @@ def test_no_media_written_to_disk(tmp_path):
     from parlor import db
     from parlor.wellness import WellnessService
 
-    # 1. Capture list of media files in workspace before processing
-    extensions = {".png", ".jpg", ".jpeg", ".bmp", ".wav", ".pcm", ".y4m", ".mp4", ".raw"}
+    # 1. Capture list of media files in workspace and temp dir before processing
+    import tempfile
+    extensions = {".png", ".jpg", ".jpeg", ".bmp", ".wav", ".pcm", ".y4m", ".mp4", ".raw", ".webm", ".bin", ".tmp"}
+    scan_dirs = [".", tempfile.gettempdir()]
     media_before = {
         os.path.join(root, f)
-        for root, _, files in os.walk(".")
+        for d in scan_dirs
+        for root, _, files in os.walk(d)
         for f in files
         if os.path.splitext(f)[1].lower() in extensions
     }
@@ -98,10 +101,11 @@ def test_no_media_written_to_disk(tmp_path):
 
     asyncio.run(_run_wellness_cycle())
 
-    # 4. Check for any newly created media files across the entire workspace
+    # 4. Check for any newly created media files across the workspace and temp dir
     media_after = {
         os.path.join(root, f)
-        for root, _, files in os.walk(".")
+        for d in scan_dirs
+        for root, _, files in os.walk(d)
         for f in files
         if os.path.splitext(f)[1].lower() in extensions
     }

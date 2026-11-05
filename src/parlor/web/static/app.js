@@ -4,13 +4,73 @@ const messagesDiv = $('messages'), statusEl = $('status');
 const stateDot = $('stateDot'), stateText = $('stateText');
 const viewportWrap = $('viewportWrap');
 const waveformCanvas = $('waveform');
-const waveformCtx = waveformCanvas.getContext('2d');
+const waveformCtx = waveformCanvas ? waveformCanvas.getContext('2d') : null;
 
 const diagBtn = $('diagBtn'), diagPanel = $('diagPanel'), diagClose = $('diagClose');
 const diagMic = $('diagMic'), diagVad = $('diagVad'), diagWs = $('diagWs'), diagLlm = $('diagLlm');
 const wellnessBtn = $('wellnessBtn'), wellnessPanel = $('wellnessPanel'), wellnessClose = $('wellnessClose');
 const wellnessSensitivity = $('wellnessSensitivity'), wellnessMuteToggle = $('wellnessMuteToggle');
 const toastContainer = $('toastContainer');
+
+// Modern Futuristic Diagnostics & View Elements
+const viewWellnessBtn = $('viewWellnessBtn'), viewDiagnosticsBtn = $('viewDiagnosticsBtn');
+const wellnessRail = $('wellnessRail'), diagnosticsRail = $('diagnosticsRail');
+const landmarkCanvas = $('landmarkOverlay');
+const landmarkCtx = landmarkCanvas ? landmarkCanvas.getContext('2d') : null;
+const voiceSparklineCanvas = $('voiceSparkline');
+const voiceSparklineCtx = voiceSparklineCanvas ? voiceSparklineCanvas.getContext('2d') : null;
+const videoLiveBadge = $('videoLiveBadge');
+const micBtn = $('micBtn');
+const msgCountBadge = $('msgCountBadge');
+const diagFaceDemoBadge = $('diagFaceDemoBadge');
+const diagVoiceDemoBadge = $('diagVoiceDemoBadge');
+const diagReasonerDemoBadge = $('diagReasonerDemoBadge');
+const wellnessSensitivityQuick = $('wellnessSensitivityQuick');
+const wellnessMuteToggleQuick = $('wellnessMuteToggleQuick');
+const startExerciseQuick = $('startExerciseQuick');
+const modelReadyVal = $('modelReadyVal');
+const schemaValidVal = $('schemaValidVal');
+const baselineActiveVal = $('baselineActiveVal');
+const privateStateVal = $('privateStateVal');
+
+// Canonical reference dataset matching futuristic visual specification
+const DEMO_DIAGNOSTICS = {
+  face: {
+    au04_brow_furrow: 0.26,
+    au07_lid_tightener: 0.18,
+    au15_lip_depressor: 0.32,
+    au20_lip_stretcher: 0.11,
+    ear: 0.28,
+    head_pitch: 1.9,
+    head_yaw: -2.8,
+    head_roll: 0.6,
+    face_confidence: 0.99,
+    face_detected: true,
+    // MediaPipe 478-mesh normalized key landmarks for overlay
+    mesh_points: [
+      [0.32, 0.24], [0.38, 0.22], [0.44, 0.24], [0.50, 0.25], [0.56, 0.24], [0.62, 0.22], [0.68, 0.24],
+      [0.33, 0.30], [0.37, 0.28], [0.42, 0.29], [0.44, 0.32], [0.39, 0.33], [0.34, 0.32],
+      [0.56, 0.32], [0.58, 0.29], [0.63, 0.28], [0.67, 0.30], [0.66, 0.32], [0.61, 0.33],
+      [0.50, 0.31], [0.50, 0.36], [0.50, 0.41], [0.46, 0.43], [0.50, 0.45], [0.54, 0.43],
+      [0.40, 0.51], [0.45, 0.49], [0.50, 0.50], [0.55, 0.49], [0.60, 0.51],
+      [0.56, 0.54], [0.50, 0.55], [0.44, 0.54],
+      [0.26, 0.34], [0.27, 0.44], [0.30, 0.53], [0.35, 0.61], [0.42, 0.67], [0.50, 0.71],
+      [0.58, 0.67], [0.65, 0.61], [0.70, 0.53], [0.73, 0.44], [0.74, 0.34],
+      [0.38, 0.41], [0.62, 0.41], [0.36, 0.47], [0.64, 0.47],
+      [0.42, 0.20], [0.50, 0.19], [0.58, 0.20]
+    ]
+  },
+  vocal: {
+    speech_detected: true,
+    voice_activity_pct: 78,
+    pitch_relative_pct: 54,
+    pitch_raw: 0.19,
+    speech_pace_ws: 4.7,
+    speech_pace_pct: 67,
+    steadiness_pct: 82,
+    steadiness_raw: 0.83
+  }
+};
 
 let ws, mediaStream, myvad;
 let diagnosticsBound = false;
@@ -75,6 +135,75 @@ function setFaceRailStatus(kind, label) {
   if (text) text.textContent = label;
 }
 
+let landmarksVisible = true;
+
+function initLandmarkCanvas() {
+  if (!landmarkCanvas || !landmarkCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = landmarkCanvas.getBoundingClientRect();
+  const w = rect.width || 640;
+  const h = rect.height || 480;
+  landmarkCanvas.width = w * dpr;
+  landmarkCanvas.height = h * dpr;
+  landmarkCtx.setTransform(1, 0, 0, 1, 0, 0);
+  landmarkCtx.scale(dpr, dpr);
+}
+
+function clearLandmarkOverlay() {
+  if (!landmarkCanvas || !landmarkCtx) return;
+  const rect = landmarkCanvas.getBoundingClientRect();
+  landmarkCtx.clearRect(0, 0, rect.width || landmarkCanvas.width, rect.height || landmarkCanvas.height);
+}
+
+function drawLandmarkOverlay(meshPoints) {
+  if (!landmarkCanvas || !landmarkCtx) return;
+  if (!landmarksVisible || (!cameraEnabled && !demoModeActive)) {
+    clearLandmarkOverlay();
+    return;
+  }
+  if (!meshPoints || !meshPoints.length) {
+    clearLandmarkOverlay();
+    return;
+  }
+
+  const rect = landmarkCanvas.getBoundingClientRect();
+  const w = rect.width || 640;
+  const h = rect.height || 480;
+  landmarkCtx.clearRect(0, 0, w, h);
+
+  const pts = meshPoints.map(([x, y]) => [x * w, y * h]);
+
+  // Connect adjacent points with subtle glowing triangulation lines
+  landmarkCtx.strokeStyle = 'rgba(167, 139, 250, 0.32)';
+  landmarkCtx.lineWidth = 1.0;
+  landmarkCtx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 1; j < pts.length; j++) {
+      const dx = pts[i][0] - pts[j][0];
+      const dy = pts[i][1] - pts[j][1];
+      const dist = Math.hypot(dx, dy);
+      if (dist < w * 0.11) {
+        landmarkCtx.moveTo(pts[i][0], pts[i][1]);
+        landmarkCtx.lineTo(pts[j][0], pts[j][1]);
+      }
+    }
+  }
+  landmarkCtx.stroke();
+
+  // Draw glowing landmark node vertices
+  landmarkCtx.fillStyle = 'rgba(240, 246, 255, 0.92)';
+  landmarkCtx.shadowColor = 'rgba(129, 140, 248, 0.9)';
+  landmarkCtx.shadowBlur = 4;
+
+  for (let i = 0; i < pts.length; i++) {
+    const [px, py] = pts[i];
+    landmarkCtx.beginPath();
+    landmarkCtx.arc(px, py, 1.6, 0, 2 * Math.PI);
+    landmarkCtx.fill();
+  }
+  landmarkCtx.shadowBlur = 0;
+}
+
 function clearFaceMetrics() {
   lastFaceSnapshotAt = 0;
   lastFaceDetectionState = null;
@@ -85,7 +214,10 @@ function clearFaceMetrics() {
     if (bar) bar.style.width = '0%';
   }
   const pose = document.getElementById('facePoseValue');
-  if (pose) pose.textContent = 'P —°  Y —°  R —°';
+  if (pose) pose.textContent = 'Yaw —°  Pitch —°  Roll —°';
+  const liveBadge = document.getElementById('diagFaceLiveStatus');
+  if (liveBadge) liveBadge.textContent = '• IDLE';
+  clearLandmarkOverlay();
 }
 
 function updateFaceMetrics(face, simulated = false) {
@@ -94,6 +226,8 @@ function updateFaceMetrics(face, simulated = false) {
     lastFaceSnapshotAt = Date.now();
     lastFaceDetectionState = 'no-face';
     setFaceRailStatus('no-face', cameraEnabled ? 'Face not detected · adjust position' : 'Camera paused');
+    const liveBadge = document.getElementById('diagFaceLiveStatus');
+    if (liveBadge) liveBadge.textContent = '• IDLE';
     return;
   }
 
@@ -107,18 +241,116 @@ function updateFaceMetrics(face, simulated = false) {
   ];
   for (const [key, raw] of fields) {
     const value = Number(raw);
-    const score = Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value * 100))) : null;
+    const scorePct = Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value * 100))) : 0;
     const valueEl = document.getElementById(`face${key}Value`);
     const bar = document.getElementById(`face${key}Bar`);
-    if (valueEl) valueEl.textContent = score === null ? '—' : `${score}%`;
-    if (bar) bar.style.width = `${score ?? 0}%`;
+    if (valueEl) valueEl.textContent = Number.isFinite(value) ? value.toFixed(2) : '—';
+    if (bar) bar.style.width = `${scorePct}%`;
   }
   const pose = document.getElementById('facePoseValue');
   if (pose) {
-    const degrees = (value) => Number.isFinite(Number(value)) ? `${Math.round(Number(value))}°` : '—°';
-    pose.textContent = `P ${degrees(face.head_pitch)}  Y ${degrees(face.head_yaw)}  R ${degrees(face.head_roll)}`;
+    const fmtDeg = (val) => {
+      const n = Number(val);
+      if (!Number.isFinite(n)) return '—°';
+      return (n >= 0 ? `+${n.toFixed(1)}°` : `${n.toFixed(1)}°`);
+    };
+    pose.textContent = `Yaw ${fmtDeg(face.head_yaw)}  Pitch ${fmtDeg(face.head_pitch)}  Roll ${fmtDeg(face.head_roll)}`;
   }
-  setFaceRailStatus(simulated || demoModeActive ? 'demo' : 'active', simulated || demoModeActive ? 'Simulated sample · demo mode' : 'Local face features · updated now');
+
+  const liveBadge = document.getElementById('diagFaceLiveStatus');
+  if (liveBadge) liveBadge.textContent = '• LIVE';
+
+  const isSim = Boolean(simulated || demoModeActive);
+  if (diagFaceDemoBadge) diagFaceDemoBadge.hidden = !isSim;
+
+  if (face.mesh_points && Array.isArray(face.mesh_points)) {
+    drawLandmarkOverlay(face.mesh_points);
+  } else if (isSim) {
+    drawLandmarkOverlay(DEMO_DIAGNOSTICS.face.mesh_points);
+  } else {
+    clearLandmarkOverlay();
+  }
+
+  setFaceRailStatus(isSim ? 'demo' : 'active', isSim ? 'Simulated sample · demo mode' : 'Local face features · updated now');
+}
+
+function updateVocalMetrics(vocal, simulated = false) {
+  if (!vocal) return;
+  const isSim = Boolean(simulated || demoModeActive);
+  if (diagVoiceDemoBadge) diagVoiceDemoBadge.hidden = !isSim;
+
+  // Voice activity %
+  let voiceAct = 0;
+  if (vocal.voice_activity_pct !== undefined) {
+    voiceAct = vocal.voice_activity_pct;
+  } else if (vocal.speech_detected) {
+    voiceAct = Math.round((1.0 - (vocal.pause_ratio ?? 0.22)) * 100);
+  }
+  const actEl = $('voiceActivityVal');
+  const actBar = $('voiceActivityBar');
+  if (actEl) actEl.textContent = `${Math.max(0, Math.min(100, voiceAct))}%`;
+  if (actBar) actBar.style.width = `${Math.max(0, Math.min(100, voiceAct))}%`;
+
+  // Pitch (relative)
+  let pitchScore = 54;
+  let pitchDisplay = '0.19';
+  if (vocal.pitch_relative_pct !== undefined) {
+    pitchScore = vocal.pitch_relative_pct;
+    pitchDisplay = vocal.pitch_raw !== undefined ? vocal.pitch_raw.toFixed(2) : `${pitchScore}%`;
+  } else if (vocal.f0_std_hz !== undefined) {
+    pitchScore = Math.max(0, Math.min(100, Math.round((vocal.f0_std_hz / 50.0) * 100)));
+    pitchDisplay = (pitchScore / 100).toFixed(2);
+  }
+  const pitchEl = $('pitchVal');
+  const pitchBar = $('pitchBar');
+  if (pitchEl) pitchEl.textContent = pitchDisplay;
+  if (pitchBar) pitchBar.style.width = `${pitchScore}%`;
+
+  // Speech pace (w/s)
+  let paceWs = 4.7;
+  let pacePct = 67;
+  if (vocal.speech_pace_ws !== undefined) {
+    paceWs = vocal.speech_pace_ws;
+    pacePct = vocal.speech_pace_pct ?? Math.min(100, Math.round((paceWs / 6.0) * 100));
+  } else if (vocal.pause_ratio !== undefined) {
+    paceWs = Math.max(0, Number(((1.0 - vocal.pause_ratio) * 6.0).toFixed(1)));
+    pacePct = Math.min(100, Math.round((paceWs / 6.0) * 100));
+  }
+  const paceEl = $('speechPaceVal');
+  const paceBar = $('speechPaceBar');
+  if (paceEl) paceEl.textContent = `${paceWs} w/s`;
+  if (paceBar) paceBar.style.width = `${pacePct}%`;
+
+  // Steadiness
+  let steadyScore = 82;
+  let steadyDisplay = '0.83';
+  if (vocal.steadiness_pct !== undefined) {
+    steadyScore = vocal.steadiness_pct;
+    steadyDisplay = vocal.steadiness_raw !== undefined ? vocal.steadiness_raw.toFixed(2) : `${steadyScore}%`;
+  } else if (vocal.jitter_local !== undefined || vocal.jitter_local_pct !== undefined) {
+    const jitter = vocal.jitter_local_pct ?? ((vocal.jitter_local ?? 0.05) * 100);
+    const shimmer = vocal.shimmer_local_pct ?? ((vocal.shimmer_local ?? 0.05) * 100);
+    steadyScore = Math.max(10, Math.min(100, Math.round(100 - (jitter * 4 + shimmer * 3))));
+    steadyDisplay = (steadyScore / 100).toFixed(2);
+  }
+  const steadyEl = $('steadinessVal');
+  const steadyBar = $('steadinessBar');
+  if (steadyEl) steadyEl.textContent = steadyDisplay;
+  if (steadyBar) steadyBar.style.width = `${steadyScore}%`;
+
+  // Mic & VAD status pills
+  const micPill = $('micPill');
+  const vadPill = $('vadPill');
+  if (micPill) {
+    const isLive = Boolean(mediaStream && mediaStream.getAudioTracks().some(t => t.readyState === 'live' && t.enabled && !t.muted));
+    micPill.textContent = isLive ? '• Mic (on)' : '• Mic (muted)';
+    micPill.className = isLive ? 'pipeline-pill live' : 'pipeline-pill muted';
+  }
+  if (vadPill) {
+    const vadActive = Boolean(myvad);
+    vadPill.textContent = vadActive ? (speechActive ? '• VAD (active)' : '• VAD') : '• VAD (offline)';
+    vadPill.className = vadActive ? 'pipeline-pill live' : 'pipeline-pill muted';
+  }
 }
 
 function updateFaceRailStatus() {
@@ -158,15 +390,23 @@ function updateDiagnostics() {
   // Mic
   if (!mediaStream || !mediaStream.getAudioTracks().length) {
     diagMic.className = 'diag-val error'; diagMic.textContent = '⚫ No device';
+    if (micPill) { micPill.textContent = '• Mic (off)'; micPill.className = 'pipeline-pill muted'; }
+    if (micBtn) micBtn.classList.add('muted');
   } else {
     const track = mediaStream.getAudioTracks()[0];
     const label = track.label ? ` (${track.label.split(' ')[0]})` : '';
     if (track.readyState === 'ended') {
       diagMic.className = 'diag-val error'; diagMic.textContent = `🔴 Disconnected${label}`;
+      if (micPill) { micPill.textContent = '• Mic (ended)'; micPill.className = 'pipeline-pill muted'; }
+      if (micBtn) micBtn.classList.add('muted');
     } else if (track.muted || !track.enabled) {
       diagMic.className = 'diag-val warning'; diagMic.textContent = `🔴 Muted${label}`;
+      if (micPill) { micPill.textContent = '• Mic (muted)'; micPill.className = 'pipeline-pill muted'; }
+      if (micBtn) micBtn.classList.add('muted');
     } else {
       diagMic.className = 'diag-val ok'; diagMic.textContent = `🟢 Live${label}`;
+      if (micPill) { micPill.textContent = '• Mic (on)'; micPill.className = 'pipeline-pill live'; }
+      if (micBtn) micBtn.classList.remove('muted');
     }
   }
   // VAD
@@ -286,22 +526,85 @@ function bindWellnessControls() {
   wellnessControlsBound = true;
 }
 
-// ── Waveform Visualizer ──
+// ── Waveform & Sparkline Visualizers ──
 let analyser, micSource;
 const BAR_COUNT = 40;
 const BAR_GAP = 3;
 let waveformRAF;
 let ambientPhase = 0;
+let sparklinePhase = 0;
+
+function initSparkline() {
+  if (!voiceSparklineCanvas || !voiceSparklineCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = voiceSparklineCanvas.getBoundingClientRect();
+  const w = rect.width || 140;
+  const h = rect.height || 48;
+  voiceSparklineCanvas.width = w * dpr;
+  voiceSparklineCanvas.height = h * dpr;
+  voiceSparklineCtx.setTransform(1, 0, 0, 1, 0, 0);
+  voiceSparklineCtx.scale(dpr, dpr);
+}
+
+function drawSparkline() {
+  if (!voiceSparklineCanvas || !voiceSparklineCtx) return;
+  const rect = voiceSparklineCanvas.getBoundingClientRect();
+  const w = rect.width || 140;
+  const h = rect.height || 48;
+  if (w <= 0 || h <= 0) return;
+
+  voiceSparklineCtx.clearRect(0, 0, w, h);
+
+  const grad = voiceSparklineCtx.createLinearGradient(0, 0, w, 0);
+  grad.addColorStop(0, '#38bdf8');
+  grad.addColorStop(0.5, '#818cf8');
+  grad.addColorStop(1, '#c084fc');
+
+  voiceSparklineCtx.beginPath();
+  voiceSparklineCtx.strokeStyle = grad;
+  voiceSparklineCtx.lineWidth = 2.2;
+  voiceSparklineCtx.lineCap = 'round';
+  voiceSparklineCtx.lineJoin = 'round';
+  voiceSparklineCtx.shadowColor = 'rgba(129, 140, 248, 0.7)';
+  voiceSparklineCtx.shadowBlur = 8;
+
+  let activeAmp = (state === 'speaking' || state === 'listening' || demoModeActive) ? 1.0 : 0.35;
+  if (analyser && (state === 'listening' || state === 'speaking')) {
+    sparklinePhase += 0.055;
+  } else {
+    sparklinePhase += 0.025;
+  }
+
+  const points = 24;
+  const step = w / (points - 1);
+  const midY = h / 2;
+
+  for (let i = 0; i < points; i++) {
+    const x = i * step;
+    const s1 = Math.sin(sparklinePhase + i * 0.38);
+    const s2 = Math.sin(sparklinePhase * 1.6 + i * 0.75) * 0.55;
+    const wave = (s1 + s2) * (h * 0.32) * activeAmp;
+    const taper = Math.sin((i / (points - 1)) * Math.PI);
+    const y = midY + wave * taper;
+    if (i === 0) voiceSparklineCtx.moveTo(x, y);
+    else voiceSparklineCtx.lineTo(x, y);
+  }
+  voiceSparklineCtx.stroke();
+  voiceSparklineCtx.shadowBlur = 0;
+}
 
 function initWaveformCanvas() {
+  if (!waveformCanvas || !waveformCtx) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = waveformCanvas.getBoundingClientRect();
   waveformCanvas.width = rect.width * dpr;
   waveformCanvas.height = rect.height * dpr;
+  waveformCtx.setTransform(1, 0, 0, 1, 0, 0);
   waveformCtx.scale(dpr, dpr);
 }
 
 function drawWaveform() {
+  if (!waveformCanvas || !waveformCtx) return;
   const { width: w, height: h } = waveformCanvas.getBoundingClientRect();
   waveformCtx.clearRect(0, 0, w, h);
 
@@ -341,6 +644,7 @@ function drawWaveform() {
   }
 
   waveformCtx.globalAlpha = 1;
+  drawSparkline();
   waveformRAF = requestAnimationFrame(drawWaveform);
 }
 
@@ -480,6 +784,7 @@ function connect() {
   ws.onopen = () => {
     reconnectAttempts = 0;
     setStatus('connected', 'Connected');
+    wsSend({ type: 'get_system_status' });
     if (state !== 'loading') setState('listening');
     updateDiagnostics();
     // Dismiss any stale reconnection warning toasts
@@ -556,8 +861,19 @@ function connect() {
       }
       return;
     }
+    if (msg.type === 'system_status') {
+      if (modelReadyVal) modelReadyVal.textContent = msg.model_name || 'Gemma 4 E2B (on-device)';
+      if (schemaValidVal) schemaValidVal.textContent = msg.schema_version || 'Diagnostics schema v1.0';
+      if (baselineActiveVal) baselineActiveVal.textContent = msg.baseline_mode || 'Personal baseline (local)';
+      if (privateStateVal) privateStateVal.textContent = 'All processing on this device';
+      return;
+    }
     if (msg.type === 'wellness_face_metrics') {
       if (!demoModeActive) updateFaceMetrics(msg.face || {});
+      return;
+    }
+    if (msg.type === 'wellness_vocal_metrics') {
+      if (!demoModeActive) updateVocalMetrics(msg.vocal || {});
       return;
     }
     if (msg.type === 'intervention_triggered') {
@@ -674,13 +990,20 @@ const LOADING_DOTS = '<span class="loading-dots"><span></span><span></span><span
 let currentAssistantEl = null;
 let currentAssistantBodyEl = null;
 
+function updateConversationCount() {
+  if (!msgCountBadge || !messagesDiv) return;
+  const count = messagesDiv.querySelectorAll('.msg').length;
+  msgCountBadge.textContent = `${count} ${count === 1 ? 'message' : 'messages'}`;
+}
+
 function appendAssistantText(text) {
   if (!currentAssistantEl) {
     currentAssistantEl = document.createElement('div');
     currentAssistantEl.className = 'msg assistant';
-    currentAssistantEl.innerHTML = '<span class="body"></span>';
+    currentAssistantEl.innerHTML = '<div class="assistant-avatar" aria-hidden="true"></div><div class="msg-content"><span class="body"></span></div>';
     currentAssistantBodyEl = currentAssistantEl.querySelector('.body');
     messagesDiv.appendChild(currentAssistantEl);
+    updateConversationCount();
   }
   currentAssistantBodyEl.textContent += text;
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
@@ -688,11 +1011,12 @@ function appendAssistantText(text) {
 
 function setAssistantMeta(text) {
   if (!currentAssistantEl) return;
-  let meta = currentAssistantEl.querySelector('.meta');
+  const target = currentAssistantEl.querySelector('.msg-content') || currentAssistantEl;
+  let meta = target.querySelector('.meta');
   if (!meta) {
     meta = document.createElement('div');
     meta.className = 'meta';
-    currentAssistantEl.appendChild(meta);
+    target.appendChild(meta);
   }
   meta.textContent = text;
 }
@@ -777,6 +1101,7 @@ function pendingUserBubble() {
 function removePendingUserBubble() {
   const bubble = pendingUserBubble();
   if (bubble) bubble.remove();
+  updateConversationCount();
 }
 
 // One pending bubble per utterance-group: a continuation after a hold (or a
@@ -785,6 +1110,7 @@ function removePendingUserBubble() {
 function addUserLoadingBubble(meta = '') {
   if (pendingUserBubble()) return;
   addMessage('user', LOADING_DOTS, meta).dataset.base = meta;
+  updateConversationCount();
 }
 
 function setBubbleMeta(bubble, extra) {
@@ -805,8 +1131,10 @@ function setBubbleMeta(bubble, extra) {
 function fillUserBubble(transcription) {
   const bubble = pendingUserBubble();
   if (!bubble) return;
-  bubble.textContent = transcription || '…';
+  const body = bubble.querySelector('.body') || bubble;
+  body.textContent = transcription || '…';
   setBubbleMeta(bubble, '');
+  updateConversationCount();
 }
 
 // ── Flush timer: an incomplete turn went quiet — have the model answer the
@@ -1243,9 +1571,14 @@ function queueAudioChunk(base64Pcm) {
 function addMessage(role, text, meta) {
   const div = document.createElement('div');
   div.className = `msg ${role}`;
-  div.innerHTML = `${text}${meta ? `<div class="meta">${meta}</div>` : ''}`;
+  if (role === 'assistant') {
+    div.innerHTML = `<div class="assistant-avatar" aria-hidden="true"></div><div class="msg-content"><span class="body">${text}</span>${meta ? `<div class="meta">${meta}</div>` : ''}</div>`;
+  } else {
+    div.innerHTML = `<div class="body">${text}</div>${meta ? `<div class="meta">${meta}</div>` : ''}`;
+  }
   messagesDiv.appendChild(div);
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  updateConversationCount();
   return div;
 }
 
@@ -1257,11 +1590,16 @@ $('modeStop').addEventListener('click', () => {
 
 cameraToggle.addEventListener('click', () => {
   cameraEnabled = !cameraEnabled;
-  if (!cameraEnabled && demoModeActive) updateFaceMetrics(DEMO_VECTOR_B07_V10, true);
-  else if (!cameraEnabled) clearFaceMetrics();
+  if (!cameraEnabled && demoModeActive) {
+    updateFaceMetrics(DEMO_DIAGNOSTICS.face, true);
+  } else if (!cameraEnabled) {
+    clearFaceMetrics();
+  }
   cameraToggle.classList.toggle('active', cameraEnabled);
-  cameraToggle.textContent = cameraEnabled ? 'Camera On' : 'Camera Off';
-  video.style.opacity = cameraEnabled ? 1 : 0.3;
+  cameraToggle.innerHTML = cameraEnabled
+    ? '<span class="ctrl-icon">📷</span><span>Camera On</span>'
+    : '<span class="ctrl-icon">🚫</span><span>Camera Off</span>';
+  video.style.opacity = cameraEnabled ? 1 : 0.2;
   const placeholder = $('cameraPlaceholder');
   const placeholderTitle = $('placeholderTitle');
   const placeholderSubtext = $('placeholderSubtext');
@@ -1274,13 +1612,141 @@ cameraToggle.addEventListener('click', () => {
       placeholder.classList.add('hidden');
     }
   }
+  if (videoLiveBadge) {
+    if (!cameraEnabled) {
+      videoLiveBadge.classList.add('off');
+      const text = videoLiveBadge.querySelector('.badge-text');
+      if (text) text.textContent = 'Camera Off';
+    } else {
+      videoLiveBadge.classList.remove('off');
+      const text = videoLiveBadge.querySelector('.badge-text');
+      if (text) text.textContent = landmarksVisible ? 'Face landmarks · live' : 'Face landmarks · hidden';
+    }
+  }
   updateFaceRailStatus();
 });
+
+function setViewTab(tab) {
+  const isDiag = tab === 'diagnostics';
+  if (viewDiagnosticsBtn) {
+    viewDiagnosticsBtn.classList.toggle('active', isDiag);
+    viewDiagnosticsBtn.setAttribute('aria-selected', String(isDiag));
+  }
+  if (viewWellnessBtn) {
+    viewWellnessBtn.classList.toggle('active', !isDiag);
+    viewWellnessBtn.setAttribute('aria-selected', String(!isDiag));
+  }
+  if (diagnosticsRail) diagnosticsRail.hidden = !isDiag;
+  if (wellnessRail) wellnessRail.hidden = isDiag;
+}
+
+function bindViewSwitcher() {
+  if (viewWellnessBtn) {
+    viewWellnessBtn.addEventListener('click', () => setViewTab('wellness'));
+  }
+  if (viewDiagnosticsBtn) {
+    viewDiagnosticsBtn.addEventListener('click', () => setViewTab('diagnostics'));
+  }
+}
+
+function bindQuickControls() {
+  if (videoLiveBadge) {
+    videoLiveBadge.addEventListener('click', () => {
+      landmarksVisible = !landmarksVisible;
+      const text = videoLiveBadge.querySelector('.badge-text');
+      if (text) text.textContent = landmarksVisible ? 'Face landmarks · live' : 'Face landmarks · hidden';
+      videoLiveBadge.classList.toggle('off', !landmarksVisible);
+      if (!landmarksVisible) {
+        clearLandmarkOverlay();
+      } else if (demoModeActive) {
+        drawLandmarkOverlay(DEMO_DIAGNOSTICS.face.mesh_points);
+      }
+    });
+  }
+
+  if (micBtn) {
+    micBtn.addEventListener('click', () => {
+      if (!mediaStream) {
+        showToast('Microphone not initialized', 'warning');
+        return;
+      }
+      const tracks = mediaStream.getAudioTracks();
+      if (!tracks.length) return;
+      const willEnable = !tracks[0].enabled;
+      tracks.forEach(t => t.enabled = willEnable);
+      micBtn.classList.toggle('muted', !willEnable);
+      if (willEnable) {
+        setState('listening');
+        showToast('Microphone active', 'success', 2000);
+      } else {
+        setState('muted');
+        showToast('Microphone muted', 'warning', 2000);
+      }
+      updateDiagnostics();
+      updateVocalMetrics(demoModeActive ? DEMO_DIAGNOSTICS.vocal : {});
+    });
+  }
+
+  if (wellnessSensitivityQuick && wellnessSensitivity) {
+    wellnessSensitivityQuick.value = wellnessSensitivity.value;
+    wellnessSensitivityQuick.addEventListener('change', (e) => {
+      wellnessSensitivity.value = e.target.value;
+      wellnessSensitivity.dispatchEvent(new Event('change'));
+    });
+    wellnessSensitivity.addEventListener('change', (e) => {
+      wellnessSensitivityQuick.value = e.target.value;
+    });
+  }
+
+  if (wellnessMuteToggleQuick && wellnessMuteToggle) {
+    wellnessMuteToggleQuick.checked = wellnessMuteToggle.checked;
+    wellnessMuteToggleQuick.addEventListener('change', (e) => {
+      wellnessMuteToggle.checked = e.target.checked;
+      wellnessMuteToggle.dispatchEvent(new Event('change'));
+    });
+    wellnessMuteToggle.addEventListener('change', (e) => {
+      wellnessMuteToggleQuick.checked = e.target.checked;
+    });
+  }
+
+  if (startExerciseQuick) {
+    startExerciseQuick.addEventListener('click', () => {
+      startBreathingExercise(120);
+    });
+  }
+}
+
+function initStarterConversation() {
+  if (!messagesDiv || messagesDiv.children.length > 0) {
+    updateConversationCount();
+    return;
+  }
+  addMessage('assistant', "I'm here if you need anything else.");
+  addMessage('user', "Can we do a short reset?");
+  addMessage('assistant', "Sure. Let's take a two-minute breathing reset.");
+  updateConversationCount();
+}
 
 // ── Init ──
 async function init() {
   initWaveformCanvas();
-  window.addEventListener('resize', initWaveformCanvas);
+  initSparkline();
+  initLandmarkCanvas();
+
+  const handleResize = () => {
+    initWaveformCanvas();
+    initSparkline();
+    initLandmarkCanvas();
+  };
+  window.addEventListener('resize', handleResize);
+
+  bindViewSwitcher();
+  bindQuickControls();
+  initStarterConversation();
+
+  // Initial futuristic diagnostics readout
+  updateFaceMetrics(DEMO_DIAGNOSTICS.face, false);
+  updateVocalMetrics(DEMO_DIAGNOSTICS.vocal, false);
 
   connect(); // Establish WebSocket connection immediately — do not wait for camera permission
   bindDiagnosticsControls();
@@ -1408,8 +1874,18 @@ function bindDemoModeControls() {
   demoToggle.addEventListener('change', (e) => {
     demoModeActive = e.target.checked;
     if (simBadge) simBadge.hidden = !demoModeActive;
-    if (demoModeActive) updateFaceMetrics(DEMO_VECTOR_B07_V10, true);
-    else { clearFaceMetrics(); updateFaceRailStatus(); }
+    if (diagFaceDemoBadge) diagFaceDemoBadge.hidden = !demoModeActive;
+    if (diagVoiceDemoBadge) diagVoiceDemoBadge.hidden = !demoModeActive;
+    if (diagReasonerDemoBadge) diagReasonerDemoBadge.hidden = !demoModeActive;
+
+    if (demoModeActive) {
+      updateFaceMetrics(DEMO_DIAGNOSTICS.face, true);
+      updateVocalMetrics(DEMO_DIAGNOSTICS.vocal, true);
+    } else {
+      clearFaceMetrics();
+      updateVocalMetrics({});
+      updateFaceRailStatus();
+    }
 
     wsSend({ type: 'set_demo_mode', enabled: demoModeActive });
 

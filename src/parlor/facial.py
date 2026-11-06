@@ -73,14 +73,21 @@ class FacialExtractor:
                 print(f"[FACIAL EXTRACTOR WARNING] Failed to initialize MediaPipe FaceMesh: {e}")
                 self.mp_available = False
 
-        # 3D Model Points for solvePnP Head Pose Estimation (Nose tip, Chin, Left Eye, Right Eye, Left Mouth, Right Mouth)
+        # 3D Model Points for solvePnP Head Pose Estimation in camera frame (Y-down):
+        # Coordinates: X (right), Y (down), Z (away/into camera)
+        # Landmark 1: Nose tip
+        # Landmark 152: Chin (below nose -> Y > 0)
+        # Landmark 33: Right eye outer corner (image left -> X < 0, above nose -> Y < 0)
+        # Landmark 263: Left eye outer corner (image right -> X > 0, above nose -> Y < 0)
+        # Landmark 61: Right mouth corner (image left -> X < 0, below nose -> Y > 0)
+        # Landmark 291: Left mouth corner (image right -> X > 0, below nose -> Y > 0)
         self.model_points_3d = np.array([
             (0.0, 0.0, 0.0),             # Nose tip (1)
-            (0.0, -330.0, -65.0),        # Chin (152)
-            (-225.0, 170.0, -135.0),     # Left eye left corner (33)
-            (225.0, 170.0, -135.0),      # Right eye right corner (263)
-            (-150.0, -150.0, -125.0),    # Left Mouth corner (61)
-            (150.0, -150.0, -125.0)      # Right Mouth corner (291)
+            (0.0, 330.0, -65.0),         # Chin (152)
+            (-225.0, -170.0, -135.0),    # Right eye outer corner / image left (33)
+            (225.0, -170.0, -135.0),     # Left eye outer corner / image right (263)
+            (-150.0, 150.0, -125.0),     # Right mouth corner / image left (61)
+            (150.0, 150.0, -125.0)       # Left mouth corner / image right (291)
         ], dtype=np.float64)
 
     def extract(self, image_input: Any) -> Dict[str, Any]:
@@ -148,55 +155,75 @@ class FacialExtractor:
             face_landmarks = results.multi_face_landmarks[0]
             landmarks = face_landmarks.landmark
 
-            # 1. Inter-pupillary distance (IPD) as normalization factor (Landmarks 33 & 263)
-            p33 = np.array([landmarks[33].x * w, landmarks[33].y * h])
-            p263 = np.array([landmarks[263].x * w, landmarks[263].y * h])
-            ipd = np.linalg.norm(p33 - p263)
-            if ipd < 1e-5:
+            # 1. Inter-pupillary distance (IPD) as normalization factor
+            if len(landmarks) >= 478:
+                p_r_pupil = np.array([landmarks[468].x * w, landmarks[468].y * h])
+                p_l_pupil = np.array([landmarks[473].x * w, landmarks[473].y * h])
+                ipd = float(np.linalg.norm(p_r_pupil - p_l_pupil))
+            else:
+                p_r_eye = (np.array([landmarks[33].x * w, landmarks[33].y * h]) +
+                           np.array([landmarks[133].x * w, landmarks[133].y * h])) / 2.0
+                p_l_eye = (np.array([landmarks[362].x * w, landmarks[362].y * h]) +
+                           np.array([landmarks[263].x * w, landmarks[263].y * h])) / 2.0
+                ipd = float(np.linalg.norm(p_r_eye - p_l_eye))
+            if ipd < 1e-4:
                 ipd = 1.0
 
-            # 2. AU04 (Brow Lowerer / Furrow): Inner Eyebrow distance (70 to 300) / IPD
-            p70 = np.array([landmarks[70].x * w, landmarks[70].y * h])
-            p300 = np.array([landmarks[300].x * w, landmarks[300].y * h])
-            brow_dist = np.linalg.norm(p70 - p300) / ipd
-            # Normal brow_dist is ~0.45-0.55; smaller distance = brow furrowing / tension
-            au04_furrow = float(np.clip(1.0 - (brow_dist / 0.50), 0.0, 1.0))
+            # 2. AU04 (Brow Furrow / Corrugator supercilii):
+            # Inner Eyebrow distance: Landmark 107 (Right inner brow) to 336 (Left inner brow)
+            p107 = np.array([landmarks[107].x * w, landmarks[107].y * h])
+            p336 = np.array([landmarks[336].x * w, landmarks[336].y * h])
+            brow_dist = float(np.linalg.norm(p107 - p336) / ipd)
+            # Neutral brow_dist is ~0.35-0.42; furrowed drops to ~0.20-0.28
+            au04_furrow = float(np.clip((0.38 - brow_dist) / 0.16, 0.0, 1.0))
 
-            # 3. Eye Aspect Ratio (EAR) -> AU07 (Lid Tightener)
-            # Left Eye: 159 (top), 145 (bottom), 33 (left), 133 (right)
+            # 3. Eye Aspect Ratio (EAR) -> AU07 (Lid Tightener / Squint):
+            # Right Eye: top 159, bottom 145, corners 33, 133
+            p33 = np.array([landmarks[33].x * w, landmarks[33].y * h])
+            p133 = np.array([landmarks[133].x * w, landmarks[133].y * h])
             p159 = np.array([landmarks[159].x * w, landmarks[159].y * h])
             p145 = np.array([landmarks[145].x * w, landmarks[145].y * h])
-            p133 = np.array([landmarks[133].x * w, landmarks[133].y * h])
-            left_ear = np.linalg.norm(p159 - p145) / max(np.linalg.norm(p33 - p133), 1e-5)
+            r_ear = float(np.linalg.norm(p159 - p145) / max(np.linalg.norm(p33 - p133), 1e-5))
 
-            # Right Eye: 386 (top), 374 (bottom), 362 (left), 263 (right)
+            # Left Eye: top 386, bottom 374, corners 362, 263
+            p263 = np.array([landmarks[263].x * w, landmarks[263].y * h])
+            p362 = np.array([landmarks[362].x * w, landmarks[362].y * h])
             p386 = np.array([landmarks[386].x * w, landmarks[386].y * h])
             p374 = np.array([landmarks[374].x * w, landmarks[374].y * h])
-            p362 = np.array([landmarks[362].x * w, landmarks[362].y * h])
-            right_ear = np.linalg.norm(p386 - p374) / max(np.linalg.norm(p362 - p263), 1e-5)
-            avg_ear = float((left_ear + right_ear) / 2.0)
-            au07_lid_tight = float(np.clip(1.0 - (avg_ear / 0.32), 0.0, 1.0))
+            l_ear = float(np.linalg.norm(p386 - p374) / max(np.linalg.norm(p362 - p263), 1e-5))
+            avg_ear = float((r_ear + l_ear) / 2.0)
+            # Normal open eye is ~0.28-0.34; squint drops EAR to ~0.14-0.22 (<0.10 is blink)
+            if avg_ear >= 0.28:
+                au07_lid_tight = 0.0
+            elif avg_ear < 0.10:
+                au07_lid_tight = 0.0  # blink closure, not active squinting
+            else:
+                au07_lid_tight = float(np.clip((0.28 - avg_ear) / 0.14, 0.0, 1.0))
 
-            # 4. AU15 (Lip Corner Depressor): Mouth Corners (61, 291) drop relative to Nose (1)
-            p1 = np.array([landmarks[1].x * w, landmarks[1].y * h])
+            # 4. AU15 (Lip Corner Depressor / Depressor anguli oris):
+            # Mouth corners (61, 291) drop relative to lower lip center (14)
             p61 = np.array([landmarks[61].x * w, landmarks[61].y * h])
             p291 = np.array([landmarks[291].x * w, landmarks[291].y * h])
+            p14 = np.array([landmarks[14].x * w, landmarks[14].y * h])
             mouth_corners_y = (p61[1] + p291[1]) / 2.0
-            nose_to_mouth_dist = (mouth_corners_y - p1[1]) / ipd
-            au15_depressor = float(np.clip((nose_to_mouth_dist - 0.70) / 0.30, 0.0, 1.0))
+            corner_drop = float((mouth_corners_y - p14[1]) / ipd)
+            # Neutral is ~ -0.04 to 0.0; depressed frown is > 0.03
+            au15_depressor = float(np.clip((corner_drop - (-0.01)) / 0.07, 0.0, 1.0))
 
-            # 5. AU20 (Lip Stretcher): Horizontal mouth width (61 to 291) / IPD
-            mouth_width = np.linalg.norm(p61 - p291) / ipd
-            au20_stretcher = float(np.clip((mouth_width - 0.65) / 0.35, 0.0, 1.0))
+            # 5. AU20 (Lip Stretcher / Risorius):
+            # Mouth width: distance between corners (61 to 291) / IPD
+            mouth_width = float(np.linalg.norm(p61 - p291) / ipd)
+            # Neutral width is ~0.70-0.76; horizontal stretch is >0.85
+            au20_stretcher = float(np.clip((mouth_width - 0.74) / 0.20, 0.0, 1.0))
 
             # 6. Head Pose via solvePnP
             image_points_2d = np.array([
                 (landmarks[1].x * w, landmarks[1].y * h),     # Nose tip
                 (landmarks[152].x * w, landmarks[152].y * h), # Chin
-                (p33[0], p33[1]),                             # Left eye left corner
-                (p263[0], p263[1]),                           # Right eye right corner
-                (p61[0], p61[1]),                             # Left mouth corner
-                (p291[0], p291[1])                            # Right mouth corner
+                (p33[0], p33[1]),                             # Right eye outer corner (image left)
+                (p263[0], p263[1]),                           # Left eye outer corner (image right)
+                (p61[0], p61[1]),                             # Right mouth corner (image left)
+                (p291[0], p291[1])                            # Left mouth corner (image right)
             ], dtype=np.float64)
 
             focal_length = w
@@ -216,7 +243,16 @@ class FacialExtractor:
             if success:
                 rmat, _ = cv2.Rodrigues(rot_vec)
                 angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat)
-                pitch, yaw, roll = float(angles[0]), float(angles[1]), float(angles[2])
+                def _wrap_to_range(deg: float, limit: float = 90.0) -> float:
+                    w_deg = (deg + 180.0) % 360.0 - 180.0
+                    return float(np.clip(w_deg, -limit, limit))
+
+                pitch = _wrap_to_range(angles[0], 90.0)
+                yaw = _wrap_to_range(angles[1], 90.0)
+                roll = float((angles[2] + 180.0) % 360.0 - 180.0)
+
+            # Log raw geometric ratios before and after normalization
+            print(f"[FACIAL RAW RATIOS] ipd={ipd:.1f}px | brow_dist={brow_dist:.3f}->AU04={au04_furrow:.3f} | ear={avg_ear:.3f}->AU07={au07_lid_tight:.3f} | drop={corner_drop:.3f}->AU15={au15_depressor:.3f} | width={mouth_width:.3f}->AU20={au20_stretcher:.3f} | pitch={pitch:.1f}° yaw={yaw:.1f}° roll={roll:.1f}°")
 
             mesh_points = [
                 [round(landmarks[idx].x, 3), round(landmarks[idx].y, 3)]

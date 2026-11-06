@@ -49,6 +49,7 @@ class VocalExtractor:
             "jitter_local": 0.0,
             "shimmer_local": 0.0,
             "pause_ratio": 1.0,
+            "speech_pace_relative": 0.0,
             "vocal_tension_index": 0.0,
             "latency_ms": 0.0
         }
@@ -156,6 +157,34 @@ class VocalExtractor:
             hf_energy = np.sum(fft_mag[hf_mask] ** 2)
             vocal_tension = float(hf_energy / max(total_energy, 1e-5))
 
+            # 5. Speech Pace Proxy (Syllable burst count per second of voiced speech):
+            # Derived from short-time energy envelope peak detection (Mermelstein 1975)
+            # Minimum inter-syllable interval = 150ms (15 hops at 10ms hop length)
+            frame_energies = np.array([
+                np.sqrt(np.mean(audio[i * hop_len: i * hop_len + frame_len] ** 2))
+                for i in range(n_frames)
+            ])
+            speech_pace_relative = 0.0
+            voiced_duration = voiced_frames * (hop_len / self.sample_rate)
+            if self.scipy_available and voiced_duration >= 0.3:
+                min_dist_frames = max(1, int(0.15 / (hop_len / self.sample_rate)))
+                prominence = max(0.015, float(np.max(frame_energies) * 0.15))
+                peaks, _ = find_peaks(frame_energies, distance=min_dist_frames, prominence=prominence)
+                if len(peaks) > 0:
+                    speech_pace_relative = round(float(len(peaks) / max(voiced_duration, 0.5)), 2)
+            elif voiced_duration >= 0.3:
+                min_dist_frames = max(1, int(0.15 / (hop_len / self.sample_rate)))
+                threshold = max(0.015, float(np.max(frame_energies) * 0.15))
+                peaks_count = 0
+                last_peak = -min_dist_frames
+                for idx in range(1, len(frame_energies) - 1):
+                    if frame_energies[idx] > threshold and frame_energies[idx] > frame_energies[idx - 1] and frame_energies[idx] > frame_energies[idx + 1]:
+                        if idx - last_peak >= min_dist_frames:
+                            peaks_count += 1
+                            last_peak = idx
+                if peaks_count > 0:
+                    speech_pace_relative = round(float(peaks_count / max(voiced_duration, 0.5)), 2)
+
             latency = round((time.time() - t0) * 1000, 2)
             return {
                 "speech_detected": True,
@@ -165,6 +194,7 @@ class VocalExtractor:
                 "jitter_local": round(jitter_local, 4),
                 "shimmer_local": round(shimmer_local, 4),
                 "pause_ratio": round(pause_ratio, 4),
+                "speech_pace_relative": speech_pace_relative,
                 "vocal_tension_index": round(vocal_tension, 4),
                 "latency_ms": latency
             }

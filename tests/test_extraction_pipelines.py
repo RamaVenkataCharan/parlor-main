@@ -122,3 +122,69 @@ def test_no_media_written_to_disk(tmp_path):
 
     new_media = media_after - media_before
     assert len(new_media) == 0, f"Raw media files were unexpectedly written to disk: {new_media}"
+
+
+def test_facial_head_pose_known_rotations():
+    """Verify that solvePnP head pose estimation correctly recovers known Euler angles without flipping."""
+    import cv2
+    extractor = FacialExtractor()
+    model = extractor.model_points_3d
+    w, h = 640, 480
+    focal = w
+    cam = np.array([[focal, 0, w / 2], [0, focal, h / 2], [0, 0, 1]], dtype=np.float64)
+    dist = np.zeros((4, 1))
+
+    test_angles = [
+        (0.0, 0.0, 0.0),       # Neutral / facing camera
+        (15.0, 0.0, 0.0),      # Pitch down 15 deg
+        (-15.0, 0.0, 0.0),     # Pitch up 15 deg
+        (0.0, 20.0, 0.0),      # Yaw right 20 deg
+        (0.0, -20.0, 0.0),     # Yaw left 20 deg
+        (0.0, 0.0, 10.0),      # Roll 10 deg
+    ]
+
+    for pitch_exp, yaw_exp, roll_exp in test_angles:
+        rx = np.radians(pitch_exp)
+        ry = np.radians(yaw_exp)
+        rz = np.radians(roll_exp)
+        Rx = np.array([[1, 0, 0], [0, np.cos(rx), -np.sin(rx)], [0, np.sin(rx), np.cos(rx)]])
+        Ry = np.array([[np.cos(ry), 0, np.sin(ry)], [0, 1, 0], [-np.sin(ry), 0, np.cos(ry)]])
+        Rz = np.array([[np.cos(rz), -np.sin(rz), 0], [np.sin(rz), np.cos(rz), 0], [0, 0, 1]])
+        R = Rx @ Ry @ Rz
+        rvec, _ = cv2.Rodrigues(R)
+        tvec = np.array([[0.0], [0.0], [1000.0]])
+
+        proj, _ = cv2.projectPoints(model, rvec, tvec, cam, dist)
+        pts_2d = proj.reshape(-1, 2)
+
+        success, rvec_est, _ = cv2.solvePnP(model, pts_2d, cam, dist, flags=cv2.SOLVEPNP_ITERATIVE)
+        assert success is True
+        rmat_est, _ = cv2.Rodrigues(rvec_est)
+        angles, _, _, _, _, _ = cv2.RQDecomp3x3(rmat_est)
+        p_est = (angles[0] + 180.0) % 360.0 - 180.0
+        y_est = (angles[1] + 180.0) % 360.0 - 180.0
+        r_est = (angles[2] + 180.0) % 360.0 - 180.0
+
+        assert abs(p_est - pitch_exp) < 1.5, f"Pitch mismatch: expected {pitch_exp}, got {p_est}"
+        assert abs(y_est - yaw_exp) < 1.5, f"Yaw mismatch: expected {yaw_exp}, got {y_est}"
+        assert abs(r_est - roll_exp) < 1.5, f"Roll mismatch: expected {roll_exp}, got {r_est}"
+
+
+def test_vocal_extractor_speech_pace_relative():
+    """Verify that VocalExtractor correctly extracts relative speech pace from syllable energy bursts."""
+    extractor = VocalExtractor()
+    sr = 16000
+    duration = 2.0
+    t = np.linspace(0, duration, int(sr * duration), endpoint=False)
+    # 6 syllable bursts spaced every 0.3s (3.0 syllables/sec)
+    envelope = np.zeros_like(t)
+    for i in range(6):
+        center = 0.2 + i * 0.3
+        envelope += np.exp(-((t - center) ** 2) / (2 * (0.05 ** 2)))
+    carrier = np.sin(2 * np.pi * 180.0 * t)
+    audio = (carrier * envelope).astype(np.float32)
+
+    res = extractor.extract(audio)
+    assert res["speech_detected"] is True
+    assert "speech_pace_relative" in res
+    assert 2.5 <= res["speech_pace_relative"] <= 3.5, f"Expected pace around 3.0, got {res['speech_pace_relative']}"

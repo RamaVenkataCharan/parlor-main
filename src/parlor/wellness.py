@@ -123,7 +123,7 @@ class WellnessService:
         fields = (
             "speech_detected", "rms_energy", "f0_mean_hz",
             "f0_std_hz", "jitter_local", "shimmer_local",
-            "pause_ratio", "vocal_tension_index", "latency_ms",
+            "pause_ratio", "speech_pace_relative", "vocal_tension_index", "latency_ms",
         )
         latest = self._latest_vocal_res or {}
         return {key: latest.get(key) for key in fields}

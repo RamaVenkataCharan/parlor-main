@@ -3,8 +3,10 @@ __pycache__/
 *.py[oc]
 .venv/
 build/
-dist/*
-!dist/parlor_submission_batch14.zip
+dist/
+*.zip
+shared_state/latest_features.json
+shared_state/*.json
 wheels/
 *.egg-info
 .pytest_cache/

@@ -58,6 +58,10 @@ EXCLUDED_EXTENSIONS = {
     ".safetensors",
     ".pt",
     ".coverage",
+    ".db",
+    ".sqlite",
+    ".sqlite3",
+    ".har",
 }
 
 EXCLUDED_FILES = {
@@ -65,7 +69,9 @@ EXCLUDED_FILES = {
     ".coverage",
     ".DS_Store",
     "Thumbs.db",
-    "ema_validation_trials.json",  # Exclude unverified synthetic participant trials
+    "wellness_history.db",
+    "latest_features.json",
+    "ema_validation_trials.json",
 }
 
 

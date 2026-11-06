@@ -14,7 +14,7 @@
 This document serves as the primary empirical record for all operational parameters, latency budgets, resource allocations, and automated test suite outcomes for the Parlor project.
 
 ### Core Verification Status
-- **Test Suite Pass Rate:** **`99.1%`** (110 passed, 0 failed, 1 intentionally skipped for live prosody judgement out of 111 tests; evidence: `evidence/pytest_full.log`).
+- **Test Suite Pass Rate:** **`98.4%`** (125 passed, 1 skipped by design, 1 flaky live-model test out of 127 tests; 126 passed in isolation; evidence: `evidence/pytest_full.log`).
 - **Core Conversational Latency (TTFA, 30-Turn Alternating Benchmark):**
   - **Loop OFF:** **`1.789s`** mean / **`1.593s`** p50 / **`2.755s`** p95 (95% CI: [1.626s, 1.968s], N=30 turns; evidence: `evidence/voice_ttfa_30_turns.csv`).
   - **Loop ON Mitigated:** **`1.903s`** mean / **`1.588s`** p50 / **`3.716s`** p95 (95% CI: [1.575s, 2.262s], N=30 turns; mitigated via voice turn deferral; +0.114s concurrency cost).

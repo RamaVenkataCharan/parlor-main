@@ -25,7 +25,7 @@ All metrics were evaluated on the host workstation (**Intel Core i5-13450HX, NVI
 | **SLM Wellness Qualitative Reasoning (GPU)** | $\le 5.00\,\text{s}$ (window) | **$2.14\,\text{s}$** mean (p95: $2.42\,\text{s}$, N=30) | Literature est: ~4.15 s | **PASS** (+2.58s margin within 5.0s window) |
 | **Peak GPU VRAM Consumption** | — | **$3.90\,\text{GB}$** (3991 MB / 6141 MB) | N/A (Shared RAM) | Fully resident within 6GB VRAM (`evidence/vram_cpu_usage.log`) |
 | **Outbound Data Transmission (Privacy Audit)** | **$0.0\,\text{KB}$** | **$0.00\,\text{KB}$** (0 outbound sockets) | $0.00\,\text{KB}$ | **PASS** (100% on-device isolation, `evidence/netstat_outbound.txt`) |
-| **Automated Test Suite Pass Rate** | — | **110 / 111 Passed** (1 skipped) | N/A | **PASS** (`evidence/pytest_full.log`) |
+| **Automated Test Suite Pass Rate** | — | **125 / 127 Passed** (1 skipped by design, 1 flaky live-model test; 126 in isolation) | N/A | **PASS** (`evidence/pytest_full.log`) |
 
 > [!NOTE]
 > Raspberry Pi 5 figures represent published literature estimates from Phase 0 feasibility modeling; no Raspberry Pi hardware was deployed or benchmarked in this project.

@@ -310,8 +310,8 @@
           </div>
         </div>
         <div class="diag-card-badges">
-          <span id="faceLiveTag" class="diag-badge live">
-            <span class="badge-dot"></span> LIVE
+          <span id="faceLiveTag" class="diag-badge idle">
+            <span class="badge-dot"></span> IDLE
           </span>
           <span class="diag-badge demo demo-tag" hidden>DEMO DATA</span>
         </div>
@@ -321,27 +321,14 @@
         <!-- High-tech wireframe face mesh graphic -->
         <div class="face-wireframe-col" aria-hidden="true">
           <div class="face-map">
-            <svg viewBox="0 0 240 178" role="presentation">
-              <defs>
-                <linearGradient id="meshStroke" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0" stop-color="#38bdf8"/>
-                  <stop offset=".5" stop-color="#818cf8"/>
-                  <stop offset="1" stop-color="#34d399"/>
-                </linearGradient>
-              </defs>
-              <path class="mesh-outline" d="M120 17c-35 0-61 24-61 62v20c0 33 23 61 61 66 38-5 61-33 61-66V79c0-38-26-62-61-62Z"/>
-              <path class="mesh-line" d="M64 76 91 62l29-6 29 6 27 14M65 86l28 4 27-2 27 2 28-4M83 121l37 4 37-4M100 147l20 4 20-4M120 56v95M91 62l29 25 29-25M93 90l27 31 27-31M82 121l38-34 38 34"/>
-              <path class="mesh-brow" d="M76 74c12-8 24-9 37-3m14 0c13-6 25-5 37 3"/>
-              <path class="mesh-eye" d="M76 90c10-8 23-8 33 0-10 8-23 8-33 0Zm39 0c10-8 23-8 33 0-10 8-23 8-33 0Z"/>
-              <path class="mesh-mouth" d="M99 122c13-5 29-5 42 0-12 11-30 11-42 0Z"/>
-              <g class="mesh-points">
-                <circle cx="91" cy="62" r="2"/><circle cx="120" cy="56" r="2.2"/><circle cx="149" cy="62" r="2"/>
-                <circle cx="76" cy="74" r="2"/><circle cx="113" cy="71" r="2"/><circle cx="127" cy="71" r="2"/><circle cx="164" cy="74" r="2"/>
-                <circle cx="76" cy="90" r="2"/><circle cx="109" cy="90" r="2"/><circle cx="115" cy="90" r="2"/><circle cx="148" cy="90" r="2"/>
-                <circle cx="120" cy="105" r="2"/><circle cx="99" cy="122" r="2"/><circle cx="120" cy="126" r="2"/><circle cx="141" cy="122" r="2"/>
-                <circle cx="100" cy="147" r="2"/><circle cx="120" cy="151" r="2"/><circle cx="140" cy="147" r="2"/>
-              </g>
-            </svg>
+            <canvas id="faceMiniCanvas" class="face-mini-canvas" width="120" height="96"></canvas>
+            <div id="faceEmptyState" class="face-empty-state">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" width="28" height="28">
+                <circle cx="12" cy="12" r="9"/>
+                <path d="M9 10h.01M15 10h.01M9.5 15c1 1 4 1 5 0"/>
+              </svg>
+              <span>No face detected</span>
+            </div>
             <div id="faceRailStatus" class="face-rail-status waiting">
               <i></i><span>Waiting for camera frames</span>
             </div>
@@ -354,41 +341,41 @@
             <div class="metric-meta">
               <span class="metric-code">AU04</span>
               <span class="metric-label">Brow (lower)</span>
-              <span id="faceAU04Value" class="metric-num">0.26</span>
+              <span id="faceAU04Value" class="metric-num" title="Action Unit 04: Brow lowerer / furrow (0.00 - 1.00)">—</span>
             </div>
-            <div class="metric-track"><div id="faceAU04Bar" class="metric-fill" style="width: 26%;"></div></div>
+            <div class="metric-track"><div id="faceAU04Bar" class="metric-fill" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-code">AU07</span>
               <span class="metric-label">Eyelid (tighten)</span>
-              <span id="faceAU07Value" class="metric-num">0.18</span>
+              <span id="faceAU07Value" class="metric-num" title="Action Unit 07: Lid tightener (0.00 - 1.00)">—</span>
             </div>
-            <div class="metric-track"><div id="faceAU07Bar" class="metric-fill" style="width: 18%;"></div></div>
+            <div class="metric-track"><div id="faceAU07Bar" class="metric-fill" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-code">AU15</span>
               <span class="metric-label">Lip (corner)</span>
-              <span id="faceAU15Value" class="metric-num">0.32</span>
+              <span id="faceAU15Value" class="metric-num" title="Action Unit 15: Lip corner depressor (0.00 - 1.00)">—</span>
             </div>
-            <div class="metric-track"><div id="faceAU15Bar" class="metric-fill" style="width: 32%;"></div></div>
+            <div class="metric-track"><div id="faceAU15Bar" class="metric-fill" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-code">AU20</span>
               <span class="metric-label">Lip stretch</span>
-              <span id="faceAU20Value" class="metric-num">0.11</span>
+              <span id="faceAU20Value" class="metric-num" title="Action Unit 20: Lip stretcher (0.00 - 1.00)">—</span>
             </div>
-            <div class="metric-track"><div id="faceAU20Bar" class="metric-fill" style="width: 11%;"></div></div>
+            <div class="metric-track"><div id="faceAU20Bar" class="metric-fill" style="width: 0%;"></div></div>
           </div>
 
           <div class="pose-box">
             <span class="pose-label">Head pose</span>
-            <span id="facePoseValue" class="pose-coords">Y -2.8° &nbsp; P +1.6° &nbsp; R +0.7°</span>
+            <span id="facePoseValue" class="pose-coords" title="Head orientation in degrees (Yaw, Pitch, Roll)">Yaw —° &nbsp; Pitch —° &nbsp; Roll —°</span>
           </div>
         </div>
       </div>
@@ -411,8 +398,8 @@
           </div>
         </div>
         <div class="diag-card-badges">
-          <span id="voiceLiveTag" class="diag-badge live">
-            <span class="badge-dot"></span> LIVE
+          <span id="voiceLiveTag" class="diag-badge idle">
+            <span class="badge-dot"></span> IDLE
           </span>
           <span class="diag-badge demo demo-tag" hidden>DEMO DATA</span>
         </div>
@@ -441,33 +428,33 @@
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-label">Voice activity</span>
-              <span id="voiceActivityValue" class="metric-num">78%</span>
+              <span id="voiceActivityValue" class="metric-num" title="Voice activity ratio from Silero VAD (0% - 100%)">—</span>
             </div>
-            <div class="metric-track"><div id="voiceActivityBar" class="metric-fill cyan" style="width: 78%;"></div></div>
+            <div class="metric-track"><div id="voiceActivityBar" class="metric-fill cyan" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-label">Pitch variability</span>
-              <span id="voicePitchValue" class="metric-num">0.19</span>
+              <span id="voicePitchValue" class="metric-num" title="Pitch variability (ΔF0 standard deviation in Hz)">—</span>
             </div>
-            <div class="metric-track"><div id="voicePitchBar" class="metric-fill cyan" style="width: 54%;"></div></div>
+            <div class="metric-track"><div id="voicePitchBar" class="metric-fill cyan" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-label">Speech pace</span>
-              <span id="voicePaceValue" class="metric-num">4.7 w/s</span>
+              <span id="voicePaceValue" class="metric-num" title="Speech pace proxy: energy envelope syllable burst rate (relative bursts/s)">—</span>
             </div>
-            <div class="metric-track"><div id="voicePaceBar" class="metric-fill cyan" style="width: 67%;"></div></div>
+            <div class="metric-track"><div id="voicePaceBar" class="metric-fill cyan" style="width: 0%;"></div></div>
           </div>
 
           <div class="metric-row">
             <div class="metric-meta">
               <span class="metric-label">Steadiness</span>
-              <span id="voiceSteadinessValue" class="metric-num">0.83</span>
+              <span id="voiceSteadinessValue" class="metric-num" title="Voice steadiness: acoustic stability score based on jitter and shimmer perturbation (0.00 - 1.00)">—</span>
             </div>
-            <div class="metric-track"><div id="voiceSteadinessBar" class="metric-fill cyan" style="width: 82%;"></div></div>
+            <div class="metric-track"><div id="voiceSteadinessBar" class="metric-fill cyan" style="width: 0%;"></div></div>
           </div>
         </div>
       </div>
@@ -546,28 +533,28 @@
               <span class="check-icon">✓</span>
               <div class="verify-text">
                 <span class="verify-title">Local model ready</span>
-                <span class="verify-val">Gemma 4 E2B (on-device)</span>
+                <span id="modelReadyVal" class="verify-val" title="LLM reasoner build and availability">Checking model...</span>
               </div>
             </li>
             <li>
               <span class="check-icon">✓</span>
               <div class="verify-text">
                 <span class="verify-title">Feature schema valid</span>
-                <span class="verify-val">Diagnostics schema v1.0</span>
+                <span id="schemaValidVal" class="verify-val" title="Diagnostics schema specification">Diagnostics schema v1.0</span>
               </div>
             </li>
             <li>
               <span class="check-icon">✓</span>
               <div class="verify-text">
                 <span class="verify-title">Baseline active</span>
-                <span class="verify-val">Personal baseline (local)</span>
+                <span id="baselineActiveVal" class="verify-val" title="Calibration baseline mode">not used (static 145 Hz reference)</span>
               </div>
             </li>
             <li>
               <span class="check-icon">✓</span>
               <div class="verify-text">
                 <span class="verify-title">Private / on-device</span>
-                <span class="verify-val">All processing on this device</span>
+                <span id="privateStateVal" class="verify-val" title="Network privacy audit: count of external non-local browser requests">Non-local requests: 0 (100% on-device)</span>
               </div>
             </li>
           </ul>
@@ -605,6 +592,44 @@
       <span class="rail-sublabel">Personal monitoring & resets</span>
     </div>
 
+    <!-- Current Affective State Tier Card -->
+    <section class="diag-card wellness-tier-card" aria-labelledby="affectiveStateHeading">
+      <div class="diag-card-head compact-head">
+        <div>
+          <div class="rail-eyebrow">CURRENT ASSESSMENT</div>
+          <h3 id="affectiveStateHeading">Affective State</h3>
+        </div>
+        <span id="wellnessStateTier" class="tier-pill tier-relaxed">
+          <span class="pill-dot"></span> Relaxed
+        </span>
+      </div>
+      <p id="wellnessStateReason" class="tier-reason">Bimodal cues within relaxed baseline limits. No sustained elevated tension observed.</p>
+      <div class="tier-levels-bar" aria-hidden="true">
+        <div id="tierSegmentRelaxed" class="tier-seg active">Relaxed</div>
+        <div id="tierSegmentElevated" class="tier-seg">Elevated</div>
+        <div id="tierSegmentHigh" class="tier-seg">High</div>
+        <div id="tierSegmentInsufficient" class="tier-seg">Low Signal</div>
+      </div>
+    </section>
+
+    <!-- 60-Minute Stress Trajectory Card -->
+    <section class="diag-card history-card" aria-labelledby="historyHeading">
+      <div class="diag-card-head compact-head">
+        <div>
+          <div class="rail-eyebrow">SESSION TRAJECTORY</div>
+          <h3 id="historyHeading">60-Min Trend</h3>
+        </div>
+        <span class="local-chip"><i></i> 100% LOCAL</span>
+      </div>
+      <div class="history-canvas-wrap">
+        <canvas id="wellnessHistoryCanvas" width="320" height="68"></canvas>
+      </div>
+      <div class="history-meta">
+        <span id="wellnessHistorySummary">Trajectory: Baseline steady · 0 alerts</span>
+        <span class="history-window">Past 60 mins</span>
+      </div>
+    </section>
+
     <!-- Signal Fusion Step Overview -->
     <section class="diag-card fusion-panel-card" aria-labelledby="fusionHeading">
       <div class="diag-card-head compact-head">
@@ -612,7 +637,7 @@
           <div class="rail-eyebrow">HOW PARLOR MONITORS</div>
           <h3 id="fusionHeading">Signal fusion</h3>
         </div>
-        <span class="local-chip"><i></i> LOCAL</span>
+        <span class="local-chip"><i></i> ON-DEVICE</span>
       </div>
       <div class="fusion-step">
         <span class="fusion-icon face-icon">⌁</span>
@@ -622,7 +647,7 @@
       <div class="fusion-step">
         <span class="fusion-icon voice-icon">∿</span>
         <div><strong>Voice features</strong><small>Pitch · pace · steadiness</small></div>
-        <span id="voiceFusionState" class="fusion-state">STARTING</span>
+        <span id="voiceFusionState" class="fusion-state">IDLE</span>
       </div>
       <div class="fusion-step">
         <span class="fusion-icon reason-icon">✳</span>
@@ -635,7 +660,7 @@
       </div>
     </section>
 
-    <!-- Guided Breathing Reset Card -->
+    <!-- Guided Breathing Reset Launcher Card -->
     <section class="diag-card exercise-launcher-card">
       <div class="diag-card-head">
         <div class="diag-card-title-group">

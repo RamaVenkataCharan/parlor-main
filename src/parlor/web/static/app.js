@@ -149,10 +149,92 @@ function initLandmarkCanvas() {
   landmarkCtx.scale(dpr, dpr);
 }
 
+// ── Pure Landmark Coordinate Transform (Step 3 Parity with Python overlay.py) ──
+function mapLandmarkToCanvas(normX, normY, srcW, srcH, dstW, dstH, objectFit = 'cover', mirrored = false, crop = null) {
+  if (srcW <= 0 || srcH <= 0 || dstW <= 0 || dstH <= 0) return [0, 0];
+  let xSrc = normX;
+  let ySrc = normY;
+  if (crop) {
+    const cx = crop.x ?? crop[0] ?? 0;
+    const cy = crop.y ?? crop[1] ?? 0;
+    const cw = crop.w ?? crop.width ?? crop[2] ?? 1;
+    const ch = crop.h ?? crop.height ?? crop[3] ?? 1;
+    xSrc = cx + normX * cw;
+    ySrc = cy + normY * ch;
+  }
+  if (mirrored) {
+    xSrc = 1.0 - xSrc;
+  }
+  const scaleX = dstW / srcW;
+  const scaleY = dstH / srcH;
+  const scale = objectFit === 'contain' ? Math.min(scaleX, scaleY) : Math.max(scaleX, scaleY);
+  const renderedW = srcW * scale;
+  const renderedH = srcH * scale;
+  const offsetX = (dstW - renderedW) / 2.0;
+  const offsetY = (dstH - renderedH) / 2.0;
+  return [offsetX + xSrc * renderedW, offsetY + ySrc * renderedH];
+}
+window.mapLandmarkToCanvas = mapLandmarkToCanvas;
+
 function clearLandmarkOverlay() {
   if (!landmarkCanvas || !landmarkCtx) return;
   const rect = landmarkCanvas.getBoundingClientRect();
   landmarkCtx.clearRect(0, 0, rect.width || landmarkCanvas.width, rect.height || landmarkCanvas.height);
+}
+
+function initLandmarkCanvas() {
+  if (!landmarkCanvas || !landmarkCtx) return;
+  const dpr = window.devicePixelRatio || 1;
+  const rect = landmarkCanvas.getBoundingClientRect();
+  landmarkCanvas.width = (rect.width || 640) * dpr;
+  landmarkCanvas.height = (rect.height || 360) * dpr;
+  landmarkCtx.setTransform(1, 0, 0, 1, 0, 0);
+  landmarkCtx.scale(dpr, dpr);
+}
+
+const faceMiniCanvas = $('faceMiniCanvas');
+const faceMiniCtx = faceMiniCanvas ? faceMiniCanvas.getContext('2d') : null;
+const faceEmptyState = $('faceEmptyState');
+
+function drawMiniFaceMesh(meshPoints) {
+  if (!faceMiniCanvas || !faceMiniCtx) return;
+  if (!meshPoints || !meshPoints.length) {
+    if (faceEmptyState) faceEmptyState.hidden = false;
+    faceMiniCanvas.hidden = true;
+    return;
+  }
+  if (faceEmptyState) faceEmptyState.hidden = true;
+  faceMiniCanvas.hidden = false;
+
+  const w = faceMiniCanvas.width;
+  const h = faceMiniCanvas.height;
+  faceMiniCtx.clearRect(0, 0, w, h);
+
+  const pts = meshPoints.map(([nx, ny]) => [nx * w, ny * h]);
+
+  // Connect contour lines
+  faceMiniCtx.strokeStyle = 'rgba(56, 189, 248, 0.45)';
+  faceMiniCtx.lineWidth = 1.0;
+  faceMiniCtx.beginPath();
+  for (let i = 0; i < pts.length; i++) {
+    for (let j = i + 1; j < pts.length; j++) {
+      const dx = pts[i][0] - pts[j][0];
+      const dy = pts[i][1] - pts[j][1];
+      if (Math.hypot(dx, dy) < w * 0.16) {
+        faceMiniCtx.moveTo(pts[i][0], pts[i][1]);
+        faceMiniCtx.lineTo(pts[j][0], pts[j][1]);
+      }
+    }
+  }
+  faceMiniCtx.stroke();
+
+  // Draw node vertices
+  faceMiniCtx.fillStyle = 'rgba(240, 246, 255, 0.9)';
+  for (let i = 0; i < pts.length; i++) {
+    faceMiniCtx.beginPath();
+    faceMiniCtx.arc(pts[i][0], pts[i][1], 1.2, 0, 2 * Math.PI);
+    faceMiniCtx.fill();
+  }
 }
 
 function drawLandmarkOverlay(meshPoints) {
@@ -166,15 +248,28 @@ function drawLandmarkOverlay(meshPoints) {
     return;
   }
 
+  // Fade out / clear if face data is > 1.5s stale
+  if (!demoModeActive && lastFaceSnapshotAt > 0 && (Date.now() - lastFaceSnapshotAt > 1500)) {
+    clearLandmarkOverlay();
+    return;
+  }
+
   const rect = landmarkCanvas.getBoundingClientRect();
-  const w = rect.width || 640;
-  const h = rect.height || 480;
-  landmarkCtx.clearRect(0, 0, w, h);
+  const dstW = rect.width || 640;
+  const dstH = rect.height || 360;
+  landmarkCtx.clearRect(0, 0, dstW, dstH);
 
-  const pts = meshPoints.map(([x, y]) => [x * w, y * h]);
+  // Source camera aspect ratio (default 16:9 1280x720)
+  const srcW = (video && video.videoWidth > 0) ? video.videoWidth : 1280;
+  const srcH = (video && video.videoHeight > 0) ? video.videoHeight : 720;
 
-  // Connect adjacent points with subtle glowing triangulation lines
-  landmarkCtx.strokeStyle = 'rgba(167, 139, 250, 0.32)';
+  // Map landmarks to canvas with cover and horizontal mirror parity
+  const pts = meshPoints.map(([nx, ny]) => {
+    return mapLandmarkToCanvas(nx, ny, srcW, srcH, dstW, dstH, 'cover', true);
+  });
+
+  // Connect adjacent points with subtle glowing triangulation lines (1px)
+  landmarkCtx.strokeStyle = 'rgba(56, 189, 248, 0.38)';
   landmarkCtx.lineWidth = 1.0;
   landmarkCtx.beginPath();
   for (let i = 0; i < pts.length; i++) {
@@ -182,7 +277,7 @@ function drawLandmarkOverlay(meshPoints) {
       const dx = pts[i][0] - pts[j][0];
       const dy = pts[i][1] - pts[j][1];
       const dist = Math.hypot(dx, dy);
-      if (dist < w * 0.11) {
+      if (dist < dstW * 0.10) {
         landmarkCtx.moveTo(pts[i][0], pts[i][1]);
         landmarkCtx.lineTo(pts[j][0], pts[j][1]);
       }
@@ -190,18 +285,21 @@ function drawLandmarkOverlay(meshPoints) {
   }
   landmarkCtx.stroke();
 
-  // Draw glowing landmark node vertices
-  landmarkCtx.fillStyle = 'rgba(240, 246, 255, 0.92)';
-  landmarkCtx.shadowColor = 'rgba(129, 140, 248, 0.9)';
+  // Draw delicate glowing landmark node vertices
+  landmarkCtx.fillStyle = 'rgba(240, 246, 255, 0.95)';
+  landmarkCtx.shadowColor = 'rgba(56, 189, 248, 0.85)';
   landmarkCtx.shadowBlur = 4;
 
   for (let i = 0; i < pts.length; i++) {
     const [px, py] = pts[i];
     landmarkCtx.beginPath();
-    landmarkCtx.arc(px, py, 1.6, 0, 2 * Math.PI);
+    landmarkCtx.arc(px, py, 1.4, 0, 2 * Math.PI);
     landmarkCtx.fill();
   }
   landmarkCtx.shadowBlur = 0;
+
+  // Mirror onto mini wireframe canvas
+  drawMiniFaceMesh(meshPoints);
 }
 
 function clearFaceMetrics() {
@@ -215,9 +313,14 @@ function clearFaceMetrics() {
   }
   const pose = document.getElementById('facePoseValue');
   if (pose) pose.textContent = 'Yaw —°  Pitch —°  Roll —°';
-  const liveBadge = document.getElementById('diagFaceLiveStatus');
-  if (liveBadge) liveBadge.textContent = '• IDLE';
+  const liveBadge = document.getElementById('faceLiveTag') || document.getElementById('diagFaceLiveStatus');
+  if (liveBadge) {
+    liveBadge.className = 'diag-badge idle';
+    liveBadge.innerHTML = '<span class="badge-dot"></span> IDLE';
+  }
   clearLandmarkOverlay();
+  if (faceEmptyState) faceEmptyState.hidden = false;
+  if (faceMiniCanvas) faceMiniCanvas.hidden = true;
 }
 
 function updateFaceMetrics(face, simulated = false) {
@@ -226,8 +329,11 @@ function updateFaceMetrics(face, simulated = false) {
     lastFaceSnapshotAt = Date.now();
     lastFaceDetectionState = 'no-face';
     setFaceRailStatus('no-face', cameraEnabled ? 'Face not detected · adjust position' : 'Camera paused');
-    const liveBadge = document.getElementById('diagFaceLiveStatus');
-    if (liveBadge) liveBadge.textContent = '• IDLE';
+    const liveBadge = document.getElementById('faceLiveTag') || document.getElementById('diagFaceLiveStatus');
+    if (liveBadge) {
+      liveBadge.className = 'diag-badge idle';
+      liveBadge.innerHTML = '<span class="badge-dot"></span> IDLE';
+    }
     return;
   }
 
@@ -257,11 +363,14 @@ function updateFaceMetrics(face, simulated = false) {
     pose.textContent = `Yaw ${fmtDeg(face.head_yaw)}  Pitch ${fmtDeg(face.head_pitch)}  Roll ${fmtDeg(face.head_roll)}`;
   }
 
-  const liveBadge = document.getElementById('diagFaceLiveStatus');
-  if (liveBadge) liveBadge.textContent = '• LIVE';
+  const liveBadge = document.getElementById('faceLiveTag') || document.getElementById('diagFaceLiveStatus');
+  if (liveBadge) {
+    liveBadge.className = 'diag-badge live';
+    liveBadge.innerHTML = '<span class="badge-dot"></span> LIVE';
+  }
 
   const isSim = Boolean(simulated || demoModeActive);
-  if (diagFaceDemoBadge) diagFaceDemoBadge.hidden = !isSim;
+  document.querySelectorAll('.demo-tag').forEach(tag => tag.hidden = !isSim);
 
   if (face.mesh_points && Array.isArray(face.mesh_points)) {
     drawLandmarkOverlay(face.mesh_points);
@@ -274,82 +383,142 @@ function updateFaceMetrics(face, simulated = false) {
   setFaceRailStatus(isSim ? 'demo' : 'active', isSim ? 'Simulated sample · demo mode' : 'Local face features · updated now');
 }
 
+let lastVoiceSnapshotAt = 0;
+
+function clearVocalMetrics() {
+  lastVoiceSnapshotAt = 0;
+  const actEl = $('voiceActivityValue') || $('voiceActivityVal');
+  const actBar = $('voiceActivityBar');
+  const pitchEl = $('voicePitchValue') || $('pitchVal');
+  const pitchBar = $('voicePitchBar') || $('pitchBar');
+  const paceEl = $('voicePaceValue') || $('speechPaceVal');
+  const paceBar = $('voicePaceBar') || $('speechPaceBar');
+  const steadyEl = $('voiceSteadinessValue') || $('steadinessVal');
+  const steadyBar = $('voiceSteadinessBar') || $('steadinessBar');
+
+  if (actEl) actEl.textContent = '—';
+  if (actBar) actBar.style.width = '0%';
+  if (pitchEl) pitchEl.textContent = '—';
+  if (pitchBar) pitchBar.style.width = '0%';
+  if (paceEl) paceEl.textContent = '—';
+  if (paceBar) paceBar.style.width = '0%';
+  if (steadyEl) steadyEl.textContent = '—';
+  if (steadyBar) steadyBar.style.width = '0%';
+
+  const liveBadge = document.getElementById('voiceLiveTag');
+  if (liveBadge) {
+    liveBadge.className = 'diag-badge idle';
+    liveBadge.innerHTML = '<span class="badge-dot"></span> IDLE';
+  }
+}
+
 function updateVocalMetrics(vocal, simulated = false) {
   if (!vocal) return;
   const isSim = Boolean(simulated || demoModeActive);
-  if (diagVoiceDemoBadge) diagVoiceDemoBadge.hidden = !isSim;
+  document.querySelectorAll('.demo-tag').forEach(tag => tag.hidden = !isSim);
 
-  // Voice activity %
-  let voiceAct = 0;
+  const actEl = $('voiceActivityValue') || $('voiceActivityVal');
+  const actBar = $('voiceActivityBar');
+  const pitchEl = $('voicePitchValue') || $('pitchVal');
+  const pitchBar = $('voicePitchBar') || $('pitchBar');
+  const paceEl = $('voicePaceValue') || $('speechPaceVal');
+  const paceBar = $('voicePaceBar') || $('speechPaceBar');
+  const steadyEl = $('voiceSteadinessValue') || $('steadinessVal');
+  const steadyBar = $('voiceSteadinessBar') || $('steadinessBar');
+
+  // 1. Voice activity %
+  let voiceAct = null;
   if (vocal.voice_activity_pct !== undefined) {
     voiceAct = vocal.voice_activity_pct;
   } else if (vocal.speech_detected) {
     voiceAct = Math.round((1.0 - (vocal.pause_ratio ?? 0.22)) * 100);
+  } else if (isSim) {
+    voiceAct = DEMO_DIAGNOSTICS.vocal.voice_activity_pct;
   }
-  const actEl = $('voiceActivityVal');
-  const actBar = $('voiceActivityBar');
-  if (actEl) actEl.textContent = `${Math.max(0, Math.min(100, voiceAct))}%`;
-  if (actBar) actBar.style.width = `${Math.max(0, Math.min(100, voiceAct))}%`;
 
-  // Pitch (relative)
-  let pitchScore = 54;
-  let pitchDisplay = '0.19';
-  if (vocal.pitch_relative_pct !== undefined) {
+  if (actEl) actEl.textContent = voiceAct !== null ? `${Math.max(0, Math.min(100, voiceAct))}%` : '—';
+  if (actBar) actBar.style.width = voiceAct !== null ? `${Math.max(0, Math.min(100, voiceAct))}%` : '0%';
+
+  // 2. Pitch variability
+  let pitchScore = 0;
+  let pitchDisplay = '—';
+  if (vocal.f0_std_hz !== undefined && vocal.f0_std_hz > 0) {
+    pitchScore = Math.max(0, Math.min(100, Math.round((vocal.f0_std_hz / 50.0) * 100)));
+    pitchDisplay = `${vocal.f0_std_hz.toFixed(1)} Hz`;
+  } else if (vocal.pitch_relative_pct !== undefined) {
     pitchScore = vocal.pitch_relative_pct;
     pitchDisplay = vocal.pitch_raw !== undefined ? vocal.pitch_raw.toFixed(2) : `${pitchScore}%`;
-  } else if (vocal.f0_std_hz !== undefined) {
-    pitchScore = Math.max(0, Math.min(100, Math.round((vocal.f0_std_hz / 50.0) * 100)));
-    pitchDisplay = (pitchScore / 100).toFixed(2);
+  } else if (isSim) {
+    pitchScore = DEMO_DIAGNOSTICS.vocal.pitch_relative_pct;
+    pitchDisplay = `${DEMO_DIAGNOSTICS.vocal.pitch_raw.toFixed(2)}`;
   }
-  const pitchEl = $('pitchVal');
-  const pitchBar = $('pitchBar');
+
   if (pitchEl) pitchEl.textContent = pitchDisplay;
   if (pitchBar) pitchBar.style.width = `${pitchScore}%`;
 
-  // Speech pace (w/s)
-  let paceWs = 4.7;
-  let pacePct = 67;
-  if (vocal.speech_pace_ws !== undefined) {
-    paceWs = vocal.speech_pace_ws;
-    pacePct = vocal.speech_pace_pct ?? Math.min(100, Math.round((paceWs / 6.0) * 100));
-  } else if (vocal.pause_ratio !== undefined) {
-    paceWs = Math.max(0, Number(((1.0 - vocal.pause_ratio) * 6.0).toFixed(1)));
-    pacePct = Math.min(100, Math.round((paceWs / 6.0) * 100));
+  // 3. Speech pace (relative)
+  let pacePct = 0;
+  let paceDisplay = '—';
+  if (vocal.speech_pace_relative !== undefined && vocal.speech_pace_relative > 0) {
+    const paceVal = vocal.speech_pace_relative;
+    pacePct = Math.min(100, Math.round((paceVal / 6.0) * 100));
+    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
+  } else if (vocal.speech_pace_ws !== undefined && vocal.speech_pace_ws > 0) {
+    const paceVal = vocal.speech_pace_ws;
+    pacePct = vocal.speech_pace_pct ?? Math.min(100, Math.round((paceVal / 6.0) * 100));
+    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
+  } else if (isSim) {
+    const paceVal = DEMO_DIAGNOSTICS.vocal.speech_pace_ws;
+    pacePct = DEMO_DIAGNOSTICS.vocal.speech_pace_pct;
+    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
   }
-  const paceEl = $('speechPaceVal');
-  const paceBar = $('speechPaceBar');
-  if (paceEl) paceEl.textContent = `${paceWs} w/s`;
+
+  if (paceEl) paceEl.textContent = paceDisplay;
   if (paceBar) paceBar.style.width = `${pacePct}%`;
 
-  // Steadiness
-  let steadyScore = 82;
-  let steadyDisplay = '0.83';
-  if (vocal.steadiness_pct !== undefined) {
+  // 4. Steadiness
+  let steadyScore = 0;
+  let steadyDisplay = '—';
+  if (vocal.steadiness_pct !== undefined && vocal.steadiness_pct > 0) {
     steadyScore = vocal.steadiness_pct;
-    steadyDisplay = vocal.steadiness_raw !== undefined ? vocal.steadiness_raw.toFixed(2) : `${steadyScore}%`;
+    steadyDisplay = vocal.steadiness_raw !== undefined ? vocal.steadiness_raw.toFixed(2) : (steadyScore / 100).toFixed(2);
   } else if (vocal.jitter_local !== undefined || vocal.jitter_local_pct !== undefined) {
     const jitter = vocal.jitter_local_pct ?? ((vocal.jitter_local ?? 0.05) * 100);
     const shimmer = vocal.shimmer_local_pct ?? ((vocal.shimmer_local ?? 0.05) * 100);
     steadyScore = Math.max(10, Math.min(100, Math.round(100 - (jitter * 4 + shimmer * 3))));
     steadyDisplay = (steadyScore / 100).toFixed(2);
+  } else if (isSim) {
+    steadyScore = DEMO_DIAGNOSTICS.vocal.steadiness_pct;
+    steadyDisplay = DEMO_DIAGNOSTICS.vocal.steadiness_raw.toFixed(2);
   }
-  const steadyEl = $('steadinessVal');
-  const steadyBar = $('steadinessBar');
+
   if (steadyEl) steadyEl.textContent = steadyDisplay;
   if (steadyBar) steadyBar.style.width = `${steadyScore}%`;
+
+  if (voiceAct !== null || pitchScore > 0 || isSim) {
+    lastVoiceSnapshotAt = Date.now();
+  }
+
+  // Live badge
+  const liveBadge = document.getElementById('voiceLiveTag');
+  if (liveBadge) {
+    const isLive = Boolean(isSim || (lastVoiceSnapshotAt > 0 && Date.now() - lastVoiceSnapshotAt < 2000));
+    liveBadge.className = isLive ? 'diag-badge live' : 'diag-badge idle';
+    liveBadge.innerHTML = `<span class="badge-dot"></span> ${isLive ? 'LIVE' : 'IDLE'}`;
+  }
 
   // Mic & VAD status pills
   const micPill = $('micPill');
   const vadPill = $('vadPill');
   if (micPill) {
     const isLive = Boolean(mediaStream && mediaStream.getAudioTracks().some(t => t.readyState === 'live' && t.enabled && !t.muted));
-    micPill.textContent = isLive ? '• Mic (on)' : '• Mic (muted)';
-    micPill.className = isLive ? 'pipeline-pill live' : 'pipeline-pill muted';
+    micPill.innerHTML = `<span class="pill-dot"></span> ${isLive ? 'Mic (on)' : 'Mic (muted)'}`;
+    micPill.className = isLive ? 'indicator-pill on' : 'indicator-pill off';
   }
   if (vadPill) {
     const vadActive = Boolean(myvad);
-    vadPill.textContent = vadActive ? (speechActive ? '• VAD (active)' : '• VAD') : '• VAD (offline)';
-    vadPill.className = vadActive ? 'pipeline-pill live' : 'pipeline-pill muted';
+    vadPill.innerHTML = `<span class="pill-dot"></span> ${vadActive ? (speechActive ? 'VAD (active)' : 'VAD') : 'VAD (off)'}`;
+    vadPill.className = vadActive ? 'indicator-pill vad' : 'indicator-pill off';
   }
 }
 
@@ -562,32 +731,60 @@ function drawSparkline() {
 
   voiceSparklineCtx.beginPath();
   voiceSparklineCtx.strokeStyle = grad;
-  voiceSparklineCtx.lineWidth = 2.2;
+  voiceSparklineCtx.lineWidth = 2.0;
   voiceSparklineCtx.lineCap = 'round';
   voiceSparklineCtx.lineJoin = 'round';
-  voiceSparklineCtx.shadowColor = 'rgba(129, 140, 248, 0.7)';
-  voiceSparklineCtx.shadowBlur = 8;
+  voiceSparklineCtx.shadowColor = 'rgba(129, 140, 248, 0.6)';
+  voiceSparklineCtx.shadowBlur = 6;
 
-  let activeAmp = (state === 'speaking' || state === 'listening' || demoModeActive) ? 1.0 : 0.35;
-  if (analyser && (state === 'listening' || state === 'speaking')) {
-    sparklinePhase += 0.055;
-  } else {
-    sparklinePhase += 0.025;
-  }
-
-  const points = 24;
-  const step = w / (points - 1);
   const midY = h / 2;
 
-  for (let i = 0; i < points; i++) {
-    const x = i * step;
-    const s1 = Math.sin(sparklinePhase + i * 0.38);
-    const s2 = Math.sin(sparklinePhase * 1.6 + i * 0.75) * 0.55;
-    const wave = (s1 + s2) * (h * 0.32) * activeAmp;
-    const taper = Math.sin((i / (points - 1)) * Math.PI);
-    const y = midY + wave * taper;
-    if (i === 0) voiceSparklineCtx.moveTo(x, y);
-    else voiceSparklineCtx.lineTo(x, y);
+  if (demoModeActive) {
+    sparklinePhase += 0.045;
+    const points = 24;
+    const step = w / (points - 1);
+    for (let i = 0; i < points; i++) {
+      const x = i * step;
+      const s1 = Math.sin(sparklinePhase + i * 0.38);
+      const s2 = Math.sin(sparklinePhase * 1.6 + i * 0.75) * 0.55;
+      const wave = (s1 + s2) * (h * 0.32);
+      const taper = Math.sin((i / (points - 1)) * Math.PI);
+      const y = midY + wave * taper;
+      if (i === 0) voiceSparklineCtx.moveTo(x, y);
+      else voiceSparklineCtx.lineTo(x, y);
+    }
+  } else if (analyser && state !== 'muted' && (state === 'listening' || state === 'speaking')) {
+    const binCount = analyser.frequencyBinCount;
+    const data = new Uint8Array(binCount);
+    analyser.getByteFrequencyData(data);
+
+    let maxVal = 0;
+    for (let i = 0; i < 48; i++) {
+      if (data[i] > maxVal) maxVal = data[i];
+    }
+
+    if (maxVal < 6) {
+      // Flat baseline when muted or idle / no acoustic activity
+      voiceSparklineCtx.moveTo(0, midY);
+      voiceSparklineCtx.lineTo(w, midY);
+    } else {
+      const points = 24;
+      const step = w / (points - 1);
+      for (let i = 0; i < points; i++) {
+        const x = i * step;
+        const binIndex = Math.floor((i / points) * (binCount * 0.5));
+        const normVal = (data[binIndex] || 0) / 255.0;
+        const taper = Math.sin((i / (points - 1)) * Math.PI);
+        const wave = normVal * (h * 0.45) * taper;
+        const y = midY - wave;
+        if (i === 0) voiceSparklineCtx.moveTo(x, y);
+        else voiceSparklineCtx.lineTo(x, y);
+      }
+    }
+  } else {
+    // Flat baseline when muted, idle, or uninitialized
+    voiceSparklineCtx.moveTo(0, midY);
+    voiceSparklineCtx.lineTo(w, midY);
   }
   voiceSparklineCtx.stroke();
   voiceSparklineCtx.shadowBlur = 0;
@@ -612,24 +809,23 @@ function drawWaveform() {
   waveformCtx.fillStyle = (STATE_COLORS[state] || STATE_COLORS.loading)[0];
 
   let dataArray = null;
-  if (analyser) {
+  if (analyser && state !== 'muted') {
     dataArray = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(dataArray);
   }
 
   for (let i = 0; i < BAR_COUNT; i++) {
-    let amplitude;
-    if (dataArray) {
-      // Map bar index to frequency bin
+    let amplitude = 0.01;
+    if (demoModeActive) {
+      ambientPhase += 0.001;
+      const s = Math.sin(ambientPhase * 3 + i * 0.35) * 0.5 + 0.5;
+      amplitude = 0.12 + s * 0.65;
+    } else if (dataArray && state !== 'muted') {
       const binIndex = Math.floor((i / BAR_COUNT) * dataArray.length * 0.6);
-      amplitude = dataArray[binIndex] / 255;
-    }
-
-    // If no real audio data or very quiet, use ambient drift
-    if (!dataArray || amplitude < 0.02) {
-      ambientPhase += 0.0001;
-      const drift = Math.sin(ambientPhase * 3 + i * 0.4) * 0.5 + 0.5;
-      amplitude = 0.03 + drift * 0.04;
+      const raw = dataArray[binIndex] / 255.0;
+      amplitude = raw > 0.02 ? raw : 0.01;
+    } else {
+      amplitude = 0.01;
     }
 
     const barH = Math.max(2, amplitude * (h - 4));
@@ -1727,11 +1923,76 @@ function initStarterConversation() {
   updateConversationCount();
 }
 
+let nonLocalRequestCount = 0;
+
+function initPrivacyObserver() {
+  if (typeof window !== 'undefined' && 'PerformanceObserver' in window) {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          try {
+            const url = new URL(entry.name);
+            const isLocal = url.hostname === 'localhost' ||
+                            url.hostname === '127.0.0.1' ||
+                            url.hostname === '0.0.0.0' ||
+                            url.hostname === '::1' ||
+                            url.hostname === window.location.hostname;
+            if (!isLocal) {
+              nonLocalRequestCount++;
+              updatePrivacyBadge();
+            }
+          } catch (_) {}
+        }
+      });
+      observer.observe({ type: 'resource', buffered: true });
+    } catch (_) {}
+  }
+}
+
+function updatePrivacyBadge() {
+  const privateEl = $('privateStateVal');
+  if (privateEl) {
+    if (nonLocalRequestCount === 0) {
+      privateEl.textContent = 'Non-local requests: 0 (100% on-device)';
+    } else {
+      privateEl.textContent = `External requests: ${nonLocalRequestCount}`;
+    }
+  }
+}
+
+function initFreshnessWatcher() {
+  setInterval(() => {
+    if (!demoModeActive) {
+      // Face freshness check (< 2.0s)
+      const faceLiveTag = $('faceLiveTag') || $('diagFaceLiveStatus');
+      if (faceLiveTag) {
+        const isLive = lastFaceSnapshotAt > 0 && (Date.now() - lastFaceSnapshotAt < 2000);
+        faceLiveTag.className = isLive ? 'diag-badge live' : 'diag-badge idle';
+        faceLiveTag.innerHTML = `<span class="badge-dot"></span> ${isLive ? 'LIVE' : 'IDLE'}`;
+        if (!isLive) {
+          clearLandmarkOverlay();
+          if (faceEmptyState) faceEmptyState.hidden = false;
+          if (faceMiniCanvas) faceMiniCanvas.hidden = true;
+        }
+      }
+      // Voice freshness check (< 2.0s)
+      const voiceLiveTag = $('voiceLiveTag');
+      if (voiceLiveTag) {
+        const isLive = lastVoiceSnapshotAt > 0 && (Date.now() - lastVoiceSnapshotAt < 2000);
+        voiceLiveTag.className = isLive ? 'diag-badge live' : 'diag-badge idle';
+        voiceLiveTag.innerHTML = `<span class="badge-dot"></span> ${isLive ? 'LIVE' : 'IDLE'}`;
+      }
+    }
+  }, 500);
+}
+
 // ── Init ──
 async function init() {
   initWaveformCanvas();
   initSparkline();
   initLandmarkCanvas();
+  initPrivacyObserver();
+  initFreshnessWatcher();
 
   const handleResize = () => {
     initWaveformCanvas();
@@ -1744,9 +2005,14 @@ async function init() {
   bindQuickControls();
   initStarterConversation();
 
-  // Initial futuristic diagnostics readout
-  updateFaceMetrics(DEMO_DIAGNOSTICS.face, false);
-  updateVocalMetrics(DEMO_DIAGNOSTICS.vocal, false);
+  // Initial state: Start clean with uninitialized/idle markers ('—') unless Demo mode is already on
+  if (demoModeActive) {
+    updateFaceMetrics(DEMO_DIAGNOSTICS.face, true);
+    updateVocalMetrics(DEMO_DIAGNOSTICS.vocal, true);
+  } else {
+    clearFaceMetrics();
+    clearVocalMetrics();
+  }
 
   connect(); // Establish WebSocket connection immediately — do not wait for camera permission
   bindDiagnosticsControls();

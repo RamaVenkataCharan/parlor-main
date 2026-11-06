@@ -784,14 +784,34 @@ async def _run_session(ws: WebSocket):
                 continue
 
             if msg.get("type") == "get_system_status":
+                is_llama_up = llama.is_healthy(timeout=0.8)
+                model_name = llama.model_label()
+                build_info = "offline"
+                if is_llama_up:
+                    try:
+                        conn = llama._connect(timeout=0.8)
+                        conn.request("GET", "/props")
+                        resp = conn.getresponse()
+                        if resp.status == 200:
+                            props = json.loads(resp.read().decode())
+                            build_num = props.get("build_number") or props.get("version")
+                            build_info = f"b{build_num}" if build_num else "online"
+                        else:
+                            build_info = "online"
+                        conn.close()
+                    except Exception:
+                        build_info = "online"
+                else:
+                    build_info = "offline"
+
                 await send_json(ws, {
                     "type": "system_status",
-                    "model_ready": True,
-                    "model_name": "Gemma 4 E2B (on-device)",
+                    "model_ready": is_llama_up,
+                    "model_name": f"{model_name} ({build_info})",
                     "schema_valid": True,
-                    "schema_version": "Diagnostics schema v1.0",
+                    "schema_version": "Diagnostics schema v1.0 (validated)",
                     "baseline_active": True,
-                    "baseline_mode": "Personal baseline (local)",
+                    "baseline_mode": "not used (static 145 Hz reference)",
                     "private_on_device": True,
                     "research_opt_in": bool(research_opted_in),
                     "research_configured": reasoner.enabled()

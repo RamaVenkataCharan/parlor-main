@@ -310,7 +310,7 @@ Vocal DSP Extraction (CPU)             2.85 ms (mean) / 3.73 ms (p95)
 Wellness SLM Latency (GPU, Gemma 4)    2.14 s (mean) / 2.44 s (p95) [Margin: +2.56s]           
 Voice TTFA (Wellness Loop OFF)         1.920 s (mean) / 3.545 s (p95, N=30, CI: [1.663s, 2.213s])                   
 Voice TTFA (Wellness Loop ON)          1.774 s (mean) / 3.419 s (p95, N=30, CI: [1.505s, 2.077s])                   
-Integration Test Suite                 115 / 117 passed (1 skipped: TTS fixture falling prosody vs live hesitation; 1 flaky live-model test) 
+Integration Test Suite                 125 / 127 passed (1 skipped: TTS fixture falling prosody vs live hesitation; 1 flaky live-model test) 
 Outbound Network Telemetry             0 sockets (0.00 KB outbound)                                                 
 Peak GPU VRAM Utilization              3.9 GB (3991 MB / 6141 MB capacity)                                          
 Human Ground-Truth Accuracy            NOT YET COLLECTED                                                            

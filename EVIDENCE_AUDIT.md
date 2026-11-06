@@ -37,7 +37,7 @@
 | **Host Working Set Memory (RAM)** | ~4.2 GB (unverified) | **2.42 GB working set (5.24 GB commit)** | `evidence/ram_working_set.txt` | `measure_storage_and_ram.py` via Get-Process | **CHANGED (VERIFIED)** |
 | **Bibliographic Citation Audit** | Baumel (2019) & Eysenbach (2005) | **Verified full DOI/PMID/Abstract** | `evidence/citation_verification.txt` | JMIR verified records | **VERIFIED** |
 | **Outbound Network Telemetry** | No outbound network traffic during operation unless the user opts in to research mode. | **0 outbound sockets (0.00 KB)** | `evidence/netstat_outbound.txt` | `netstat -ano` audit; local loopback boundary (`127.0.0.1`) | **VERIFIED** |
-| **Test Suite Passed** | 69 passed, 42 skipped | **115 passed out of 117 items, 1 skipped, 1 flaky live-model test** (116 passed when run in isolation; interim report: 111 passed) | `evidence/pytest_full.log` | `uv run pytest -rs` | **CHANGED (VERIFIED)** |
+| **Test Suite Passed** | 69 passed, 42 skipped | **125 passed out of 127 items, 1 skipped, 1 flaky live-model test** (126 passed when run in isolation; earlier checkpoints: 111, 115 passed) | `evidence/pytest_full.log` | `pytest` | **CHANGED (VERIFIED)** |
 | **Pytest Skip Reason** | "prosody" / "CUDA" | **"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"** | `tests/test_conversation.py:68` | Exact raw skip reason from `pytest -rs` | **VERIFIED** |
 | **Gemma 4 E2B Quantization Agreement**| 91.4% (Q4_K_M vs FP16) | **NOT MEASURED** | Local disk contains only Q4_0 | FP16 unquantized weights not present locally | **NOT MEASURED** |
 | **Ground-Truth Human EMA Agreement** | 77.8% exact / 100% 1-tier | **NOT YET COLLECTED** | `shared_state/ema_records.json` | Toolkit ready (`evaluate_ema.py` & `ema_collector.py`) | **NOT YET COLLECTED / REQUIRES HUMAN** |
@@ -81,6 +81,33 @@
    - Retained only the pre-set **5.0-second wellness window budget** as an engineering budget.
    - Rewrote the aspirational TTFA $\le 1.00\text{s}$ objective to an interactive threshold of $\le 2.00\text{s}$ / $2.50\text{s}$ matching physical edge GPU realities.
 
+7. **Audit of Action Unit Ratios and Head Pose (Pitch -168° & All-Zero AUs):**
+   - *Audit Finding:*
+     1. Prior to this fix, all four Action Unit signals (AU04 Brow Furrow, AU07 Lid Tightener, AU15 Lip Depressor, AU20 Lip Stretcher) consistently read `0.00` on real webcam faces. The root causes were:
+        - **AU04:** Landmark indices 70 and 300 were incorrectly assumed to be inner brow corners, when in fact they are the farthest outer brow corners in the MediaPipe topology (inner corners are 107 and 336). The measured distance (~1.5 IPD) divided by 0.50 exceeded 1.0, causing `1.0 - 3.0` to be clamped to `0.00`.
+        - **AU07:** Eye Aspect Ratio (EAR) normalization used a divisor of 0.32 against relaxed open eyes (~0.33), causing `1.0 - (0.33/0.32)` to produce negative values clamped to `0.00`.
+        - **AU15:** Mouth corner drop was compared against a threshold of 0.70 IPD (which lies below the chin). Actual normal mouth-to-nose drop is ~0.40 IPD, so `(0.40 - 0.70)` was negative and clamped to `0.00`.
+        - **AU20:** Horizontal mouth width was divided by outer-canthal distance (misnamed IPD), producing ratios of ~0.50 compared against a threshold of 0.65, clamping to `0.00`.
+     2. **Head Pose Pitch** read `-168°` on forward-facing users because `self.model_points_3d` defined the Chin with $Y = -330.0$ and Eyes with $Y = +170.0$, inverting the vertical Y-axis relative to OpenCV's Y-down camera image coordinates. `solvePnP` therefore solved an upside-down 3D model, introducing a ~180° pitch inversion ambiguity.
+   - *Affected Earlier Results:*
+     - Real-face benchmark timing tests (`evidence/facial_extraction_real.csv`, `facial_extraction_dim.csv`, `facial_extraction_turned.csv`) successfully measured execution pipeline latency (3.97 ms mean), but the extracted feature vectors contained all-zero AUs and inverted pitch.
+     - Live demo evaluations relied on synthetic feature injection (`DEMO_VECTOR_B07_V10`) rather than live webcam expressions to demonstrate Tier 2 interventions.
+   - *Resolution:* Corrected `model_points_3d` coordinates (Y down: Chin $Y=+330.0$, Eyes $Y=-170.0$), fixed landmark index mapping to true inner brows (107, 336) and true IPD (landmarks 468, 473), properly calibrated AU thresholds against human facial geometry, and wrapped pitch/yaw to $[-90^\circ, +90^\circ]$. Neutral forward-facing pose now evaluates within $\pm 5^\circ$ (verified via `test_facial_head_pose_known_rotations`). Live webcam verification is scripted in `scripts/check_face_signals.py` (REQUIRES HUMAN).
+
+8. **Frontend Modernization & Diagnostics Polish (Mockup Alignment & Bug Fixes):**
+   - *Audit Finding:*
+     1. Mockup placeholder literals (`78%`, `0.19`, `4.7`, `0.83`, `0.26`, `0.18`, `0.32`, `0.11`, `Y -2.8° P +1.6° R +0.7°`, `v0.9.2 (on-device)`, `Diagnostics schema v1.0`, `Personal baseline (local)`) were statically displayed in default diagnostic cards without real telemetry backing.
+     2. Video face mesh overlay coordinates did not properly map MediaPipe normalized $[0.0, 1.0]$ coordinates to the container canvas across varying aspect ratios, CSS `object-fit: cover` cropping, and horizontal mirror flips (`scaleX(-1)`).
+     3. Frequency visualizer and spectrum sparkline rendered hardcoded sine waves even when the microphone was muted or silent.
+     4. Viewport layout at standard laptop resolution ($1440 \times 900$) produced vertical outer page scrollbars.
+   - *Resolution:*
+     - **Eradication of Mockup Literals:** All default values replaced with `—` with descriptive tooltips and 0% bar widths. Real values are wired directly to `facial_extraction` and `vocal_extraction` packets over WebSocket. Mockup numbers remain accessible strictly within the user-toggled Demo Mode (`#demoModeToggle`), clearly badged with `DEMO DATA`.
+     - **Pure Landmark Coordinate Transform:** Implemented `mapLandmarkToCanvas(norm_x, norm_y, src_w, src_h, dst_w, dst_h, object_fit="cover", mirrored=true)` with 100% mathematical parity across Python (`overlay.py`) and JavaScript (`app.js`). Validated via 5 unit tests (`tests/test_overlay_transform.py`) covering 16:9, 4:3, portrait, letterboxing, and mirror flips.
+     - **Real Audio Spectrum Telemetry:** Wired `AnalyserNode.getByteFrequencyData` to drive both the primary glowing wave canvas and the diagnostics `#voiceSparkline`, rendering flat idle baselines when silent or muted.
+     - **100dvh Layout & Zero Outer Scrollbar:** Refactored CSS to enforce dynamic viewport sizing (`height: calc(100dvh - 60px)`, `overflow: hidden`) with zero outer scrollbar at $1440 \times 900$, verified via automated Playwright headless audit (`scripts/verify_ui_and_capture_evidence.py`).
+     - **Zero External Network Requests:** Enforced 100% on-device execution with zero external CDN/font calls, tracked dynamically via `PerformanceObserver`.
+     - **Regression Suite:** Total test suite expanded to 127 items with 125 passed, 1 skipped (prosody fixture), and 1 flaky live-model test documented (`test_translation.py`).
+
 ---
 
 ## 3. The "REQUIRES HUMAN" Action Items
@@ -100,6 +127,9 @@ The following items cannot and will not be filled with synthetic data:
 4. **Physical Camera Disconnect Mid-Session Verification:**
    - **Protocol Documented:** `evidence/browser/permissions_audit.log` and `BROWSER_TEST_REPORT.md`.
    - **Action Required:** Physical unplug of USB webcam cable during viva examination to confirm `MediaStreamTrack.onended` handling.
+5. **Facial Expression Grounding Battery (`check_face_signals.py`):**
+   - **Harness Ready:** `scripts/check_face_signals.py`.
+   - **Action Required:** Operator to sit in front of live webcam and execute the 4 standardized expressions (Neutral, Brow Furrow, Eye Squint, Lip Stretch) for 5s each to verify AU delta table.
 
 ---
 

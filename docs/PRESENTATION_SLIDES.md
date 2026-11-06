@@ -143,7 +143,7 @@
 | Wellness SLM Latency (GPU, Conflict Max) | **4.32 s** (mean: 2.79 s, CoT) | $\le 5.0\text{ s}$ (window) | **PASS (+0.68s)** | `evidence/live_pattern_reasoning.json` |
 | Conversational Turn TTFA (Loop OFF, 30 turns) | **1.920 s mean** (p50: 1.622 s, p95: 3.545 s, CI: [1.66s, 2.21s]) | Baseline isolated voice mode | **MEASURED** | `evidence/voice_ttfa_summary.json` |
 | Conversational Turn TTFA (Loop Mitigated, 30 turns) | **1.774 s mean** (p50: 1.483 s, p95: 3.419 s, CI: [1.51s, 2.08s]) | Interactive threshold $\le 2.00\text{ s}$ | **PASS (No distinguishable cost; CIs overlap)** | `evidence/voice_ttfa_summary.json` |
-| Test Suite Integration | **114 / 115 Passed (1 skipped by design)** | All functional | **PASS (99.1%)** | `evidence/pytest_full.log` |
+| Test Suite Integration | **125 / 127 Passed (1 skipped by design, 1 flaky live-model test)** | All functional (126 in isolation) | **PASS (98.4%)** | `evidence/pytest_full.log` |
 | Outbound Network Sockets | **0 (0.00 KB)** | $0.0\text{ KB}$ | **PASS** | `evidence/netstat_outbound.txt` |
 | Peak VRAM (Session) | **3.90 GB** (3991 MB peak) | 6.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
 | Host Working Set RAM | **2.42 GB** (`llama-server` 1.84 GB + `python` 0.61 GB; 5.24 GB commit) | 16.0 GB capacity | **PASS** | `evidence/ram_working_set.txt` |

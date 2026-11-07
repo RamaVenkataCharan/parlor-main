@@ -57,7 +57,7 @@ class FacialExtractor:
         61, 185, 40, 39, 37, 0, 267, 269, 270, 409, 291, 375, 321, 405, 314, 17, 84, 181, 91, 146,
     ]
 
-    def __init__(self, max_faces: int = 1, min_detection_confidence: float = 0.5):
+    def __init__(self, max_faces: int = 1, min_detection_confidence: float = 0.4):
         self.mp_available = MP_AVAILABLE
         self.face_mesh = None
         if MP_AVAILABLE:
@@ -67,27 +67,28 @@ class FacialExtractor:
                     static_image_mode=False,
                     max_num_faces=max_faces,
                     refine_landmarks=True,
-                    min_detection_confidence=min_detection_confidence
+                    min_detection_confidence=min_detection_confidence,
+                    min_tracking_confidence=min_detection_confidence
                 )
             except Exception as e:
                 print(f"[FACIAL EXTRACTOR WARNING] Failed to initialize MediaPipe FaceMesh: {e}")
                 self.mp_available = False
 
         # 3D Model Points for solvePnP Head Pose Estimation in camera frame (Y-down):
-        # Coordinates: X (right), Y (down), Z (away/into camera)
+        # Coordinates: X (right), Y (down), Z (away/into scene from nose tip)
         # Landmark 1: Nose tip
-        # Landmark 152: Chin (below nose -> Y > 0)
-        # Landmark 33: Right eye outer corner (image left -> X < 0, above nose -> Y < 0)
-        # Landmark 263: Left eye outer corner (image right -> X > 0, above nose -> Y < 0)
-        # Landmark 61: Right mouth corner (image left -> X < 0, below nose -> Y > 0)
-        # Landmark 291: Left mouth corner (image right -> X > 0, below nose -> Y > 0)
+        # Landmark 152: Chin (below nose -> Y > 0, further back than nose -> Z > 0)
+        # Landmark 33: Right eye outer corner (image left -> X < 0, above nose -> Y < 0, further back -> Z > 0)
+        # Landmark 263: Left eye outer corner (image right -> X > 0, above nose -> Y < 0, further back -> Z > 0)
+        # Landmark 61: Right mouth corner (image left -> X < 0, below nose -> Y > 0, further back -> Z > 0)
+        # Landmark 291: Left mouth corner (image right -> X > 0, below nose -> Y > 0, further back -> Z > 0)
         self.model_points_3d = np.array([
             (0.0, 0.0, 0.0),             # Nose tip (1)
-            (0.0, 330.0, -65.0),         # Chin (152)
-            (-225.0, -170.0, -135.0),    # Right eye outer corner / image left (33)
-            (225.0, -170.0, -135.0),     # Left eye outer corner / image right (263)
-            (-150.0, 150.0, -125.0),     # Right mouth corner / image left (61)
-            (150.0, 150.0, -125.0)       # Left mouth corner / image right (291)
+            (0.0, 330.0, 65.0),          # Chin (152)
+            (-225.0, -170.0, 135.0),     # Right eye outer corner / image left (33)
+            (225.0, -170.0, 135.0),      # Left eye outer corner / image right (263)
+            (-150.0, 150.0, 125.0),      # Right mouth corner / image left (61)
+            (150.0, 150.0, 125.0)        # Left mouth corner / image right (291)
         ], dtype=np.float64)
 
     def extract(self, image_input: Any) -> Dict[str, Any]:
@@ -249,7 +250,7 @@ class FacialExtractor:
 
                 pitch = _wrap_to_range(angles[0], 90.0)
                 yaw = _wrap_to_range(angles[1], 90.0)
-                roll = float((angles[2] + 180.0) % 360.0 - 180.0)
+                roll = _wrap_to_range(angles[2], 90.0)
 
             # Log raw geometric ratios before and after normalization
             print(f"[FACIAL RAW RATIOS] ipd={ipd:.1f}px | brow_dist={brow_dist:.3f}->AU04={au04_furrow:.3f} | ear={avg_ear:.3f}->AU07={au07_lid_tight:.3f} | drop={corner_drop:.3f}->AU15={au15_depressor:.3f} | width={mouth_width:.3f}->AU20={au20_stretcher:.3f} | pitch={pitch:.1f}° yaw={yaw:.1f}° roll={roll:.1f}°")

@@ -188,3 +188,24 @@ def test_vocal_extractor_speech_pace_relative():
     assert res["speech_detected"] is True
     assert "speech_pace_relative" in res
     assert 2.5 <= res["speech_pace_relative"] <= 3.5, f"Expected pace around 3.0, got {res['speech_pace_relative']}"
+
+
+def test_frontal_face_pose_within_bounds():
+    """Verify that a real frontal face fixture reads yaw/pitch/roll within +/- 15 degrees."""
+    import cv2
+    import os
+    img_path = os.path.join(
+        os.path.dirname(os.path.dirname(__file__)),
+        ".venv", "Lib", "site-packages", "matplotlib", "mpl-data", "sample_data", "grace_hopper.jpg"
+    )
+    if not os.path.exists(img_path):
+        import pytest
+        pytest.skip("grace_hopper.jpg fixture not found")
+    img = cv2.imread(img_path)
+    extractor = FacialExtractor()
+    res = extractor.extract(img)
+    assert res["face_detected"] is True
+    assert abs(res["head_pitch"]) <= 15.0, f"Frontal pitch exceeded 15 deg: {res['head_pitch']}"
+    assert abs(res["head_yaw"]) <= 15.0, f"Frontal yaw exceeded 15 deg: {res['head_yaw']}"
+    assert abs(res["head_roll"]) <= 15.0, f"Frontal roll exceeded 15 deg: {res['head_roll']}"
+

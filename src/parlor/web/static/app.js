@@ -176,18 +176,29 @@ function mapLandmarkToCanvas(normX, normY, srcW, srcH, dstW, dstH, objectFit = '
 }
 window.mapLandmarkToCanvas = mapLandmarkToCanvas;
 
+let isDocumentVisible = true;
+document.addEventListener('visibilitychange', () => {
+  isDocumentVisible = document.visibilityState === 'visible';
+  if (!isDocumentVisible) {
+    clearLandmarkOverlay();
+  }
+});
+
+let cachedLandmarkW = 640;
+let cachedLandmarkH = 360;
+
 function clearLandmarkOverlay() {
   if (!landmarkCanvas || !landmarkCtx) return;
-  const rect = landmarkCanvas.getBoundingClientRect();
-  landmarkCtx.clearRect(0, 0, rect.width || landmarkCanvas.width, rect.height || landmarkCanvas.height);
+  landmarkCtx.clearRect(0, 0, cachedLandmarkW, cachedLandmarkH);
 }
 
 function initLandmarkCanvas() {
   if (!landmarkCanvas || !landmarkCtx) return;
   const dpr = window.devicePixelRatio || 1;
-  const rect = landmarkCanvas.getBoundingClientRect();
-  landmarkCanvas.width = (rect.width || 640) * dpr;
-  landmarkCanvas.height = (rect.height || 360) * dpr;
+  cachedLandmarkW = landmarkCanvas.clientWidth || 640;
+  cachedLandmarkH = landmarkCanvas.clientHeight || 360;
+  landmarkCanvas.width = cachedLandmarkW * dpr;
+  landmarkCanvas.height = cachedLandmarkH * dpr;
   landmarkCtx.setTransform(1, 0, 0, 1, 0, 0);
   landmarkCtx.scale(dpr, dpr);
 }
@@ -237,8 +248,11 @@ function drawMiniFaceMesh(meshPoints) {
   }
 }
 
+let lastMeshDrawTimestamp = 0;
+const MESH_THROTTLE_INTERVAL = 66; // 15 fps budget
+
 function drawLandmarkOverlay(meshPoints) {
-  if (!landmarkCanvas || !landmarkCtx) return;
+  if (!landmarkCanvas || !landmarkCtx || !isDocumentVisible) return;
   if (!landmarksVisible || (!cameraEnabled && !demoModeActive)) {
     clearLandmarkOverlay();
     return;
@@ -248,15 +262,20 @@ function drawLandmarkOverlay(meshPoints) {
     return;
   }
 
+  const now = Date.now();
+  if (now - lastMeshDrawTimestamp < MESH_THROTTLE_INTERVAL) {
+    return;
+  }
+  lastMeshDrawTimestamp = now;
+
   // Fade out / clear if face data is > 1.5s stale
-  if (!demoModeActive && lastFaceSnapshotAt > 0 && (Date.now() - lastFaceSnapshotAt > 1500)) {
+  if (!demoModeActive && lastFaceSnapshotAt > 0 && (now - lastFaceSnapshotAt > 1500)) {
     clearLandmarkOverlay();
     return;
   }
 
-  const rect = landmarkCanvas.getBoundingClientRect();
-  const dstW = rect.width || 640;
-  const dstH = rect.height || 360;
+  const dstW = cachedLandmarkW;
+  const dstH = cachedLandmarkH;
   landmarkCtx.clearRect(0, 0, dstW, dstH);
 
   // Source camera aspect ratio (default 16:9 1280x720)
@@ -323,6 +342,9 @@ function clearFaceMetrics() {
   if (faceMiniCanvas) faceMiniCanvas.hidden = true;
 }
 
+let lastFaceUpdateTimestamp = 0;
+const METRICS_THROTTLE_INTERVAL = 250; // 4 Hz update budget
+
 function updateFaceMetrics(face, simulated = false) {
   if (!face || !face.face_detected) {
     clearFaceMetrics();
@@ -337,8 +359,19 @@ function updateFaceMetrics(face, simulated = false) {
     return;
   }
 
-  lastFaceSnapshotAt = Date.now();
+  const now = Date.now();
+  const isSim = Boolean(simulated || demoModeActive);
+  if (!simulated && !isSim && now - lastFaceUpdateTimestamp < METRICS_THROTTLE_INTERVAL) {
+    return;
+  }
+  lastFaceUpdateTimestamp = now;
+
+  lastFaceSnapshotAt = now;
   lastFaceDetectionState = 'face';
+
+  if (face.baseline) {
+    updateBaselineUI(face.baseline);
+  }
   const fields = [
     ['AU04', face.au04_brow_furrow],
     ['AU07', face.au07_lid_tightener],
@@ -369,7 +402,6 @@ function updateFaceMetrics(face, simulated = false) {
     liveBadge.innerHTML = '<span class="badge-dot"></span> LIVE';
   }
 
-  const isSim = Boolean(simulated || demoModeActive);
   document.querySelectorAll('.demo-tag').forEach(tag => tag.hidden = !isSim);
 
   if (face.mesh_points && Array.isArray(face.mesh_points)) {
@@ -412,10 +444,22 @@ function clearVocalMetrics() {
   }
 }
 
+let lastVocalUpdateTimestamp = 0;
+
 function updateVocalMetrics(vocal, simulated = false) {
   if (!vocal) return;
   const isSim = Boolean(simulated || demoModeActive);
   document.querySelectorAll('.demo-tag').forEach(tag => tag.hidden = !isSim);
+
+  const now = Date.now();
+  if (!simulated && !isSim && now - lastVocalUpdateTimestamp < METRICS_THROTTLE_INTERVAL) {
+    return;
+  }
+  lastVocalUpdateTimestamp = now;
+
+  if (vocal.baseline) {
+    updateBaselineUI(vocal.baseline);
+  }
 
   const actEl = $('voiceActivityValue') || $('voiceActivityVal');
   const actBar = $('voiceActivityBar');
@@ -425,6 +469,8 @@ function updateVocalMetrics(vocal, simulated = false) {
   const paceBar = $('voicePaceBar') || $('speechPaceBar');
   const steadyEl = $('voiceSteadinessValue') || $('steadinessVal');
   const steadyBar = $('voiceSteadinessBar') || $('steadinessBar');
+
+  const speechActive = Boolean(vocal.speech_detected || isSim);
 
   // 1. Voice activity %
   let voiceAct = null;
@@ -436,63 +482,78 @@ function updateVocalMetrics(vocal, simulated = false) {
     voiceAct = DEMO_DIAGNOSTICS.vocal.voice_activity_pct;
   }
 
-  if (actEl) actEl.textContent = voiceAct !== null ? `${Math.max(0, Math.min(100, voiceAct))}%` : '—';
-  if (actBar) actBar.style.width = voiceAct !== null ? `${Math.max(0, Math.min(100, voiceAct))}%` : '0%';
+  if (actEl) actEl.textContent = (speechActive && voiceAct !== null) ? `${Math.max(0, Math.min(100, voiceAct))}%` : '—';
+  if (actBar) actBar.style.width = (speechActive && voiceAct !== null) ? `${Math.max(0, Math.min(100, voiceAct))}%` : '0%';
 
   // 2. Pitch variability
   let pitchScore = 0;
   let pitchDisplay = '—';
-  if (vocal.f0_std_hz !== undefined && vocal.f0_std_hz > 0) {
-    pitchScore = Math.max(0, Math.min(100, Math.round((vocal.f0_std_hz / 50.0) * 100)));
-    pitchDisplay = `${vocal.f0_std_hz.toFixed(1)} Hz`;
-  } else if (vocal.pitch_relative_pct !== undefined) {
-    pitchScore = vocal.pitch_relative_pct;
-    pitchDisplay = vocal.pitch_raw !== undefined ? vocal.pitch_raw.toFixed(2) : `${pitchScore}%`;
-  } else if (isSim) {
-    pitchScore = DEMO_DIAGNOSTICS.vocal.pitch_relative_pct;
-    pitchDisplay = `${DEMO_DIAGNOSTICS.vocal.pitch_raw.toFixed(2)}`;
+  if (speechActive) {
+    if (vocal.f0_std_hz !== undefined && vocal.f0_std_hz > 0) {
+      pitchScore = Math.max(0, Math.min(100, Math.round((vocal.f0_std_hz / 50.0) * 100)));
+      pitchDisplay = `${vocal.f0_std_hz.toFixed(1)} Hz`;
+    } else if (vocal.pitch_relative_pct !== undefined) {
+      pitchScore = vocal.pitch_relative_pct;
+      pitchDisplay = vocal.pitch_raw !== undefined ? `${vocal.pitch_raw.toFixed(2)}` : `${pitchScore}%`;
+    } else if (isSim) {
+      pitchScore = DEMO_DIAGNOSTICS.vocal.pitch_relative_pct;
+      pitchDisplay = `${DEMO_DIAGNOSTICS.vocal.pitch_raw.toFixed(2)}`;
+    }
   }
 
-  if (pitchEl) pitchEl.textContent = pitchDisplay;
+  if (pitchEl) {
+    pitchEl.textContent = pitchDisplay;
+    pitchEl.title = "Pitch variability: standard deviation of fundamental frequency (F0) across speech frames in Hz";
+  }
   if (pitchBar) pitchBar.style.width = `${pitchScore}%`;
 
-  // 3. Speech pace (relative)
+  // 3. Speech pace (relative bursts/s)
   let pacePct = 0;
   let paceDisplay = '—';
-  if (vocal.speech_pace_relative !== undefined && vocal.speech_pace_relative > 0) {
-    const paceVal = vocal.speech_pace_relative;
-    pacePct = Math.min(100, Math.round((paceVal / 6.0) * 100));
-    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
-  } else if (vocal.speech_pace_ws !== undefined && vocal.speech_pace_ws > 0) {
-    const paceVal = vocal.speech_pace_ws;
-    pacePct = vocal.speech_pace_pct ?? Math.min(100, Math.round((paceVal / 6.0) * 100));
-    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
-  } else if (isSim) {
-    const paceVal = DEMO_DIAGNOSTICS.vocal.speech_pace_ws;
-    pacePct = DEMO_DIAGNOSTICS.vocal.speech_pace_pct;
-    paceDisplay = `${paceVal.toFixed(1)} rel/s`;
+  if (speechActive) {
+    if (vocal.speech_pace_relative !== undefined && vocal.speech_pace_relative > 0) {
+      const paceVal = vocal.speech_pace_relative;
+      pacePct = Math.min(100, Math.round((paceVal / 6.0) * 100));
+      paceDisplay = `${paceVal.toFixed(1)} bursts/s`;
+    } else if (vocal.speech_pace_ws !== undefined && vocal.speech_pace_ws > 0) {
+      const paceVal = vocal.speech_pace_ws;
+      pacePct = vocal.speech_pace_pct ?? Math.min(100, Math.round((paceVal / 6.0) * 100));
+      paceDisplay = `${paceVal.toFixed(1)} bursts/s`;
+    } else if (isSim) {
+      const paceVal = DEMO_DIAGNOSTICS.vocal.speech_pace_ws;
+      pacePct = DEMO_DIAGNOSTICS.vocal.speech_pace_pct;
+      paceDisplay = `${paceVal.toFixed(1)} bursts/s`;
+    }
   }
 
-  if (paceEl) paceEl.textContent = paceDisplay;
+  if (paceEl) {
+    paceEl.textContent = paceDisplay;
+    paceEl.title = "Speech pace: energy envelope syllable burst rate (relative bursts/s)";
+  }
   if (paceBar) paceBar.style.width = `${pacePct}%`;
 
   // 4. Steadiness
   let steadyScore = 0;
   let steadyDisplay = '—';
-  if (vocal.steadiness_pct !== undefined && vocal.steadiness_pct > 0) {
-    steadyScore = vocal.steadiness_pct;
-    steadyDisplay = vocal.steadiness_raw !== undefined ? vocal.steadiness_raw.toFixed(2) : (steadyScore / 100).toFixed(2);
-  } else if (vocal.jitter_local !== undefined || vocal.jitter_local_pct !== undefined) {
-    const jitter = vocal.jitter_local_pct ?? ((vocal.jitter_local ?? 0.05) * 100);
-    const shimmer = vocal.shimmer_local_pct ?? ((vocal.shimmer_local ?? 0.05) * 100);
-    steadyScore = Math.max(10, Math.min(100, Math.round(100 - (jitter * 4 + shimmer * 3))));
-    steadyDisplay = (steadyScore / 100).toFixed(2);
-  } else if (isSim) {
-    steadyScore = DEMO_DIAGNOSTICS.vocal.steadiness_pct;
-    steadyDisplay = DEMO_DIAGNOSTICS.vocal.steadiness_raw.toFixed(2);
+  if (speechActive) {
+    if (vocal.steadiness_pct !== undefined && vocal.steadiness_pct > 0) {
+      steadyScore = vocal.steadiness_pct;
+      steadyDisplay = vocal.steadiness_raw !== undefined ? vocal.steadiness_raw.toFixed(2) : (steadyScore / 100).toFixed(2);
+    } else if (vocal.jitter_local !== undefined || vocal.jitter_local_pct !== undefined) {
+      const jitter = vocal.jitter_local_pct ?? ((vocal.jitter_local ?? 0.05) * 100);
+      const shimmer = vocal.shimmer_local_pct ?? ((vocal.shimmer_local ?? 0.05) * 100);
+      steadyScore = Math.max(10, Math.min(100, Math.round(100 - (jitter * 4 + shimmer * 3))));
+      steadyDisplay = (steadyScore / 100).toFixed(2);
+    } else if (isSim) {
+      steadyScore = DEMO_DIAGNOSTICS.vocal.steadiness_pct;
+      steadyDisplay = DEMO_DIAGNOSTICS.vocal.steadiness_raw.toFixed(2);
+    }
   }
 
-  if (steadyEl) steadyEl.textContent = steadyDisplay;
+  if (steadyEl) {
+    steadyEl.textContent = steadyDisplay;
+    steadyEl.title = "Voice steadiness: acoustic stability index based on local jitter and shimmer perturbation (0.00 - 1.00)";
+  }
   if (steadyBar) steadyBar.style.width = `${steadyScore}%`;
 
   if (voiceAct !== null || pitchScore > 0 || isSim) {
@@ -1060,8 +1121,25 @@ function connect() {
     if (msg.type === 'system_status') {
       if (modelReadyVal) modelReadyVal.textContent = msg.model_name || 'Gemma 4 E2B (on-device)';
       if (schemaValidVal) schemaValidVal.textContent = msg.schema_version || 'Diagnostics schema v1.0';
-      if (baselineActiveVal) baselineActiveVal.textContent = msg.baseline_mode || 'Personal baseline (local)';
+      if (baselineActiveVal) {
+        baselineActiveVal.textContent = msg.baseline_mode || 'calibrating (0/60 s)';
+      }
+      const baselineIcon = $('baselineCheckIcon');
+      if (baselineIcon) {
+        if (msg.baseline_active) {
+          baselineIcon.textContent = '✓';
+          baselineIcon.className = 'check-icon';
+        } else {
+          baselineIcon.textContent = '⚪';
+          baselineIcon.className = 'check-icon neutral';
+        }
+      }
       if (privateStateVal) privateStateVal.textContent = 'All processing on this device';
+      return;
+    }
+    if (msg.type === 'wellness_snoozed') {
+      startSnoozeCountdown(msg.minutes || 10);
+      showToast(`Interventions snoozed for ${msg.minutes || 10} minutes`, 'warning', 4000);
       return;
     }
     if (msg.type === 'wellness_face_metrics') {
@@ -1469,10 +1547,12 @@ async function startCamera() {
 function captureFrame() {
   if (!cameraEnabled || !video.videoWidth) return null;
   const canvas = document.createElement('canvas');
-  const scale = 320 / video.videoWidth;
-  canvas.width = 320; canvas.height = video.videoHeight * scale;
+  const targetWidth = Math.min(640, video.videoWidth);
+  const scale = targetWidth / video.videoWidth;
+  canvas.width = targetWidth;
+  canvas.height = Math.round(video.videoHeight * scale);
   canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.7).split(',')[1];
+  return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 }
 
 // ── VAD Handlers ──
@@ -1652,7 +1732,7 @@ function handleSpeechEnd(audio) {
   framePrefetched = false;
 
   goProcessing();
-  addUserLoadingBubble(withCamera ? 'with camera' : '');
+  addUserLoadingBubble('');
   setBubbleMeta(pendingUserBubble(), '');  // hold resolved — drop its meta
 
   currentAssistantEl = null;
@@ -2003,6 +2083,9 @@ async function init() {
 
   bindViewSwitcher();
   bindQuickControls();
+  bindDiagnosticsControls();
+  bindWellnessControls();
+  bindDemoModeControls();
   initStarterConversation();
 
   // Initial state: Start clean with uninitialized/idle markers ('—') unless Demo mode is already on
@@ -2137,8 +2220,8 @@ function bindDemoModeControls() {
   const simBadge = document.getElementById('simulatedInputBadge');
   if (!demoToggle) return;
 
-  demoToggle.addEventListener('change', (e) => {
-    demoModeActive = e.target.checked;
+  const onToggle = () => {
+    demoModeActive = Boolean(demoToggle.checked);
     if (simBadge) simBadge.hidden = !demoModeActive;
     if (diagFaceDemoBadge) diagFaceDemoBadge.hidden = !demoModeActive;
     if (diagVoiceDemoBadge) diagVoiceDemoBadge.hidden = !demoModeActive;
@@ -2174,7 +2257,10 @@ function bindDemoModeControls() {
         demoModeInterval = null;
       }
     }
-  });
+  };
+
+  demoToggle.addEventListener('change', onToggle);
+  demoToggle.addEventListener('click', onToggle);
 }
 
 function showInterventionCard(data) {
@@ -2299,6 +2385,66 @@ function stopBreathingExercise() {
   if (exCard) exCard.hidden = true;
 }
 
+let snoozeCountdownTimer = null;
+let snoozeRemainingSec = 0;
+
+function startSnoozeCountdown(minutes = 10) {
+  snoozeRemainingSec = Math.round(minutes * 60);
+  if (snoozeCountdownTimer) clearInterval(snoozeCountdownTimer);
+  updateSnoozeButtonLabel();
+  snoozeCountdownTimer = setInterval(() => {
+    snoozeRemainingSec--;
+    if (snoozeRemainingSec <= 0) {
+      clearInterval(snoozeCountdownTimer);
+      snoozeCountdownTimer = null;
+      updateSnoozeButtonLabel();
+      showToast('Snooze period ended. Alerts active.', 'ok', 3000);
+    } else {
+      updateSnoozeButtonLabel();
+    }
+  }, 1000);
+}
+
+function updateSnoozeButtonLabel() {
+  const snoozeBtn = document.getElementById('interventionSnooze');
+  if (!snoozeBtn) return;
+  if (snoozeRemainingSec > 0) {
+    const mins = Math.floor(snoozeRemainingSec / 60);
+    const secs = snoozeRemainingSec % 60;
+    const pad = (n) => n.toString().padStart(2, '0');
+    snoozeBtn.textContent = `Snoozed (${pad(mins)}:${pad(secs)})`;
+    snoozeBtn.classList.add('snoozed');
+  } else {
+    snoozeBtn.textContent = 'Snooze 10m';
+    snoozeBtn.classList.remove('snoozed');
+  }
+}
+
+function updateBaselineUI(baseline) {
+  if (!baseline) return;
+  const el = $('baselineActiveVal');
+  const icon = $('baselineCheckIcon');
+  if (baseline.calibrated) {
+    if (el) {
+      el.textContent = 'Personal baseline (local)';
+      el.className = 'verify-val ok';
+    }
+    if (icon) {
+      icon.textContent = '✓';
+      icon.className = 'check-icon';
+    }
+  } else {
+    if (el) {
+      el.textContent = baseline.status || 'calibrating (0/60 s)';
+      el.className = 'verify-val neutral';
+    }
+    if (icon) {
+      icon.textContent = '⚪';
+      icon.className = 'check-icon neutral';
+    }
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   bindDiagnosticsControls();
   bindWellnessControls();
@@ -2325,6 +2471,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const snoozeBtn = document.getElementById('interventionSnooze');
   if (snoozeBtn) snoozeBtn.addEventListener('click', () => {
     wsSend({ type: 'snooze_wellness', minutes: 10 });
+    startSnoozeCountdown(10);
     showToast('Interventions snoozed for 10 minutes', 'warning', 4000);
     hideInterventionCard();
   });

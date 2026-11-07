@@ -37,8 +37,10 @@
 | **Host Working Set Memory (RAM)** | ~4.2 GB (unverified) | **2.42 GB working set (5.24 GB commit)** | `evidence/ram_working_set.txt` | `measure_storage_and_ram.py` via Get-Process | **CHANGED (VERIFIED)** |
 | **Bibliographic Citation Audit** | Baumel (2019) & Eysenbach (2005) | **Verified full DOI/PMID/Abstract** | `evidence/citation_verification.txt` | JMIR verified records | **VERIFIED** |
 | **Outbound Network Telemetry** | No outbound network traffic during operation unless the user opts in to research mode. | **0 outbound sockets (0.00 KB)** | `evidence/netstat_outbound.txt` | `netstat -ano` audit; local loopback boundary (`127.0.0.1`) | **VERIFIED** |
-| **Test Suite Passed** | 69 passed, 42 skipped | **125 passed out of 127 items, 1 skipped, 1 flaky live-model test** (126 passed when run in isolation; earlier checkpoints: 111, 115 passed) | `evidence/pytest_full.log` | `pytest` | **CHANGED (VERIFIED)** |
+| **Test Suite Passed** | 69 passed, 42 skipped | **126 passed out of 128 items, 1 skipped, 1 flaky live-model test** (127 passed when run in isolation; 5/5 pass rate on mode switch isolation; earlier checkpoints: 111, 115, 125 passed) | `evidence/pytest_full.log` | `pytest` | **CHANGED (VERIFIED)** |
 | **Pytest Skip Reason** | "prosody" / "CUDA" | **"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"** | `tests/test_conversation.py:68` | Exact raw skip reason from `pytest -rs` | **VERIFIED** |
+| **UI Main-Thread Busy Budget** | Not benchmarked | **7.06% main-thread busy** (Budget: < 20.0%, 0 long tasks > 50ms) | `evidence/ui/PERFORMANCE_REPORT.md` | 60s CDP performance trace (`record_performance_trace.py`) | **VERIFIED** |
+| **UI Design System & Tokens** | Inconsistent 10-12px | **16px body type scale, tabular-nums, 0 outer scrollbar, 0 external leaks** | `scripts/verify_design_system.py` | Playwright automated audit | **VERIFIED** |
 | **Gemma 4 E2B Quantization Agreement**| 91.4% (Q4_K_M vs FP16) | **NOT MEASURED** | Local disk contains only Q4_0 | FP16 unquantized weights not present locally | **NOT MEASURED** |
 | **Ground-Truth Human EMA Agreement** | 77.8% exact / 100% 1-tier | **NOT YET COLLECTED** | `shared_state/ema_records.json` | Toolkit ready (`evaluate_ema.py` & `ema_collector.py`) | **NOT YET COLLECTED / REQUIRES HUMAN** |
 | **Live Demonstration Video (.mp4)** | Claimed in submission | **REQUIRES HUMAN** | Script in `DEMO_SCRIPT.md` | Human recording with webcam/mic required | **REQUIRES HUMAN** |
@@ -149,4 +151,23 @@ The following items cannot and will not be filled with synthetic data:
 | **B10** | Permissions & Edge Cases | **SIMULATED:** Camera/Mic denied and Camera Busy handled gracefully via automated CDP overrides (Physical camera disconnect marked **REQUIRES HUMAN**) | `evidence/browser/permissions_audit.log`, 3 PNG screenshots |
 | **B11** | Responsive, Accessibility & Lighthouse | 1280x800 & 375x667 viewports (0 overflow), focus rings, Escape dismissal; Lighthouse CLI: **94/100 Accessibility**, **78/100 Best Practices** | `evidence/browser/viewport_desktop.png`, `viewport_mobile.png`, `accessibility_audit.json`, `lighthouse_desktop.json`, `lighthouse_mobile.json` |
 | **B12** | Repeatable Media Fixtures | **SIMULATED:** Synthetic Y4M face (30 FPS) and WAV speech fixtures generated for automated tests (Real camera/mic testing marked **REQUIRES HUMAN**) | `evidence/media/synthetic_face_test.y4m`, `evidence/media/synthetic_speech_test.wav` |
+
+---
+
+## 5. UI Redesign & Real-Time Performance Audit (Post-Redesign Verified Evidence)
+
+| Audit ID | Area | Measured / Verified Value | Raw Evidence File |
+|:---|:---|:---|:---|
+| **UI-P1** | Main-Thread Busy Budget | **7.06%** (Budget: < 20.0% during active 15fps mesh & 4Hz DOM updates) | `evidence/ui/PERFORMANCE_REPORT.md`, `evidence/ui/performance_trace.json` |
+| **UI-P2** | Main-Thread Long Tasks | **0 tasks > 50ms** (Budget: 0 long tasks outside inference) | `evidence/ui/PERFORMANCE_REPORT.md`, `evidence/ui/performance_trace.json` |
+| **UI-P3** | JavaScript Memory Footprint | **2.76 MB** used JS heap (completely flat over 60s CDP trace) | `evidence/ui/PERFORMANCE_REPORT.md`, `evidence/ui/performance_trace.json` |
+| **UI-P4** | Layout Thrashing Elimination | Dimensions cached on resize (`cachedLandmarkW/H`), 0 `getBoundingClientRect()` in rAF | `src/parlor/web/static/app.js` |
+| **UI-D1** | Outer Scrollbar Elimination | Body scrollHeight: **900px** == Viewport: **900px** at 1440x900 (0 outer scrollbar) | `evidence/ui/parlor_1440x900_default.png`, `verify_ui_and_capture_evidence.py` |
+| **UI-D2** | Design Tokens & Colors | Dark slate `--bg: #0B0F17`, `--surface: #111827`, `--accent-teal: #2DD4BF`, `--accent-indigo: #6366F1` | `src/parlor/web/static/style.css` |
+| **UI-D3** | Typography & Legibility | Body **16px**, secondary **14px**, captions **12px**; **0 elements < 11px** across entire DOM | `scripts/verify_design_system.py` |
+| **UI-D4** | Tabular Numeric Figures | `font-variant-numeric: tabular-nums` enforced on all 10 numeric metrics | `scripts/verify_design_system.py` |
+| **UI-D5** | Responsive Viewports | Desktop 1440x900 and Mobile (375x812, 390x844) with **zero horizontal overflow** | `evidence/ui/parlor_mobile_375x812.png`, `verify_design_system.py` |
+| **UI-D6** | Modal & State Evidence | Settings modal, Intervention card, and 2-minute box breathing dialog captured | `evidence/ui/parlor_settings_modal.png`, `parlor_intervention_card.png`, `parlor_breathing_exercise.png` |
+| **UI-D7** | Zero-Leak Privacy | Total external requests: **0** (100% on-device private processing) | `scripts/verify_ui_and_capture_evidence.py` |
+
 

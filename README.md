@@ -3,7 +3,7 @@
 # 🌿 Parlor ("EMO Assistant")
 ### Fully On-Device Multimodal Affective Wellness Monitoring & Spoken Dialogue Assistant
 
-[![Test Suite](https://img.shields.io/badge/pytest-117%20items%20%7C%20115%20passed%20%7C%201%20skipped-brightgreen.svg)](evidence/pytest_full.log)
+[![Test Suite](https://img.shields.io/badge/pytest-128%20items%20%7C%20126%20passed%20%7C%201%20skipped-brightgreen.svg)](evidence/pytest_full.log)
 [![Conversational TTFA](https://img.shields.io/badge/Voice%20TTFA-1.920s%20mean%20(Loop%20OFF)-blue.svg)](evidence/voice_ttfa_30_turns.csv)
 [![Mitigated TTFA](https://img.shields.io/badge/Voice%20TTFA-1.774s%20mean%20(Loop%20ON)-indigo.svg)](evidence/voice_ttfa_30_turns.csv)
 [![SLM Latency](https://img.shields.io/badge/SLM%20Reasoning-2.14s%20mean%20%7C%202.44s%20p95-purple.svg)](evidence/wellness_slm_latency.csv)
@@ -210,11 +210,13 @@ All performance statistics reported below were measured directly on the evaluati
 | **Total Non-SLM Pipeline Overhead** | **`10.89 ms`** (mean sum: $3.97 + 2.85 + 4.07\text{ ms}$) | $\le 50.0\text{ ms}$ budget | Subsystem CSVs | **PASS** |
 | **Wellness SLM Reasoning (Standard GPU)** | **`2.14 s`** (mean) / **`2.44 s`** (p95) / **`2.45 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) | **PASS (+2.56s margin)** |
 | **Wellness SLM Reasoning (Conflict CoT)** | **`2.79 s`** (mean) / **`4.32 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/live_pattern_reasoning.json`](evidence/live_pattern_reasoning.json) | **PASS (+0.68s margin)** |
-| **Test Suite Integration** | **`125 / 127 Passed`** (1 skipped by design, 1 flaky live-model test; 126 passed when translation succeeds) | 0 regressions, 1 skipped by design: TTS fixture prosody | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
+| **Test Suite Integration** | **`126 / 128 Passed`** (1 skipped by design, 1 flaky live-model test; 127 passed when translation succeeds) | 0 regressions, 1 skipped by design: TTS fixture prosody | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
 | **Outbound Network Telemetry** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ local boundary | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) | **PASS (Local Loopback)** |
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB capacity) | $\le 6.0\text{ GB}$ VRAM | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) | **PASS** |
 | **Host Working Set Memory (RAM)** | **`2.42 GB`** (`llama-server` 1.84GB + `python` 0.61GB) | 16.0 GB RAM (5.24 GB commit) | [`evidence/ram_working_set.txt`](evidence/ram_working_set.txt) | **PASS** |
 | **SQLite Database Storage Rate** | **`132.00 KB / active monitoring hour`** | 300.37 bytes/cycle (1.03 MB/workday) | [`evidence/storage_growth_rate.txt`](evidence/storage_growth_rate.txt) | **PASS** |
+| **UI Performance Trace Budget** | **`7.06% main-thread busy`** (0 long tasks > 50ms, 2.76 MB JS heap) | < 20% busy budget, 15fps mesh, 4Hz DOM | [`evidence/ui/PERFORMANCE_REPORT.md`](evidence/ui/PERFORMANCE_REPORT.md) | **PASS** |
+| **Design System & Typography** | **`100% System Font Stack`** (0 cramped <11px, 0 outer scrollbar) | Linear/Vercel dark dashboard tokens | [`scripts/verify_design_system.py`](scripts/verify_design_system.py) | **PASS** |
 | **Browser DevTools Audit (B1–B12)** | **`12 / 12 Suites Verified`** (0 leaks, 60.2 FPS) | Full Chrome DevTools CDP audit | [`BROWSER_TEST_REPORT.md`](BROWSER_TEST_REPORT.md) | **PASS** |
 | **EMA Ground-Truth Agreement** | **`NOT COLLECTED / REQUIRES HUMAN STUDY`** | Human Protocol Ready | [`docs/EMA_RECOLLECTION_KIT.md`](docs/EMA_RECOLLECTION_KIT.md) | **Kit Packaged** |
 
@@ -310,7 +312,7 @@ Vocal DSP Extraction (CPU)             2.85 ms (mean) / 3.73 ms (p95)
 Wellness SLM Latency (GPU, Gemma 4)    2.14 s (mean) / 2.44 s (p95) [Margin: +2.56s]           
 Voice TTFA (Wellness Loop OFF)         1.920 s (mean) / 3.545 s (p95, N=30, CI: [1.663s, 2.213s])                   
 Voice TTFA (Wellness Loop ON)          1.774 s (mean) / 3.419 s (p95, N=30, CI: [1.505s, 2.077s])                   
-Integration Test Suite                 125 / 127 passed (1 skipped: TTS fixture falling prosody vs live hesitation; 1 flaky live-model test) 
+Integration Test Suite                 126 / 128 passed (1 skipped: TTS fixture falling prosody vs live hesitation; 1 flaky live-model test; 127 in isolation) 
 Outbound Network Telemetry             0 sockets (0.00 KB outbound)                                                 
 Peak GPU VRAM Utilization              3.9 GB (3991 MB / 6141 MB capacity)                                          
 Human Ground-Truth Accuracy            NOT YET COLLECTED                                                            

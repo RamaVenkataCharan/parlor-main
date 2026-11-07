@@ -56,6 +56,8 @@ SYSTEM_PROMPT = (
     "You are a friendly, conversational AI assistant. The user talks to you "
     "through a microphone and may show you their camera. Your replies are "
     "spoken aloud, so write plain conversational text without formatting. "
+    "Never comment on the user's appearance, skin tone, gender, or age unless explicitly asked. "
+    "For emotional statements, respond with brief, warm support. "
     "If an audio message is just your own previous reply playing back "
     "(echo), don't answer it — briefly ask what they'd like to talk about."
 )
@@ -374,12 +376,26 @@ async def get_wellness_history(limit: int = 50):
     return db.get_recent_history(limit=limit)
 
 
+@app.get("/api/wellness/baseline")
+async def get_wellness_baseline():
+    """Retrieve personal baseline calibration status."""
+    if wellness_service:
+        return wellness_service.get_baseline_status()
+    return {"status": "not used", "calibrated": False, "elapsed_sec": 0, "target_sec": 60}
+
+
 def turn_instruction(msg: dict, has_image: bool, has_audio: bool) -> str:
     if has_audio:
         camera = CAMERA_CLAUSE if has_image else ""
         prompt = FLUSH_PROMPT if msg.get("type") == "flush" else RESPOND_PROMPT
         return prompt.format(camera=camera)
     if has_image:
+        text = msg.get("text", "").strip()
+        if text:
+            visual_kws = ("what do you see", "look at this", "what am i holding", "what is this", "see this", "what can you see", "describe what you see", "describe the scene", "on my camera")
+            if any(kw in text.lower() for kw in visual_kws):
+                return f"{text} Describe what you see on the camera."
+            return text
         return "The user is showing you their camera. Describe what you see."
     return msg.get("text", "Hello!")
 
@@ -804,14 +820,15 @@ async def _run_session(ws: WebSocket):
                 else:
                     build_info = "offline"
 
+                baseline_data = wellness_service.get_baseline_status() if wellness_service else {"status": "not used", "calibrated": False}
                 await send_json(ws, {
                     "type": "system_status",
                     "model_ready": is_llama_up,
                     "model_name": f"{model_name} ({build_info})",
                     "schema_valid": True,
-                    "schema_version": "Diagnostics schema v1.0 (validated)",
-                    "baseline_active": True,
-                    "baseline_mode": "not used (static 145 Hz reference)",
+                    "schema_version": "Diagnostics schema v1.0",
+                    "baseline_active": baseline_data.get("calibrated", False),
+                    "baseline_mode": baseline_data.get("status", "calibrating (0/60 s)"),
                     "private_on_device": True,
                     "research_opt_in": bool(research_opted_in),
                     "research_configured": reasoner.enabled()
@@ -978,6 +995,10 @@ async def _run_session(ws: WebSocket):
                 wellness_service.feed_frame(msg["image"])
             image = (msg.get("image") or frame_image) if mode.wants_camera else None
             has_audio = bool(audio_b64s)
+            if not has_audio and msg.get("text") and image:
+                visual_kws = ("what do you see", "look at this", "what am i holding", "what is this", "see this", "what can you see", "describe what you see", "describe the scene", "on my camera")
+                if not any(kw in msg["text"].lower() for kw in visual_kws):
+                    image = None
             is_flush = msg.get("type") == "flush"
             print(f"[STAGE 2] [AUDIO VALIDATION] audio_b64s_count={len(audio_b64s)}, valid_raw_audio={valid_audio(msg.get('audio'))}, has_audio={has_audio}")
 

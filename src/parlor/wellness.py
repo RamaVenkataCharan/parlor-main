@@ -35,6 +35,86 @@ def write_features_atomically(vector: dict) -> None:
         print(f"[WELLNESS] Failed to write shared features file: {e}")
 
 
+class BaselineCalibrator:
+    """In-memory personal baseline calibrator.
+    
+    Accumulates natural resting vocal pitch (F0) and facial baseline features
+    over the first 60 seconds of active user interaction.
+    """
+
+    def __init__(self, target_duration_sec: float = 60.0, default_f0: float = 145.0):
+        self.target_duration_sec = target_duration_sec
+        self.default_f0 = default_f0
+        self.calibrated = False
+        self.accumulated_active_sec = 0.0
+        self._last_sample_time: Optional[float] = None
+        
+        self.f0_samples: List[float] = []
+        self.au04_samples: List[float] = []
+        self.au07_samples: List[float] = []
+        self.au15_samples: List[float] = []
+        self.au20_samples: List[float] = []
+
+    def update_vocal(self, vocal_res: Dict[str, Any]) -> None:
+        if self.calibrated or not vocal_res.get("speech_detected"):
+            return
+        now = time.time()
+        if self._last_sample_time is not None:
+            delta = min(now - self._last_sample_time, 2.0)
+            self.accumulated_active_sec += delta
+        self._last_sample_time = now
+        f0 = vocal_res.get("f0_mean_hz")
+        if f0 and f0 > 50.0:
+            self.f0_samples.append(float(f0))
+        self._check_completion()
+
+    def update_face(self, face_res: Dict[str, Any]) -> None:
+        if self.calibrated or not face_res.get("face_detected"):
+            return
+        now = time.time()
+        if self._last_sample_time is not None:
+            delta = min(now - self._last_sample_time, 2.0)
+            self.accumulated_active_sec += delta
+        self._last_sample_time = now
+        for au, arr in [
+            ("au04_brow_furrow", self.au04_samples),
+            ("au07_lid_tightener", self.au07_samples),
+            ("au15_lip_depressor", self.au15_samples),
+            ("au20_lip_stretcher", self.au20_samples),
+        ]:
+            val = face_res.get(au)
+            if val is not None:
+                arr.append(float(val))
+        self._check_completion()
+
+    def _check_completion(self) -> None:
+        if self.accumulated_active_sec >= self.target_duration_sec:
+            self.calibrated = True
+
+    def get_baseline_f0(self) -> float:
+        if self.f0_samples:
+            return float(np.median(self.f0_samples))
+        return self.default_f0
+
+    def get_status(self) -> Dict[str, Any]:
+        elapsed = min(self.target_duration_sec, self.accumulated_active_sec)
+        if self.calibrated or elapsed >= self.target_duration_sec:
+            return {
+                "status": "active (calibrated)",
+                "calibrated": True,
+                "elapsed_sec": int(self.target_duration_sec),
+                "target_sec": int(self.target_duration_sec),
+                "f0_baseline_hz": round(self.get_baseline_f0(), 1),
+            }
+        return {
+            "status": f"calibrating ({int(elapsed)}/{int(self.target_duration_sec)} s)",
+            "calibrated": False,
+            "elapsed_sec": int(elapsed),
+            "target_sec": int(self.target_duration_sec),
+            "f0_baseline_hz": round(self.get_baseline_f0(), 1),
+        }
+
+
 class WellnessService:
     """Orchestrates real-time wellness monitoring on the server asyncio loop."""
 
@@ -50,6 +130,7 @@ class WellnessService:
         self.facial_extractor = FacialExtractor()
         self.vocal_extractor = VocalExtractor()
         self.fusion_engine = FeatureFusionEngine(window_size=5)
+        self.baseline_calibrator = BaselineCalibrator(target_duration_sec=60.0)
         self.trigger_manager = TriggerManager(consecutive_required=3, cooldown_sec=300.0)
         self.intervention_generator = InterventionGenerator()
 
@@ -97,11 +178,16 @@ class WellnessService:
         self.trigger_manager.last_intervention_time = now + (minutes * 60.0 - self.trigger_manager.cooldown_sec)
         print(f"[WELLNESS] Interventions snoozed for {minutes} minutes")
 
+    def get_baseline_status(self) -> Dict[str, Any]:
+        """Return the current personal baseline calibration status."""
+        return self.baseline_calibrator.get_status()
+
     def feed_frame(self, image_data: Any) -> None:
         """Ingest live image frame (Base64 JPEG string or numpy array) from WebSocket."""
         try:
             res = self.facial_extractor.extract(image_data)
             self._latest_face_res = res
+            self.baseline_calibrator.update_face(res)
             # Push into fusion engine if vocal result exists
             self.fusion_engine.facial_history.append(res)
         except Exception as e:
@@ -116,7 +202,9 @@ class WellnessService:
             "head_roll", "mesh_points", "latency_ms",
         )
         latest = self._latest_face_res or {}
-        return {key: latest.get(key) for key in fields}
+        res = {key: latest.get(key) for key in fields}
+        res["baseline"] = self.get_baseline_status()
+        return res
 
     def get_vocal_snapshot(self) -> Dict[str, Any]:
         """Return only the latest compact vocal-feature vector for the local UI."""
@@ -126,13 +214,18 @@ class WellnessService:
             "pause_ratio", "speech_pace_relative", "vocal_tension_index", "latency_ms",
         )
         latest = self._latest_vocal_res or {}
-        return {key: latest.get(key) for key in fields}
+        res = {key: latest.get(key) for key in fields}
+        res["baseline"] = self.get_baseline_status()
+        return res
 
     def feed_audio(self, audio_data: Any) -> None:
         """Ingest live audio PCM chunk from WebSocket."""
         try:
             res = self.vocal_extractor.extract(audio_data)
             self._latest_vocal_res = res
+            self.baseline_calibrator.update_vocal(res)
+            if self.baseline_calibrator.calibrated:
+                self.fusion_engine.f0_baseline_hz = self.baseline_calibrator.get_baseline_f0()
             self.fusion_engine.vocal_history.append(res)
         except Exception as e:
             print(f"[WELLNESS] Error extracting vocal features: {e}")

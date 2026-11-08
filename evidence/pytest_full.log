@@ -4,78 +4,33 @@ rootdir: C:\Users\ramav\Documents\PROJECTS\parlor\parlor-main-main
 configfile: pyproject.toml
 testpaths: tests
 plugins: anyio-4.13.0, platformdirs-4.14.2, base-url-2.1.0, cov-7.1.0, playwright-0.8.0
-collected 128 items
+collected 135 items
 
-tests\test_conversation.py ...s..........                                [ 10%]
-tests\test_delegation.py ......                                          [ 15%]
-tests\test_demo_mode.py ...                                              [ 17%]
-tests\test_elapsed.py ....W0000 00:00:1794064017.846971   32292 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
-......                                         [ 25%]
-tests\test_extraction_pipelines.py ........                              [ 32%]
-tests\test_fusion.py ..                                                  [ 33%]
-tests\test_history.py .............                                      [ 43%]
-tests\test_listen.py ....                                                [ 46%]
-tests\test_llama_startup.py .......                                      [ 52%]
-tests\test_mic_mute.py ..                                                [ 53%]
-tests\test_mode_switch.py F...                                           [ 57%]
-tests\test_overlay_transform.py .....                                    [ 60%]
-tests\test_phase2_resilience.py ...                                      [ 63%]
-tests\test_phase3_interventions.py ....                                  [ 66%]
-tests\test_phase5_live_wellness.py .....W0000 00:00:1794064139.632755   31116 inference_feedback_manager.cc:114] Feedback manager requires a model with a single signature inference. Disabling support for feedback tensors.
-.                                [ 71%]
-tests\test_robustness.py ......                                          [ 75%]
-tests\test_stream_parser.py ..................                           [ 89%]
-tests\test_timer.py ...                                                  [ 92%]
-tests\test_transcription_stability.py ...                                [ 94%]
-tests\test_translation.py ....                                           [ 97%]
-tests\test_ui_diagnostics.py .                                           [ 98%]
-tests\test_ui_mic_mute.py .                                              [ 99%]
+tests\test_camera_states.py ......                                       [  4%]
+tests\test_ui_diagnostics.py .                                           [  5%]
+tests\test_ui_mic_mute.py .                                              [  5%]
+tests\test_conversation.py .............s                                [ 16%]
+tests\test_delegation.py ......                                          [ 20%]
+tests\test_demo_mode.py ...                                              [ 22%]
+tests\test_elapsed.py ..........                                         [ 30%]
+tests\test_extraction_pipelines.py ........                              [ 36%]
+tests\test_fusion.py ..                                                  [ 37%]
+tests\test_history.py .............                                      [ 47%]
+tests\test_listen.py ....                                                [ 50%]
+tests\test_llama_startup.py .......                                      [ 55%]
+tests\test_mic_mute.py ..                                                [ 57%]
+tests\test_mode_switch.py .....                                          [ 60%]
+tests\test_overlay_transform.py .....                                    [ 64%]
+tests\test_phase2_resilience.py ...                                      [ 66%]
+tests\test_phase3_interventions.py ....                                  [ 69%]
+tests\test_phase5_live_wellness.py ......                                [ 74%]
+tests\test_robustness.py ......                                          [ 78%]
+tests\test_stream_parser.py ...................                          [ 92%]
+tests\test_timer.py ...                                                  [ 94%]
+tests\test_transcription_stability.py ...                                [ 97%]
+tests\test_translation.py ....                                           [100%]
 tests\test_z_failure.py .                                                [100%]
 
-================================== FAILURES ===================================
-________ test_mode_switch_state_transitions_and_subsequent_utterances _________
-
-server = Server(url='ws://127.0.0.1:8821/ws', proc=<Popen: returncode: None args: ['C:\\Users\\ramav\\Documents\\PROJECTS\\parl...>, log_path=WindowsPath('C:/Users/ramav/AppData/Local/Temp/pytest-of-ramav/pytest-135/server0/server.log'))
-session = <util.Session object at 0x000001900E490470>
-
-    def test_mode_switch_state_transitions_and_subsequent_utterances(server, session):
-        """Test transitions into translate, listen, and back to conversation.
-        Verifies that after every transition confirmation turn, sending ready (client goListening)
-        leaves the session fully responsive so a second utterance is immediately processed.
-        """
-        server.require_managed()
-    
-        # 1. Switch to translate mode
->       t_trans = switch_by_voice(session, "cmd_translate", "translate")
-                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-tests\test_mode_switch.py:23: 
-_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
-
-session = <util.Session object at 0x000001900E490470>, fixture = 'cmd_translate'
-target = 'translate', tries = 2
-
-    def switch_by_voice(session: Session, fixture: str, target: str,
-                        tries: int = 2) -> Turn:
-        """Speak a mode-switch command and wait for the server to confirm it;
-        retry with the same audio if the action decider misses — one retry
-        keeps the suite stable, two misses is a real regression. Returns the
-        switching turn (callers assert on its reply)."""
-        for _ in range(tries):
-            t = session.turn(audio(fixture))
-            if t.marker == "incomplete":
-                # smart-turn held the command (conversation-mode gating):
-                # flush it rather than re-speaking, which would double the
-                # utterance into one merged turn.
-                t = session.turn({"type": "flush"})
-            changed = session.wait_for("mode_changed", timeout=10)
-            if changed and changed.get("mode") == target:
-                return t
->       raise AssertionError(
-            f"never switched to {target!r} in {tries} tries — last reply {t.text!r}")
-E       AssertionError: never switched to 'translate' in 2 tries — last reply 'Okay, I understand. I will translate everything you say into English from now on. I will start my replies with the line '
-
-tests\util.py:188: AssertionError
 ============================== warnings summary ===============================
 <frozen importlib._bootstrap>:488
   <frozen importlib._bootstrap>:488: DeprecationWarning: Type google._upb._message.MessageMapContainer uses PyType_Spec with a metaclass that has custom tp_new. This is deprecated and will no longer be allowed in Python 3.14.
@@ -89,5 +44,5 @@ tests/test_extraction_pipelines.py::test_frontal_face_pose_within_bounds
 
 -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
 =========================== short test summary info ===========================
-SKIPPED [1] tests\test_conversation.py:68: the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live
-====== 1 failed, 126 passed, 1 skipped, 3 warnings in 543.72s (0:09:03) =======
+SKIPPED [1] tests\test_conversation.py:348: the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live
+======================= 134 passed, 1 skipped in 85.34s =======================

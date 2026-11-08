@@ -3,7 +3,7 @@
 # 🌿 Parlor ("EMO Assistant")
 ### Fully On-Device Multimodal Affective Wellness Monitoring & Spoken Dialogue Assistant
 
-[![Test Suite](https://img.shields.io/badge/pytest-128%20items%20%7C%20126%20passed%20%7C%201%20skipped-brightgreen.svg)](evidence/pytest_full.log)
+[![Test Suite](https://img.shields.io/badge/pytest-135%20items%20%7C%20134%20passed%20%7C%201%20skipped-brightgreen.svg)](evidence/pytest_full.log)
 [![Conversational TTFA](https://img.shields.io/badge/Voice%20TTFA-1.920s%20mean%20(Loop%20OFF)-blue.svg)](evidence/voice_ttfa_30_turns.csv)
 [![Mitigated TTFA](https://img.shields.io/badge/Voice%20TTFA-1.774s%20mean%20(Loop%20ON)-indigo.svg)](evidence/voice_ttfa_30_turns.csv)
 [![SLM Latency](https://img.shields.io/badge/SLM%20Reasoning-2.14s%20mean%20%7C%202.44s%20p95-purple.svg)](evidence/wellness_slm_latency.csv)
@@ -36,7 +36,7 @@ Knowledge workers and software developers frequently suffer from **insidious str
 **Parlor** addresses this by providing a **passive, fully on-device affective wellness monitoring system** running on commodity consumer laptops. Using standard laptop webcams and microphones, Parlor observes facial micro-expressions and acoustic biomarkers over rolling observation windows, evaluates multi-sensory patterns using a local Small Language Model (**Google Gemma 4 E2B IT `Q4_0`**), and dispatches calibrated, explainable micro-interventions:
 - **Transparent Output:** Delivers a clear stress tier (`Low (Tier 0)`, `Moderate (Tier 1)`, `High (Tier 2)`), a grounded natural-language explanation citing active physiological drivers, and one concrete action suggestion (e.g., a 2-minute box breathing exercise).
 - **Pattern Reasoning Over Cutoffs:** Rather than relying on brittle, fixed numeric thresholds, the local model reasons qualitatively across cross-modal cues (distinguishing animated conversation from genuine stress).
-- **Complete Local Privacy:** No outbound network traffic during operation unless the user explicitly opts in to research mode. All frames and audio buffers are processed ephemerally in RAM and are never written to disk.
+- **Complete Local Privacy:** No outbound network traffic during operation; weights are downloaded once at setup; Research Mode is opt-in and is the only feature that can call an external API. All frames and audio buffers are processed ephemerally in RAM and are never written to disk.
 
 ---
 
@@ -210,7 +210,7 @@ All performance statistics reported below were measured directly on the evaluati
 | **Total Non-SLM Pipeline Overhead** | **`10.89 ms`** (mean sum: $3.97 + 2.85 + 4.07\text{ ms}$) | $\le 50.0\text{ ms}$ budget | Subsystem CSVs | **PASS** |
 | **Wellness SLM Reasoning (Standard GPU)** | **`2.14 s`** (mean) / **`2.44 s`** (p95) / **`2.45 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/wellness_slm_latency.csv`](evidence/wellness_slm_latency.csv) | **PASS (+2.56s margin)** |
 | **Wellness SLM Reasoning (Conflict CoT)** | **`2.79 s`** (mean) / **`4.32 s`** (max) | $\le 5.00\text{ s}$ observation window | [`evidence/live_pattern_reasoning.json`](evidence/live_pattern_reasoning.json) | **PASS (+0.68s margin)** |
-| **Test Suite Integration** | **`126 / 128 Passed`** (1 skipped by design, 1 flaky live-model test; 127 passed when translation succeeds) | 0 regressions, 1 skipped by design: TTS fixture prosody | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
+| **Test Suite Integration** | **`134 / 135 Passed`** (1 skipped by design: TTS fixture falling prosody vs live hesitation; live-model translation tests pass across multi-run testing) | 0 regressions, 1 skipped by design | [`evidence/pytest_full.log`](evidence/pytest_full.log) | **PASS (1 skipped\*)** |
 | **Outbound Network Telemetry** | **`0.00 KB`** (0 remote sockets) | $0.00\text{ KB}$ local boundary | [`evidence/netstat_outbound.txt`](evidence/netstat_outbound.txt) | **PASS (Local Loopback)** |
 | **Peak GPU VRAM Utilization** | **`3.90 GB`** (3991 MB / 6141 MB capacity) | $\le 6.0\text{ GB}$ VRAM | [`evidence/vram_cpu_usage.log`](evidence/vram_cpu_usage.log) | **PASS** |
 | **Host Working Set Memory (RAM)** | **`2.42 GB`** (`llama-server` 1.84GB + `python` 0.61GB) | 16.0 GB RAM (5.24 GB commit) | [`evidence/ram_working_set.txt`](evidence/ram_working_set.txt) | **PASS** |
@@ -312,7 +312,7 @@ Vocal DSP Extraction (CPU)             2.85 ms (mean) / 3.73 ms (p95)
 Wellness SLM Latency (GPU, Gemma 4)    2.14 s (mean) / 2.44 s (p95) [Margin: +2.56s]           
 Voice TTFA (Wellness Loop OFF)         1.920 s (mean) / 3.545 s (p95, N=30, CI: [1.663s, 2.213s])                   
 Voice TTFA (Wellness Loop ON)          1.774 s (mean) / 3.419 s (p95, N=30, CI: [1.505s, 2.077s])                   
-Integration Test Suite                 126 / 128 passed (1 skipped: TTS fixture falling prosody vs live hesitation; 1 flaky live-model test; 127 in isolation) 
+Integration Test Suite                 134 / 135 passed (1 skipped by design: TTS fixture falling prosody vs live hesitation; 0 failed) 
 Outbound Network Telemetry             0 sockets (0.00 KB outbound)                                                 
 Peak GPU VRAM Utilization              3.9 GB (3991 MB / 6141 MB capacity)                                          
 Human Ground-Truth Accuracy            NOT YET COLLECTED                                                            

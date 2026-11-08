@@ -76,7 +76,7 @@
 
 ### Slide 7: Cognitive Layer: Qualitative SLM Pattern Reasoning
 - **Small Language Model:** Google Gemma 4 E2B IT quantized at `Q4_0` (3.35 GB GGUF) running locally via `llama-server`.
-- **Grammar-Forced Schema:** Response is constrained to deterministic JSON schema containing `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
+- **Structured Schema Interface:** JSON requested via schema; parser tolerates extra text, producing validated `tier` (0, 1, 2), `confidence` (0.0–1.0), `reasoning`, and `contributing_factors`.
 - **Inference Latency:** **2.14 s mean / 2.45 s p95** on NVIDIA RTX 4050 GPU (pooled across all prompts including cross-modal conflict CoT: **2.23 s mean / 2.49 s p95 / 4.32 s max**, comfortably within the 5.0 s budget with 0.68 s safety margin on worst-case and 2.77 s on mean).
 - **Temporal Fusion:** 8-second observation window buffer computes running statistics and acoustic delta ($F_0 = 145.0\text{ Hz}$); dynamic per-user baseline calibration identified as future work.
 
@@ -125,7 +125,7 @@
   - RAM: 16 GB DDR5
 - **Automated Test Suite:**
   - Full regression test suite covering end-to-end conversation, turn gating, delegation, facial/vocal extraction, fusion, and crash resilience.
-  - **Results:** **111 Passed out of 112 items, 0 Failed, 1 Skipped by Design** (**99.1% Pass Rate**).
+  - **Results:** **134 Passed out of 135 items, 0 Failed, 1 Skipped by Design** (**99.3% Pass Rate**).
   - *Test Note:* All E2E tests execute live against Gemma 4 E2B; single remaining skip is `test_thinking_pause_is_held` in `tests/test_conversation.py:68` (*"the TTS fixture has finished-sounding falling prosody, which the acoustic classifier correctly reads as complete — real hesitation must be judged live"*).
 
 ---
@@ -143,7 +143,7 @@
 | Wellness SLM Latency (GPU, Conflict Max) | **4.32 s** (mean: 2.79 s, CoT) | $\le 5.0\text{ s}$ (window) | **PASS (+0.68s)** | `evidence/live_pattern_reasoning.json` |
 | Conversational Turn TTFA (Loop OFF, 30 turns) | **1.920 s mean** (p50: 1.622 s, p95: 3.545 s, CI: [1.66s, 2.21s]) | Baseline isolated voice mode | **MEASURED** | `evidence/voice_ttfa_summary.json` |
 | Conversational Turn TTFA (Loop Mitigated, 30 turns) | **1.774 s mean** (p50: 1.483 s, p95: 3.419 s, CI: [1.51s, 2.08s]) | Interactive threshold $\le 2.00\text{ s}$ | **PASS (No distinguishable cost; CIs overlap)** | `evidence/voice_ttfa_summary.json` |
-| Test Suite Integration | **126 / 128 Passed (1 skipped by design, 1 flaky live-model test)** | All functional (127 in isolation) | **PASS (98.4%)** | `evidence/pytest_full.log` |
+| Test Suite Integration | **134 / 135 Passed (1 skipped by design: TTS prosody)** | All functional (134/135) | **PASS (99.3%)** | `evidence/pytest_full.log` |
 | Outbound Network Sockets | **0 (0.00 KB)** | $0.0\text{ KB}$ | **PASS** | `evidence/netstat_outbound.txt` |
 | Peak VRAM (Session) | **3.90 GB** (3991 MB peak) | 6.0 GB capacity | **PASS** | `evidence/vram_cpu_usage.log` |
 | Host Working Set RAM | **2.42 GB** (`llama-server` 1.84 GB + `python` 0.61 GB; 5.24 GB commit) | 16.0 GB capacity | **PASS** | `evidence/ram_working_set.txt` |

@@ -216,7 +216,7 @@
       <canvas id="landmarkOverlay" class="landmark-overlay" aria-hidden="true"></canvas>
 
       <!-- Graceful Placeholder States (loading, camera off, permission denied) -->
-      <div id="cameraPlaceholder" class="camera-placeholder">
+      <div id="cameraPlaceholder" class="camera-placeholder" hidden>
         <div class="placeholder-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="38" height="38">
             <path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
@@ -271,9 +271,10 @@
       </div>
 
       <div class="ctrl-right-group">
-        <div id="modeChip" class="mode-chip" hidden>
-          <span id="modeLabel">Translating → English</span>
-          <button id="modeStop" class="mode-stop">stop</button>
+        <div id="modeChip" class="mode-chip conversation">
+          <span class="mode-indicator-dot"></span>
+          <span id="modeLabel">Conversation</span>
+          <button id="modeStop" class="mode-stop" title="Switch back to Conversation" hidden>Back to Conversation</button>
         </div>
 
         <div class="state-indicator">
@@ -336,9 +337,9 @@
               </svg>
               <span>No face detected</span>
             </div>
-            <div id="faceRailStatus" class="face-rail-status waiting">
-              <i></i><span>Waiting for camera frames</span>
-            </div>
+          </div>
+          <div id="faceRailStatus" class="face-rail-status waiting">
+            <i></i><span>Waiting for camera frames</span>
           </div>
         </div>
 

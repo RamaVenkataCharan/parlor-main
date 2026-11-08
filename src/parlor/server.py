@@ -20,10 +20,13 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Any, Optional, Dict, List
 
 sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)  # logs stream even when piped
 sys.stderr.reconfigure(encoding='utf-8', line_buffering=True)
 
+import base64
+import cv2
 import numpy as np
 import uvicorn
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
@@ -382,6 +385,41 @@ async def get_wellness_baseline():
     if wellness_service:
         return wellness_service.get_baseline_status()
     return {"status": "not used", "calibrated": False, "elapsed_sec": 0, "target_sec": 60}
+
+
+def is_valid_frame(image_data: Any) -> bool:
+    """Validate that an image frame is non-empty, valid dimensions, and non-uniform."""
+    if not image_data:
+        return False
+    try:
+        if isinstance(image_data, np.ndarray):
+            img = image_data
+        elif isinstance(image_data, str):
+            raw_bytes = base64.b64decode(image_data)
+            if len(raw_bytes) < 120:
+                return False
+            nparr = np.frombuffer(raw_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        elif isinstance(image_data, bytes):
+            nparr = np.frombuffer(image_data, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        else:
+            return False
+
+        if img is None:
+            return False
+        h, w = img.shape[:2]
+        if w < 64 or h < 64:
+            return False
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        _, stddev = cv2.meanStdDev(gray)
+        if float(stddev[0][0]) < 5.0:
+            # Solid color, blank frame, or placeholder screen
+            return False
+        return True
+    except Exception as e:
+        print(f"[FRAME SANITY] Frame validation error: {e}")
+        return False
 
 
 def turn_instruction(msg: dict, has_image: bool, has_audio: bool) -> str:
@@ -951,7 +989,7 @@ async def _run_session(ws: WebSocket):
                 continue
 
             if msg.get("type") == "frame":
-                if msg.get("image"):
+                if msg.get("image") and is_valid_frame(msg["image"]):
                     if wellness_service:
                         wellness_service.feed_frame(msg["image"])
                         face_snap = wellness_service.get_face_snapshot()
@@ -961,6 +999,8 @@ async def _run_session(ws: WebSocket):
                         frame_image = msg["image"]
                         speech_chunks = []
                         await prime(held_audio)
+                else:
+                    frame_image = None
                 continue
 
             if msg.get("type") == "speech_chunk":
@@ -991,9 +1031,16 @@ async def _run_session(ws: WebSocket):
                         wellness_service.feed_audio(wav_to_float32(msg["audio"]))
                     except Exception:
                         pass
-            if msg.get("image") and wellness_service:
-                wellness_service.feed_frame(msg["image"])
-            image = (msg.get("image") or frame_image) if mode.wants_camera else None
+
+            candidate_image = msg.get("image") or frame_image
+            if candidate_image and is_valid_frame(candidate_image) and mode.wants_camera:
+                image = candidate_image
+                if wellness_service:
+                    wellness_service.feed_frame(image)
+            else:
+                image = None
+                frame_image = None
+
             has_audio = bool(audio_b64s)
             if not has_audio and msg.get("text") and image:
                 visual_kws = ("what do you see", "look at this", "what am i holding", "what is this", "see this", "what can you see", "describe what you see", "describe the scene", "on my camera")

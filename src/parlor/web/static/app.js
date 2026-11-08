@@ -604,15 +604,31 @@ function updateFaceRailStatus() {
   } else if (!lastFaceSnapshotAt) {
     setFaceRailStatus('waiting', 'Waiting for camera frames');
   } else {
-    const age = Math.max(0, Math.floor((Date.now() - lastFaceSnapshotAt) / 1000));
-    if (age > 20) {
+    const now = Date.now();
+    if (now - lastFaceSnapshotAt > 1500) {
       clearFaceMetrics();
-      setFaceRailStatus('waiting', 'Waiting for a fresh frame');
+      if (lastFaceDetectionState === 'no-face') {
+        setFaceRailStatus('no-face', 'Face not detected · adjust position');
+      } else {
+        setFaceRailStatus('idle', 'Idle');
+      }
+    } else if (lastFaceDetectionState === 'no-face') {
+      setFaceRailStatus('no-face', 'Face not detected · adjust position');
+    } else {
+      setFaceRailStatus('active', 'Local face features · live');
     }
-    else if (lastFaceDetectionState === 'no-face') setFaceRailStatus('no-face', 'Face not detected · adjust position');
-    else setFaceRailStatus('active', `Local face features · ${age}s ago`);
   }
 }
+
+// Stale face data watchdog: clears AU values, bars, and pose if no face detected or data > 1.5s old
+setInterval(() => {
+  if (demoModeActive) return;
+  const now = Date.now();
+  if (lastFaceSnapshotAt > 0 && (now - lastFaceSnapshotAt > 1500)) {
+    clearFaceMetrics();
+    setFaceRailStatus('idle', 'Idle');
+  }
+}, 250);
 
 function updateDiagnostics() {
   updateFaceRailStatus();
@@ -1185,8 +1201,9 @@ function connect() {
         fillUserBubble(msg.transcription);
       }
       const t = msg.timings || {};
+      lastTurnTimings = t;
       if (t.llm_time) {
-        setAssistantMeta((t.ttfa_s ? `first audio ${t.ttfa_s}s · ` : '') + `model ${t.llm_time}s`);
+        setAssistantMeta(t);
       }
       currentAssistantEl = null;  // the next turn gets its own bubble
       if (!msg.spoke) goListening();  // no audio will follow
@@ -1205,8 +1222,16 @@ function connect() {
         goListening();
         return;
       }
-      const meta = messagesDiv.querySelector('.msg.assistant:last-child .meta');
-      if (meta) meta.textContent += ` · tts ${msg.tts_time}s`;
+      if (lastTurnTimings) {
+        lastTurnTimings.tts_time = msg.tts_time;
+        const lastAssistant = messagesDiv.querySelector('.msg.assistant:last-child');
+        if (lastAssistant) {
+          const breakdown = lastAssistant.querySelector('.timing-breakdown');
+          if (breakdown && !breakdown.textContent.includes('tts')) {
+            breakdown.textContent += ` · tts ${msg.tts_time}s`;
+          }
+        }
+      }
       if (streamSources.length === 0 && state === 'speaking') {
         goListening();
       }
@@ -1270,7 +1295,22 @@ function updateConversationCount() {
   msgCountBadge.textContent = `${count} ${count === 1 ? 'message' : 'messages'}`;
 }
 
+let lastTurnTimings = null;
+let currentSessionMode = 'conversation';
+
+function stripProtocolMarkers(text) {
+  if (!text) return text;
+  return text.replace(/###TRANSCRIPT:[^\n]*\n?/gi, '')
+             .replace(/###RESPONSE:[^\n]*\n?/gi, '')
+             .replace(/###[A-Z_-]+:[^\n]*\n?/gi, '')
+             .replace(/^###[^\n]*\n?/gm, '');
+}
+
 function appendAssistantText(text) {
+  if (currentSessionMode !== 'translate') {
+    text = stripProtocolMarkers(text);
+  }
+  if (!text) return;
   if (!currentAssistantEl) {
     currentAssistantEl = document.createElement('div');
     currentAssistantEl.className = 'msg assistant';
@@ -1283,7 +1323,7 @@ function appendAssistantText(text) {
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-function setAssistantMeta(text) {
+function setAssistantMeta(timingData) {
   if (!currentAssistantEl) return;
   const target = currentAssistantEl.querySelector('.msg-content') || currentAssistantEl;
   let meta = target.querySelector('.meta');
@@ -1292,16 +1332,49 @@ function setAssistantMeta(text) {
     meta.className = 'meta';
     target.appendChild(meta);
   }
-  meta.textContent = text;
+  let breakdown = '';
+  if (typeof timingData === 'object' && timingData !== null) {
+    const parts = [];
+    if (timingData.ttfa_s) parts.push(`first audio ${timingData.ttfa_s}s`);
+    if (timingData.llm_time) parts.push(`model ${timingData.llm_time}s`);
+    if (timingData.tts_time) parts.push(`tts ${timingData.tts_time}s`);
+    breakdown = parts.join(' · ');
+  } else if (typeof timingData === 'string') {
+    breakdown = timingData;
+  }
+  if (breakdown) {
+    meta.innerHTML = `
+      <details class="turn-timing-toggle">
+        <summary>Timing details</summary>
+        <span class="timing-breakdown">${breakdown}</span>
+      </details>
+    `;
+  }
 }
 
 // ── Session mode (server-driven; the chip's stop button is the escape
 // hatch for when the spoken exit command gets misheard) ──
-const MODE_LABELS = { translate: 'Translating → English', listen: 'Just listening' };
+const MODE_LABELS = {
+  conversation: 'Conversation',
+  translate: 'Translating → English',
+  listen: 'Just listening'
+};
 
 function setSessionMode(mode) {
-  $('modeChip').hidden = mode === 'conversation';
-  $('modeLabel').textContent = MODE_LABELS[mode] || mode;
+  currentSessionMode = mode;
+  const chip = $('modeChip');
+  const label = $('modeLabel');
+  const stopBtn = $('modeStop');
+  if (chip) {
+    chip.hidden = false;
+    chip.className = `mode-chip mode-${mode}`;
+  }
+  if (label) {
+    label.textContent = MODE_LABELS[mode] || mode;
+  }
+  if (stopBtn) {
+    stopBtn.hidden = (mode === 'conversation');
+  }
 }
 
 // ── Delegation chips: a background research task in flight, shown until
@@ -1490,40 +1563,204 @@ function setupAudioTrackListeners(track) {
   };
 }
 
-async function startCamera() {
+// ── Camera State Machine ──
+// States: 'off' | 'requesting' | 'live' | 'denied' | 'busy' | 'no_device' | 'blocked_autoplay' | 'error'
+let cameraState = 'off';
+let currentCameraState = 'off';
+
+function setCameraState(newState, detail = '') {
+  cameraState = newState;
+  currentCameraState = newState;
+  cameraEnabled = (newState === 'live');
   const placeholder = $('cameraPlaceholder');
   const placeholderTitle = $('placeholderTitle');
   const placeholderSubtext = $('placeholderSubtext');
+  const liveBadge = $('videoLiveBadge');
+  const liveText = $('videoLiveText');
+  const toggleBtn = $('cameraToggle');
 
+  console.log(`[CAMERA STATE] Transitioned to: ${newState} (detail: ${detail})`);
+
+  if (newState === 'live') {
+    if (placeholder) {
+      placeholder.hidden = true;
+      placeholder.classList.add('hidden');
+    }
+    if (video) {
+      video.style.opacity = '1';
+      video.style.display = 'block';
+    }
+    if (liveBadge) {
+      liveBadge.className = 'video-overlay-badge active';
+    }
+    if (liveText) {
+      liveText.textContent = 'CAMERA ON';
+    }
+    if (toggleBtn) {
+      toggleBtn.classList.add('active');
+      toggleBtn.innerHTML = '<span class="ctrl-icon">📷</span><span>Camera On</span>';
+    }
+  } else {
+    // Non-live states require placeholder visible
+    if (placeholder) {
+      placeholder.hidden = false;
+      placeholder.classList.remove('hidden');
+    }
+    if (video) {
+      try { video.pause(); } catch (e) {}
+      video.style.opacity = '0.15';
+    }
+    if (toggleBtn) {
+      toggleBtn.classList.remove('active');
+      toggleBtn.innerHTML = '<span class="ctrl-icon">🚫</span><span>Camera Off</span>';
+    }
+
+    if (newState === 'off') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge off';
+      if (liveText) liveText.textContent = 'CAMERA OFF';
+      if (placeholderTitle) placeholderTitle.textContent = 'Camera Paused';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = 'Webcam monitoring paused by user.<br><button id="btnPlaceholderStart" class="btn-placeholder-action primary">Turn Camera On</button>';
+    } else if (newState === 'requesting') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge warning';
+      if (liveText) liveText.textContent = 'CONNECTING...';
+      if (placeholderTitle) placeholderTitle.textContent = 'Requesting Camera Access';
+      if (placeholderSubtext) placeholderSubtext.textContent = 'Please confirm the camera permission prompt in your browser.';
+    } else if (newState === 'denied') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge error';
+      if (liveText) liveText.textContent = 'ACCESS DENIED';
+      if (placeholderTitle) placeholderTitle.textContent = 'Camera Permission Denied';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = 'Webcam access was blocked by your browser.<br><span class="placeholder-action">Click the camera or lock icon in your browser address bar, set Camera to "Allow", and reload.</span>';
+    } else if (newState === 'busy') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge error';
+      if (liveText) liveText.textContent = 'CAMERA BUSY';
+      if (placeholderTitle) placeholderTitle.textContent = 'Camera Device In Use';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = 'Another application (Zoom, Teams, Meet) or browser tab is holding the webcam.<br><span class="placeholder-action">Close other camera applications and click <button id="btnPlaceholderRetry" class="btn-placeholder-action">Retry Camera</button></span>';
+    } else if (newState === 'no_device') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge error';
+      if (liveText) liveText.textContent = 'NO WEBCAM';
+      if (placeholderTitle) placeholderTitle.textContent = 'No Webcam Found';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = 'No camera device detected on this system.<br><span class="placeholder-action">Connect a USB webcam or continue in voice-only mode.</span>';
+    } else if (newState === 'blocked_autoplay') {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge warning';
+      if (liveText) liveText.textContent = 'PREVIEW PAUSED';
+      if (placeholderTitle) placeholderTitle.textContent = 'Autoplay Blocked';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = 'Your browser requires a user gesture to display the live video stream.<br><button id="btnPlaceholderPlay" class="btn-placeholder-action primary">Start Camera Preview</button>';
+    } else {
+      if (liveBadge) liveBadge.className = 'video-overlay-badge error';
+      if (liveText) liveText.textContent = 'CAMERA ERROR';
+      if (placeholderTitle) placeholderTitle.textContent = 'Webcam Error';
+      if (placeholderSubtext) placeholderSubtext.innerHTML = `Unable to start webcam (${detail || 'error'}).<br><button id="btnPlaceholderRetry" class="btn-placeholder-action">Retry Camera</button>`;
+    }
+
+    const btnStart = $('btnPlaceholderStart');
+    if (btnStart) btnStart.onclick = () => startCamera();
+    const btnPlay = $('btnPlaceholderPlay');
+    if (btnPlay) btnPlay.onclick = () => {
+      if (video) video.play().then(() => verifyCameraLiveState()).catch(() => {});
+    };
+    const btnRetry = $('btnPlaceholderRetry');
+    if (btnRetry) btnRetry.onclick = () => startCamera();
+
+    clearFaceMetrics();
+  }
+  updateFaceRailStatus();
+}
+
+function verifyCameraLiveState() {
+  if (!mediaStream) {
+    setCameraState('off');
+    return;
+  }
+  const videoTracks = mediaStream.getVideoTracks();
+  if (!videoTracks.length) {
+    setCameraState('off');
+    return;
+  }
+  const track = videoTracks[0];
+  if (track.readyState !== 'live' || track.muted || !track.enabled) {
+    setCameraState('off', 'track not live/enabled');
+    return;
+  }
+  if (!video || video.paused || video.videoWidth === 0) {
+    if (video && video.paused) {
+      video.play().then(() => {
+        if (video.videoWidth > 0) {
+          setCameraState('live');
+        } else {
+          video.onloadedmetadata = () => setCameraState('live');
+        }
+      }).catch(err => {
+        console.warn('Video play blocked:', err);
+        setCameraState('blocked_autoplay');
+      });
+    }
+    return;
+  }
+  setCameraState('live');
+}
+
+async function startCamera() {
+  setCameraState('requesting');
   try {
     mediaStream = await navigator.mediaDevices.getUserMedia({
       video: VIDEO_CONSTRAINTS, audio: AUDIO_CONSTRAINTS,
     });
     video.srcObject = mediaStream;
-    cameraEnabled = true;
-    if (placeholder) placeholder.classList.add('hidden');
-  } catch (e) {
-    console.warn('Video+audio getUserMedia failed, attempting audio-only fallback:', e.message);
-    cameraEnabled = false;
-      updateFaceRailStatus();
-    if (placeholder) {
-      placeholder.classList.remove('hidden');
-      if (placeholderTitle) placeholderTitle.textContent = 'Camera Inactive (Voice Mode)';
-      if (placeholderSubtext) placeholderSubtext.textContent = 'Continuing in voice-only mode. Click "Camera On" below or allow webcam access in your browser settings to enable stress monitoring.';
+
+    const videoTracks = mediaStream.getVideoTracks();
+    if (videoTracks.length) {
+      const vTrack = videoTracks[0];
+      vTrack.onended = () => {
+        setCameraState('off', 'video track ended');
+        showToast('Camera device disconnected', 'warning');
+      };
+      vTrack.onmute = () => {
+        setCameraState('busy', 'video track muted/busy');
+      };
+      vTrack.onunmute = () => {
+        verifyCameraLiveState();
+      };
     }
+
+    try {
+      await video.play();
+    } catch (playErr) {
+      console.warn('[CAMERA] Autoplay blocked:', playErr);
+      setCameraState('blocked_autoplay');
+    }
+
+    if (video.readyState >= HTMLMediaElement.HAVE_METADATA && video.videoWidth > 0 && !video.paused) {
+      setCameraState('live');
+    } else {
+      video.onloadeddata = () => {
+        if (!video.paused && video.videoWidth > 0) setCameraState('live');
+      };
+      // Fallback check after 350ms
+      setTimeout(() => {
+        if (video && video.videoWidth > 0 && !video.paused) setCameraState('live');
+      }, 350);
+    }
+  } catch (e) {
+    console.warn('Video+audio getUserMedia failed:', e.name, e.message);
+    const errName = e.name || '';
+    if (errName === 'NotAllowedError' || errName === 'PermissionDeniedError') {
+      setCameraState('denied');
+    } else if (errName === 'NotReadableError' || errName === 'TrackStartError') {
+      setCameraState('busy');
+    } else if (errName === 'NotFoundError' || errName === 'DevicesNotFoundError') {
+      setCameraState('no_device');
+    } else {
+      setCameraState('error', e.message);
+    }
+
     try {
       mediaStream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
-      showToast('Camera unavailable or permission denied — continuing in audio-only mode', 'warning', 6000);
+      showToast('Camera unavailable — continuing in audio-only mode', 'warning', 6000);
     } catch (audioErr) {
       console.error('Audio-only getUserMedia failed:', audioErr.message);
       setStatus('disconnected', 'Mic Access Denied');
       setState('muted');
       updateDiagnostics();
-      if (placeholder) {
-        placeholder.classList.remove('hidden');
-        if (placeholderTitle) placeholderTitle.textContent = 'Microphone Access Required';
-        if (placeholderSubtext) placeholderSubtext.textContent = 'Microphone permission was denied. Please allow microphone access in your browser settings to speak with Parlor.';
-      }
       showToast('Microphone access required — check browser permissions or input device connection', 'error', 10000);
       return;
     }
@@ -1533,10 +1770,8 @@ async function startCamera() {
   if (audioTracks.length > 0) {
     const track = audioTracks[0];
     setupAudioTrackListeners(track);
-    console.log(`[MIC DEVICE] Label: "${track.label || 'Default Microphone'}", Enabled: ${track.enabled}, Muted: ${track.muted}, State: ${track.readyState}`, track.getSettings ? track.getSettings() : {});
     if (state === 'loading') setState('listening');
   } else {
-    console.warn('[MIC DEVICE] NO AUDIO TRACKS FOUND!');
     setStatus('disconnected', 'No Mic Device');
     setState('muted');
     showToast('No microphone device found on system', 'error', 10000);
@@ -1544,14 +1779,48 @@ async function startCamera() {
   updateDiagnostics();
 }
 
+function isFrameSane(canvas, ctx) {
+  if (!canvas || canvas.width < 32 || canvas.height < 32) return false;
+  try {
+    const sampleW = 32;
+    const sampleH = 24;
+    const testCanvas = document.createElement('canvas');
+    testCanvas.width = sampleW;
+    testCanvas.height = sampleH;
+    const testCtx = testCanvas.getContext('2d');
+    testCtx.drawImage(canvas, 0, 0, sampleW, sampleH);
+    const imgData = testCtx.getImageData(0, 0, sampleW, sampleH).data;
+    let sum = 0, sumSq = 0, n = 0;
+    for (let i = 0; i < imgData.length; i += 4) {
+      const luma = 0.299 * imgData[i] + 0.587 * imgData[i + 1] + 0.114 * imgData[i + 2];
+      sum += luma;
+      sumSq += luma * luma;
+      n++;
+    }
+    const mean = sum / n;
+    const variance = (sumSq / n) - (mean * mean);
+    const stdDev = Math.sqrt(Math.max(0, variance));
+    return stdDev >= 5.0;
+  } catch (e) {
+    return true;
+  }
+}
+
 function captureFrame() {
-  if (!cameraEnabled || !video.videoWidth) return null;
+  if (cameraState !== 'live' || !cameraEnabled || !video || !video.videoWidth || video.paused) {
+    return null;
+  }
   const canvas = document.createElement('canvas');
   const targetWidth = Math.min(640, video.videoWidth);
   const scale = targetWidth / video.videoWidth;
   canvas.width = targetWidth;
   canvas.height = Math.round(video.videoHeight * scale);
-  canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  if (!isFrameSane(canvas, ctx)) {
+    console.warn('[CAMERA] Captured frame failed sanity check (blank/uniform/zero-size), skipping transmission.');
+    return null;
+  }
   return canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
 }
 
@@ -1865,41 +2134,17 @@ $('modeStop').addEventListener('click', () => {
 });
 
 cameraToggle.addEventListener('click', () => {
-  cameraEnabled = !cameraEnabled;
-  if (!cameraEnabled && demoModeActive) {
-    updateFaceMetrics(DEMO_DIAGNOSTICS.face, true);
-  } else if (!cameraEnabled) {
-    clearFaceMetrics();
-  }
-  cameraToggle.classList.toggle('active', cameraEnabled);
-  cameraToggle.innerHTML = cameraEnabled
-    ? '<span class="ctrl-icon">📷</span><span>Camera On</span>'
-    : '<span class="ctrl-icon">🚫</span><span>Camera Off</span>';
-  video.style.opacity = cameraEnabled ? 1 : 0.2;
-  const placeholder = $('cameraPlaceholder');
-  const placeholderTitle = $('placeholderTitle');
-  const placeholderSubtext = $('placeholderSubtext');
-  if (placeholder) {
-    if (!cameraEnabled) {
-      placeholder.classList.remove('hidden');
-      if (placeholderTitle) placeholderTitle.textContent = 'Camera Off';
-      if (placeholderSubtext) placeholderSubtext.textContent = 'Webcam monitoring paused by user. Click "Camera On" to resume.';
-    } else if (mediaStream && mediaStream.getVideoTracks().length) {
-      placeholder.classList.add('hidden');
+  if (cameraState !== 'off') {
+    if (mediaStream) {
+      mediaStream.getVideoTracks().forEach(t => {
+        t.enabled = false;
+        t.stop();
+      });
     }
+    setCameraState('off', 'user paused camera');
+  } else {
+    startCamera();
   }
-  if (videoLiveBadge) {
-    if (!cameraEnabled) {
-      videoLiveBadge.classList.add('off');
-      const text = videoLiveBadge.querySelector('.badge-text');
-      if (text) text.textContent = 'Camera Off';
-    } else {
-      videoLiveBadge.classList.remove('off');
-      const text = videoLiveBadge.querySelector('.badge-text');
-      if (text) text.textContent = landmarksVisible ? 'Face landmarks · live' : 'Face landmarks · hidden';
-    }
-  }
-  updateFaceRailStatus();
 });
 
 function setViewTab(tab) {

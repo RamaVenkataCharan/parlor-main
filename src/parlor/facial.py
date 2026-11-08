@@ -193,13 +193,15 @@ class FacialExtractor:
             p374 = np.array([landmarks[374].x * w, landmarks[374].y * h])
             l_ear = float(np.linalg.norm(p386 - p374) / max(np.linalg.norm(p362 - p263), 1e-5))
             avg_ear = float((r_ear + l_ear) / 2.0)
-            # Normal open eye is ~0.28-0.34; squint drops EAR to ~0.14-0.22 (<0.10 is blink)
-            if avg_ear >= 0.28:
+            # Neutral open eye EAR in everyday webcam angles is ~0.18-0.24.
+            # Active squinting significantly narrows eyelids (EAR ~0.08-0.14).
+            # Complete eye closure (<0.08) is a blink, not active squinting.
+            if avg_ear >= 0.20:
                 au07_lid_tight = 0.0
-            elif avg_ear < 0.10:
+            elif avg_ear < 0.08:
                 au07_lid_tight = 0.0  # blink closure, not active squinting
             else:
-                au07_lid_tight = float(np.clip((0.28 - avg_ear) / 0.14, 0.0, 1.0))
+                au07_lid_tight = float(np.clip((0.20 - avg_ear) / 0.12, 0.0, 1.0))
 
             # 4. AU15 (Lip Corner Depressor / Depressor anguli oris):
             # Mouth corners (61, 291) drop relative to lower lip center (14)

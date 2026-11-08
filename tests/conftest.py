@@ -96,6 +96,7 @@ def reasoner_mock():
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     yield srv
     srv.shutdown()
+    srv.server_close()
 
 
 @dataclass
@@ -169,12 +170,15 @@ def server(tmp_path_factory, reasoner_mock) -> Server:
     def shutdown():
         # server.py's lifespan stops its llama-server child on SIGTERM, but a
         # crashed server orphans it — sweep the llama port regardless.
-        proc.terminate()
-        try:
-            proc.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-        if sys.platform != "win32":
+        if sys.platform == "win32":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                           capture_output=True, check=False)
+        else:
+            proc.terminate()
+            try:
+                proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
             subprocess.run(["bash", "-c", f"kill $(lsof -ti :{TEST_LLAMA_PORT}) 2>/dev/null"])
 
     try:

@@ -173,6 +173,8 @@ class StreamParser:
             self._awaiting = False
             self._buf = ""
         else:
+            if not self.response and ("###TRANSCRIPT:" in delta or "###TRANSCRIPT" in delta):
+                delta = re.sub(r"^.*?###TRANSCRIPT:[^\n]*(?:\n|$)", "", delta, flags=re.DOTALL)
             self.response += delta
         return self._complete_sentences()
 

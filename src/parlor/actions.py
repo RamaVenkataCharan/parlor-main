@@ -54,7 +54,7 @@ _HEAD_COMMON = (
 )
 _MODE_CLAUSES = {
     "conversation": (
-        "mode: 'translate' if the user asked to translate what they say (e.g. 'translate everything I say', 'translate from now on', 'translate into English'), "
+        "mode: 'translate' if the user explicitly asked to enter continuous translation mode or translate everything they say (e.g. 'translate everything I say', 'translate from now on', 'enter translation mode'). Do NOT switch mode for one-off translation requests, questions, or vocabulary lookups (e.g. 'how do I say hello in French', 'translate this word', 'what does that mean in English'), "
         "'listen' if they asked the assistant to just listen quietly, be quiet, or stop responding, "
         "otherwise 'none'."),
     "translate": (

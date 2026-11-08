@@ -138,5 +138,20 @@ def test_one_off_translation_request_does_not_switch_mode(server, session):
     assert t2.marker == "complete" and "paris" in t2.text.lower()
 
 
+def test_one_off_translation_queries_negative_tests(server, session):
+    """Negative tests: verify that diverse one-off translation queries in Conversation mode
+    do NOT switch the session mode to translate."""
+    server.require_managed()
+    queries = [
+        "Translate the word apple into Spanish.",
+        "What does 'merci beaucoup' mean in English?",
+    ]
+    for q in queries:
+        t = session.turn({"text": q})
+        assert t.marker == "complete", f"Turn failed on query {q!r}: {t}"
+        assert session.wait_for("mode_changed", timeout=2) is None, f"Query {q!r} switched session mode!"
+
+
+
 
 

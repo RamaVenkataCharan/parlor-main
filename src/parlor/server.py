@@ -5,13 +5,14 @@ see llama.py). This server owns the conversation history and re-sends it
 every request; llama-server's prefix cache makes that cheap, and it also
 enables two speculative tricks (see pipeline.py): the camera frame and the
 user's speech (in ~3s chunks) are pushed through cache-priming requests
-WHILE the user is still talking, so the final request only pays for the
+WHILE the user is still talking, so the final request only pays for the 
+  
 tail of the utterance.
 """
-
+    
 import asyncio
 import itertools
-import json
+import json      
 import os
 import re
 import sys

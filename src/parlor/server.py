@@ -6,6 +6,13 @@ every request; llama-server's prefix cache makes that cheap, and it also
 enables two speculative tricks (see pipeline.py): the camera frame and the
 user's speech (in ~3s chunks) are pushed through cache-priming requests
 WHILE the user is still talking, so the final request only pays for the 
+
+
+
+
+
+
+
 tail of the utterance.
 """
     

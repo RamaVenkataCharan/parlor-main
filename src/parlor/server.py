@@ -1,18 +1,10 @@
 """Parlor — on-device, real-time multimodal AI (voice + vision).
-
 LLM inference runs on llama.cpp (llama-server, spawned as a subprocess —
 see llama.py). This server owns the conversation history and re-sends it
 every request; llama-server's prefix cache makes that cheap, and it also
 enables two speculative tricks (see pipeline.py): the camera frame and the
 user's speech (in ~3s chunks) are pushed through cache-priming requests
 WHILE the user is still talking, so the final request only pays for the 
-
-
-
-
-
-
-
 tail of the utterance.
 """
     

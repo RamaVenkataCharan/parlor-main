@@ -7,6 +7,10 @@ user's speech (in ~3s chunks) are pushed through cache-priming requests
 WHILE the user is still talking, so the final request only pays for the 
 tail of the utterance.
 """
+
+
+
+
 import asyncio
 import itertools
 import json      

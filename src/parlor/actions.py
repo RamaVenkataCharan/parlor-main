@@ -1,6 +1,6 @@
 """The action decider: what the user asked the assistant to DO, decided by
 a separate grammar-forced JSON request instead of in-band control tags.
-
+    
 Why a second request (benchmarks/archbench.py, e4b, 19 spoken cases x 2):
 in-band tags scored recall 0.955 with the miss being an ack-without-action
 ("I will be quiet", no tag) — a spoken promise the server never keeps,

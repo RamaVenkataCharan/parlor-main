@@ -13,6 +13,11 @@ duration math itself ("twenty minutes" → 1200) in any language. History
 stays pure speech — no stored tag can teach the model a state the server
 isn't in.
 
+
+
+
+
+
 Cost: the head decodes ~35 JSON tokens over the cached prefix (~2s GPU on
 e4b, hidden under TTS playback), every turn. A cheaper 1-token yes/no
 pre-gate was measured (archbench B_gated): its recall is a perfect 1.0,

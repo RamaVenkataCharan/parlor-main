@@ -728,18 +728,20 @@ netstat -ano | findstr 8081
 <li><strong>Empirical EMA Accuracy is formally marked as: <code>NOT COLLECTED / REQUIRES HUMAN STUDY</code>.</strong></li>
 <li>A complete, turnkey collection harness and standardized human study protocol have been established in <code>scripts/ema_collector.py</code> and <code>docs/EMA_RECOLLECTION_KIT.md</code> for execution by the student team with $\ge 8$ human participants (4 developers + 4 external peers) prior to viva.</li>
 </ol>
-<h4>5.5.2 Human Ground-Truth Accuracy Status &amp; Tooling Readiness</h4>
-<p><strong>Human ground-truth accuracy: NOT YET COLLECTED. Protocol and tools are ready.</strong></p>
-<p>The evaluation suite has been updated in <code>scripts/evaluate_ema.py</code> with:</p>
+<h4>5.5.2 Human Ground-Truth Accuracy Status &amp; Study Mode Infrastructure Readiness</h4>
+<p><strong>Human ground-truth accuracy: NOT YET COLLECTED (<code>REQUIRES HUMAN — PROTOCOL AND COLLECTION HARNESS READY</code>).</strong></p>
+<p>To enable rigorous, standardized data collection across human cohorts, a consent-first <strong>Study Mode</strong> session runner has been integrated directly into the Parlor application UI (<code>Settings</code> &rarr; <code>Study Mode</code>):</p>
 <ul>
-<li>Strict integrity and consent refusal check (rejects unverified or missing consent flags).</li>
-<li>Ground-truth class distribution and majority-class baseline.</li>
-<li>Exact tier agreement and one-tier tolerance agreement with 95% bootstrap confidence intervals.</li>
-<li>Quadratic-weighted Cohen's Kappa ($\kappa_w$).</li>
-<li>Full 3x3 confusion matrix with marginals.</li>
-<li>Per-participant agreement breakdown.</li>
-<li>Tier 2 safety rates (False Positive Rate and False Negative Rate) computed separately with and without developers to detect confirmation bias.</li>
-<li>Fully tested and verified on <code>shared_state/toy_ema_records.json</code>.</li>
+<li><strong>Consent-First Architecture:</strong> Gated by 18+ adult confirmation and explicit informed consent checkboxes adhering to <code>docs/PARTICIPANT_PROTOCOL.md</code>.</li>
+<li><strong>Strict Group Separation:</strong> Enforces mutually exclusive enrollment between the <code>Calibration Cohort</code> (baseline distributions and trigger rule evaluations) and <code>Validation Cohort</code> (EMA agreement benchmarking); raises validation errors on cross-group contamination.</li>
+<li><strong>Participant Blinding:</strong> Automatically blinds real-time affective stress indicators, reasoning explanations, and intervention popups from participants during active sessions to eliminate confirmation bias, while background numeric logging continues uninterrupted.</li>
+<li><strong>Pre-Session Sensor QA (~1 min):</strong> Interactive 5-step checklist verifying camera stream visibility, &ge; 95% face detection rate, Action Unit movement (neutral, brow furrow AU04, eyelid squint AU07, lip stretch AU20), adequate lighting, and microphone speech response.</li>
+<li><strong>Guided 12-Minute 4-Step Protocol:</strong> On-screen timers and prompt engines for: Step 1 Baseline Rest (3 min), Step 2 Neutral Conversational Speech (3 min), Step 3 Timed Mental Arithmetic Stressor (3 min), and Step 4 Physiological Recovery (3 min).</li>
+<li><strong>In-App Ecological Momentary Assessment (EMA):</strong> Pops up after each step to record a 3-item Likert survey (Emotional Tension, Perceived Demand, Somatic Tension, 1–5 scale), computing composite scores (3–15) mapped directly to Tier 0 (3–5), Tier 1 (6–10), and Tier 2 (11–15).</li>
+<li><strong>Zero Raw Media Storage Guarantee:</strong> Memory-only feature extraction ensures that zero video frames, raw audio buffers, or 3D facial coordinate meshes are ever saved to disk; only sanitized numeric scalar features are logged to append-only local files in <code>study_data/</code> (gitignored and excluded from release archives).</li>
+<li><strong>Participant Erasure / Withdrawal:</strong> One-click withdrawal permanently purges all observation windows, survey records, and registry entries for that participant code.</li>
+<li><strong>Analytical Pipeline Ready:</strong> <code>scripts/analyze_calibration.py</code> generates calibration reports and scalar distributions, while <code>scripts/evaluate_ema.py</code> evaluates exact/1-tier agreement, quadratic-weighted Cohen's Kappa (&kappa;<sub>w</sub>), and safety rates with/without developers.</li>
+<li><strong>Operational Runbook:</strong> Documented in <code>docs/STUDY_RUNBOOK.md</code> for running 8 sessions in a 3-hour window with scheduled rest buffers.</li>
 </ul>
 <h3>5.6 Cross-Modal Conflict, Signal Honesty, and Failure Recovery Verification</h3>
 <p>Live empirical benchmarks were executed directly against Google Gemma 4 E2B IT on this machine to verify pattern reasoning, resilience, and failure recovery:</p>

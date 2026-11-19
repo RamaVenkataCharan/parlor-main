@@ -194,6 +194,7 @@ class StudyStorage:
     def log_session_summary(self, summary_data: Dict[str, Any]) -> str:
         """Appends session QA summary to study_sessions.jsonl."""
         clean = self.sanitize_window_data(summary_data)
+        # Ensure valid unique session summary identifier
         if "session_id" not in clean:
             clean["session_id"] = f"sess_{int(time.time() * 1000)}"
         if "completed_at" not in clean:

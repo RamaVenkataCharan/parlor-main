@@ -77,7 +77,7 @@ def load_dataset(target_path: Path) -> Tuple[List[Dict[str, Any]], str]:
                     consent = bool(ema.get("consent_given", reg.get("consent_given", True)))
                     is_adult = bool(ema.get("is_adult", reg.get("is_adult", True)))
 
-                    # EXCLUDE CALIBRATION COHORT
+                    # EXCLUDE CALIBRATION COHORT: calibration participants are excluded from validation
                     if grp == "calibration":
                         continue
 

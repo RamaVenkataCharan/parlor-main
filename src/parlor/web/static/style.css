@@ -2574,3 +2574,7 @@ input:checked + .slider::before {
   outline: 2px solid #38bdf8;
   outline-offset: 2px;
 }
+
+.protocol-timer {
+  text-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+}

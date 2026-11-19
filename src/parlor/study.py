@@ -77,6 +77,7 @@ class StudyStorage:
         consent_given: bool = False,
     ) -> Tuple[bool, str]:
         """Registers a participant, enforcing 18+, consent, and strict group separation."""
+        # Normalize code to uppercase alphanumeric string
         code = participant_code.strip().upper()
         if not code:
             raise StudyValidationError("Participant code cannot be empty.")

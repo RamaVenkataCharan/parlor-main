@@ -453,6 +453,7 @@ async def log_study_finish(request: Request):
 @app.post("/api/study/withdraw")
 async def withdraw_study_participant(request: Request):
     """Permanently erase all records for a participant from logs and registry."""
+    # Security and privacy audit: permanently purge all participant data
     body = await request.json()
     code = body.get("participant_code", "")
     counts = study_storage.withdraw_participant(code)

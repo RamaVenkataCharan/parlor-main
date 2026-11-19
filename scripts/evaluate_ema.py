@@ -145,7 +145,7 @@ def compute_quadratic_weighted_kappa(y_true: List[int], y_pred: List[int], num_c
     # Expected matrix E under independence
     E = np.outer(row_sums, col_sums) / n
 
-    # Quadratic weight matrix W
+    # Quadratic weight matrix W: penalty = (i - j)^2 / (k - 1)^2
     W = np.zeros((num_classes, num_classes), dtype=float)
     max_dist_sq = float((num_classes - 1) ** 2)
     for i in range(num_classes):

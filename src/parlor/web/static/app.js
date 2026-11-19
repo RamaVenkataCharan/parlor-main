@@ -2886,6 +2886,7 @@ async function initStudyRunner() {
 }
 
 function closeStudyRunner() {
+  // Clean up active interval timers upon runner dismissal
   const modal = document.getElementById('studyModal');
   if (!modal) return;
   if (studySessionState.active) {

@@ -1018,6 +1018,7 @@ async def _run_session(ws: WebSocket):
                 await send_json(ws, {"type": "study_mode_changed", "enabled": study_active, "blinded": blinded})
                 continue
 
+            # Process periodic study observation window tick over WebSocket
             if msg.get("type") == "study_window_tick":
                 win_data = msg.get("data", {})
                 win_id = study_storage.log_observation_window(win_data)

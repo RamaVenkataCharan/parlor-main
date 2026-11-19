@@ -212,3 +212,14 @@ python scripts/evaluate_ema.py
 > 2. **Ephemeral Feature Extraction:** Video frames and audio frames exist purely in volatile memory during feature extraction (~120 ms) and are immediately overwritten.
 > 3. **Non-Diagnostic Framing:** Parlor labels all inferences as *observable behavioral cues* rather than medical, psychiatric, or definitive affective diagnoses.
 > 4. **Consent-First Architecture:** Sessions cannot begin without explicit 18+ adult verification and informed consent checkboxes. Immediate participant withdrawal erases all numeric records instantly.
+
+## 12. Academic References & Bibliography
+
+1. **WESAD Multimodal Dataset:**  
+   Schmidt, P., Reiss, A., Duerichen, R., Marberger, C., & Van Laerhoven, K. (2018). *Introducing WESAD, a Multimodal Dataset for Wearable Stress and Affect Detection*. Proceedings of the 20th ACM International Conference on Multimodal Interaction (ICMI '18), 400–408.
+2. **Trier Social Stress Test (TSST):**  
+   Kirschbaum, C., Pirke, K. M., & Hellhammer, D. H. (1993). *The 'Trier Social Stress Test' – A Tool for Investigating Psychobiological Stress Responses in a Laboratory Setting*. Neuropsychobiology, 28(1-2), 76–81.
+3. **Facial Action Coding System (FACS):**  
+   Ekman, P., & Friesen, W. V. (1978). *Facial Action Coding System: A Technique for the Measurement of Facial Movement*. Consulting Psychologists Press.
+4. **Vocal Acoustic Perturbation (Jitter/Shimmer):**  
+   Farrús, M., Codina, J., & Hernando, J. (2007). *Jitter and shimmer measurements for speaker recognition*. In INTERSPEECH (pp. 778-781).

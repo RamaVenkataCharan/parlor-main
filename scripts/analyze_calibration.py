@@ -64,6 +64,7 @@ def compute_cohens_d(x1: np.ndarray, x2: np.ndarray) -> float:
     n1, n2 = len(x1), len(x2)
     if n1 < 2 or n2 < 2:
         return 0.0
+    # Compute unbiased sample variances and pooled standard deviation
     s1_sq = float(np.var(x1, ddof=1))
     s2_sq = float(np.var(x2, ddof=1))
     pooled_s = math.sqrt(((n1 - 1) * s1_sq + (n2 - 1) * s2_sq) / (n1 + n2 - 2))

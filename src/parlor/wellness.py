@@ -340,6 +340,7 @@ class WellnessService:
             return None
 
         # Evaluate against TriggerManager
+        # Note: During active Study Mode sessions, intervention delivery is blinded to participants.
         should_fire, category, meta = self.trigger_manager.evaluate(slm_output)
 
         intervention_pkg = None

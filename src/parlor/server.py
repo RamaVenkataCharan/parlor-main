@@ -27,7 +27,7 @@ import base64
 import cv2
 import numpy as np
 import uvicorn
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Response, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -43,6 +43,7 @@ from dotenv import load_dotenv
 load_dotenv()  # before importing llama — it reads its config at import time
 
 from parlor import actions, db, llama, reasoner, tts
+from parlor.study import study_storage, StudyValidationError
 from parlor.modes import MODES
 from parlor.pipeline import (estimate_tokens, pad_tail_silence, prime_cache,
                              release_client, run_turn, send_json, text_part,
@@ -383,6 +384,87 @@ async def get_wellness_baseline():
     if wellness_service:
         return wellness_service.get_baseline_status()
     return {"status": "not used", "calibrated": False, "elapsed_sec": 0, "target_sec": 60}
+
+
+# ── Study Mode Endpoints (Calibration & EMA Protocol) ─────────────────────────
+
+@app.get("/api/study/participants")
+async def get_study_participants():
+    """Return registered participants and next auto-generated anonymous code."""
+    registry = study_storage.load_participants()
+    return {
+        "participants": registry,
+        "next_code": study_storage.get_next_participant_code()
+    }
+
+
+@app.post("/api/study/register")
+async def register_study_participant(request: Request):
+    """Register participant enforcing 18+, consent, and strict group separation."""
+    body = await request.json()
+    code = body.get("participant_code", "")
+    group = body.get("group", "")
+    role = body.get("role", "external")
+    is_adult = bool(body.get("is_adult", False))
+    consent_given = bool(body.get("consent_given", False))
+
+    try:
+        success, warning = study_storage.register_participant(
+            participant_code=code,
+            group=group,
+            role=role,
+            is_adult=is_adult,
+            consent_given=consent_given
+        )
+        return {"success": success, "warning": warning, "participant_code": code.upper(), "group": group.lower()}
+    except StudyValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/study/window")
+async def log_study_window(request: Request):
+    """Append a single sanitized observation window to observation_windows.jsonl."""
+    body = await request.json()
+    win_id = study_storage.log_observation_window(body)
+    return {"success": True, "window_id": win_id}
+
+
+@app.post("/api/study/ema")
+async def log_study_ema(request: Request):
+    """Append a single EMA response record to ema_responses.jsonl."""
+    body = await request.json()
+    resp_id = study_storage.log_ema_response(body)
+    return {"success": True, "response_id": resp_id}
+
+
+@app.post("/api/study/finish")
+async def log_study_finish(request: Request):
+    """Append session QA summary to study_sessions.jsonl."""
+    body = await request.json()
+    sess_id = study_storage.log_session_summary(body)
+    return {"success": True, "session_id": sess_id}
+
+
+@app.post("/api/study/withdraw")
+async def withdraw_study_participant(request: Request):
+    """Permanently erase all records for a participant from logs and registry."""
+    body = await request.json()
+    code = body.get("participant_code", "")
+    counts = study_storage.withdraw_participant(code)
+    return {"success": True, "participant_code": code.upper(), "deleted_counts": counts}
+
+
+@app.get("/api/study/export/csv")
+async def export_study_csv():
+    """Export anonymized joined CSV of windows and EMA responses."""
+    csv_data = study_storage.export_anonymized_csv()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=study_data_anonymized.csv"}
+    )
 
 
 def is_valid_frame(image_data: Any) -> bool:
@@ -922,6 +1004,19 @@ async def _run_session(ws: WebSocket):
                     wellness_service.demo_mode = demo_enabled
                 print(f"[DEMO MODE] Simulated stress injection {'ENABLED' if demo_enabled else 'DISABLED'}")
                 await send_json(ws, {"type": "demo_mode_changed", "enabled": demo_enabled})
+                continue
+
+            if msg.get("type") == "set_study_mode":
+                study_active = bool(msg.get("enabled", False))
+                blinded = bool(msg.get("blinded", False))
+                print(f"[STUDY MODE] Study mode {'ACTIVE' if study_active else 'OFF'}, Blinded={blinded}")
+                await send_json(ws, {"type": "study_mode_changed", "enabled": study_active, "blinded": blinded})
+                continue
+
+            if msg.get("type") == "study_window_tick":
+                win_data = msg.get("data", {})
+                win_id = study_storage.log_observation_window(win_data)
+                await send_json(ws, {"type": "study_window_logged", "window_id": win_id})
                 continue
 
             if msg.get("type") == "test_wellness_cycle":

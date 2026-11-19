@@ -33,7 +33,9 @@ EMA_TIER2_MAX: int = 15
 
 class StudyValidationError(ValueError):
     """Raised when participant validation, consent, or group separation rules are violated."""
-    pass
+    def __init__(self, message: str, error_code: str = "VALIDATION_ERROR"):
+        super().__init__(message)
+        self.error_code = error_code
 
 
 class StudyStorage:

@@ -52,7 +52,7 @@ class StudyStorage:
     # ── Registry & Group Separation ──────────────────────────────────────────
 
     def load_participants(self) -> Dict[str, Dict[str, Any]]:
-        """Loads registered participants metadata."""
+        """Loads registered participants metadata from participants_registry.json."""
         if not self.participants_file.exists():
             return {}
         try:

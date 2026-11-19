@@ -62,6 +62,7 @@ class StudyStorage:
             return {}
 
     def _save_participants(self, registry: Dict[str, Dict[str, Any]]) -> None:
+        """Atomically writes participants registry to disk using a temporary file."""
         temp_file = self.participants_file.with_suffix(".tmp")
         with open(temp_file, "w", encoding="utf-8") as f:
             json.dump(registry, f, indent=2)

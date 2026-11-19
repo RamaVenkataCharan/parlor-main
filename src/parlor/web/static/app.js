@@ -3550,6 +3550,7 @@ function bindStudyModeControls() {
 
   const mathInput = document.getElementById('mathAnswerInput');
   if (mathInput) {
+    // Allow Enter key to trigger math answer submission
     mathInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') handleMathSubmit();
     });

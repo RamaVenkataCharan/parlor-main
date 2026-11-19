@@ -9,6 +9,7 @@ PRIVACY & SAFETY MANDATE:
 - Local-only storage under study_data/ (gitignored and excluded from release archives).
 """
 
+# Theoretical foundation: WESAD (Schmidt et al., 2018) multimodal stress & PSS-10.
 from __future__ import annotations
 
 import csv

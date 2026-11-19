@@ -3522,7 +3522,10 @@ function bindStudyModeControls() {
   if (consentCheck) consentCheck.addEventListener('change', updateConsentProceedState);
 
   const codeInput = document.getElementById('studyParticipantCode');
-  if (codeInput) codeInput.addEventListener('input', updateConsentProceedState);
+  if (codeInput) codeInput.addEventListener('input', () => {
+    codeInput.value = codeInput.value.toUpperCase();
+    updateConsentProceedState();
+  });
 
   const btnProceed = document.getElementById('btnProceedToQuality');
   if (btnProceed) btnProceed.addEventListener('click', registerParticipantAndProceed);

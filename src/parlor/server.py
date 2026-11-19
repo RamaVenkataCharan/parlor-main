@@ -444,6 +444,7 @@ async def log_study_ema(request: Request):
 @app.post("/api/study/finish")
 async def log_study_finish(request: Request):
     """Append session QA summary to study_sessions.jsonl."""
+    # Log completed study session summary and QA metrics
     body = await request.json()
     sess_id = study_storage.log_session_summary(body)
     return {"success": True, "session_id": sess_id}

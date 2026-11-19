@@ -426,7 +426,7 @@ async def register_study_participant(request: Request):
 
 @app.post("/api/study/window")
 async def log_study_window(request: Request):
-    """Append a single sanitized observation window to observation_windows.jsonl."""
+    """Append a single sanitized observation window to study_data/observation_windows.jsonl."""
     body = await request.json()
     win_id = study_storage.log_observation_window(body)
     return {"success": True, "window_id": win_id}

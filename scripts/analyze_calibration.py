@@ -44,7 +44,7 @@ STEPS = ["rest", "speech", "stressor", "recovery"]
 
 
 def compute_distribution(vals: List[float]) -> Dict[str, float]:
-    """Computes median, IQR, 5th, and 95th percentiles."""
+    """Computes sample size, median, interquartile range (IQR), 5th and 95th percentiles."""
     if not vals:
         return {"n": 0, "median": 0.0, "iqr": 0.0, "p05": 0.0, "p95": 0.0}
     arr = np.array(vals, dtype=float)

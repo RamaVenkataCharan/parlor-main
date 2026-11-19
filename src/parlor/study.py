@@ -214,7 +214,7 @@ class StudyStorage:
         code = participant_code.strip().upper()
         counts = {"windows": 0, "ema": 0, "sessions": 0, "registry": 0}
 
-        # 1. Purge from Windows JSONL
+        # Step 1: Purge records from Windows JSONL append log
         if self.windows_file.exists():
             remaining_windows = []
             with open(self.windows_file, "r", encoding="utf-8") as f:

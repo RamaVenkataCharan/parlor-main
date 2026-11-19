@@ -390,7 +390,7 @@ async def get_wellness_baseline():
 
 @app.get("/api/study/participants")
 async def get_study_participants():
-    """Return registered participants and next auto-generated anonymous code."""
+    """Return registered participants registry and next auto-generated anonymous code."""
     registry = study_storage.load_participants()
     return {
         "participants": registry,

@@ -119,7 +119,7 @@ class StudyStorage:
         return True, warning_msg
 
     def get_next_participant_code(self) -> str:
-        """Auto-generates the next sequential anonymous code (e.g. P01, P02)."""
+        """Auto-generates the next sequential zero-padded anonymous code (e.g. P01, P02)."""
         registry = self.load_participants()
         existing_numbers = []
         for code in registry.keys():

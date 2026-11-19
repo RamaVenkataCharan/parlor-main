@@ -1010,6 +1010,7 @@ async def _run_session(ws: WebSocket):
                 await send_json(ws, {"type": "demo_mode_changed", "enabled": demo_enabled})
                 continue
 
+            # Handle client request to toggle study mode and participant blinding
             if msg.get("type") == "set_study_mode":
                 study_active = bool(msg.get("enabled", False))
                 blinded = bool(msg.get("blinded", False))

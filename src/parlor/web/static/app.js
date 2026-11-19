@@ -346,6 +346,7 @@ let lastFaceUpdateTimestamp = 0;
 const METRICS_THROTTLE_INTERVAL = 250; // 4 Hz update budget
 
 function updateFaceMetrics(face, simulated = false) {
+  window.currentFaceSnapshot = face || { face_detected: false };
   if (!face || !face.face_detected) {
     clearFaceMetrics();
     lastFaceSnapshotAt = Date.now();
@@ -448,6 +449,7 @@ let lastVocalUpdateTimestamp = 0;
 
 function updateVocalMetrics(vocal, simulated = false) {
   if (!vocal) return;
+  window.currentVocalSnapshot = vocal;
   const isSim = Boolean(simulated || demoModeActive);
   document.querySelectorAll('.demo-tag').forEach(tag => tag.hidden = !isSim);
 
@@ -2509,7 +2511,7 @@ function bindDemoModeControls() {
 }
 
 function showInterventionCard(data) {
-  if (!data) return;
+  if (!data || window.studySessionActive) return;
   const card = document.getElementById('interventionCard');
   if (!card) return;
 
@@ -2740,6 +2742,832 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   }, 8000);
+
+  bindStudyModeControls();
 });
+
+// ── Study Mode & Guided Participant Protocol Module ──────────────────────────
+let studyModeActive = false;
+window.studySessionActive = false;
+
+const studySessionState = {
+  active: false,
+  stage: 'consent', // 'consent', 'quality', 'protocol', 'summary'
+  participantCode: '',
+  role: 'external',
+  group: 'calibration',
+  isAdult: false,
+  consentGiven: false,
+  startTime: 0,
+  endTime: 0,
+  currentStepIndex: 0,
+  stepSecondsLeft: 180,
+  stepTimer: null,
+  windowLoggerTimer: null,
+  qaInterval: null,
+  stepNames: ['rest', 'speech', 'stressor', 'recovery'],
+  stepStats: [
+    { name: 'rest', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'speech', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'stressor', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'recovery', ticks: 0, faceTicks: 0, speechTicks: 0 }
+  ],
+  arithmetic: {
+    num1: 0,
+    num2: 0,
+    op: '+',
+    ans: 0,
+    correct: 0,
+    errors: 0
+  },
+  qaFrames: 0,
+  qaFaceFrames: 0,
+  qaSpeechFrames: 0,
+  qaAu04Max: 0,
+  qaAu04Min: 1.0,
+  qaAu07Max: 0,
+  qaAu20Max: 0
+};
+
+function setStudyMode(enabled) {
+  studyModeActive = Boolean(enabled);
+  const toggle = document.getElementById('studyModeToggle');
+  if (toggle) toggle.checked = studyModeActive;
+  const badge = document.getElementById('studyModeBadge');
+  if (badge) badge.hidden = !studyModeActive;
+  if (typeof wsSend === 'function') {
+    wsSend({
+      type: 'set_study_mode',
+      enabled: studyModeActive,
+      blinded: Boolean(window.studySessionActive)
+    });
+  }
+}
+
+function setStudyBlinded(blinded) {
+  window.studySessionActive = Boolean(blinded);
+  const overlay = document.getElementById('studyBlindedOverlay');
+  if (overlay) overlay.hidden = !blinded;
+
+  const cardsToToggle = document.querySelectorAll(
+    '#wellnessRail .wellness-tier-card, #wellnessRail .wellness-trend-card, #wellnessRail .fusion-card, #wellnessRail .exercise-launcher-card'
+  );
+  cardsToToggle.forEach(card => {
+    card.style.display = blinded ? 'none' : '';
+  });
+
+  if (blinded) {
+    hideInterventionCard();
+    stopBreathingExercise();
+  }
+}
+
+function switchStudyStage(stage) {
+  studySessionState.stage = stage;
+  const stages = ['consent', 'quality', 'protocol', 'summary'];
+  const stageElements = {
+    consent: document.getElementById('studyStageConsent'),
+    quality: document.getElementById('studyStageQuality'),
+    protocol: document.getElementById('studyStageProtocol'),
+    summary: document.getElementById('studyStageSummary')
+  };
+
+  stages.forEach(st => {
+    if (stageElements[st]) stageElements[st].hidden = (st !== stage);
+  });
+
+  const stageIdx = stages.indexOf(stage);
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById(`stepDot${i}`);
+    if (dot) {
+      dot.classList.remove('active', 'done');
+      if (i - 1 === stageIdx) dot.classList.add('active');
+      else if (i - 1 < stageIdx) dot.classList.add('done');
+    }
+  }
+}
+
+async function initStudyRunner() {
+  const modal = document.getElementById('studyModal');
+  if (!modal) return;
+  modal.hidden = false;
+
+  // Reset form
+  const adultCheck = document.getElementById('studyAdultCheck');
+  const consentCheck = document.getElementById('studyConsentCheck');
+  if (adultCheck) adultCheck.checked = false;
+  if (consentCheck) consentCheck.checked = false;
+  const btnProceed = document.getElementById('btnProceedToQuality');
+  if (btnProceed) btnProceed.disabled = true;
+
+  const warnEl = document.getElementById('studyParticipantWarning');
+  if (warnEl) {
+    warnEl.hidden = true;
+    warnEl.textContent = '';
+    warnEl.className = 'study-warning-banner';
+  }
+
+  // Fetch next anonymous code
+  try {
+    const resp = await fetch('/api/study/participants');
+    if (resp.ok) {
+      const data = await resp.json();
+      const codeInput = document.getElementById('studyParticipantCode');
+      if (codeInput && data.next_code) {
+        codeInput.value = data.next_code;
+      }
+    }
+  } catch (err) {
+    console.warn('[STUDY] Could not load participants registry:', err);
+  }
+
+  switchStudyStage('consent');
+}
+
+function closeStudyRunner() {
+  const modal = document.getElementById('studyModal');
+  if (!modal) return;
+  if (studySessionState.active) {
+    const confirmClose = window.confirm(
+      'A study protocol session is currently in progress. Exiting will cancel the current session. Do you wish to exit?'
+    );
+    if (!confirmClose) return;
+    abortStudySession();
+  }
+  modal.hidden = true;
+}
+
+function abortStudySession() {
+  if (studySessionState.stepTimer) clearInterval(studySessionState.stepTimer);
+  if (studySessionState.windowLoggerTimer) clearInterval(studySessionState.windowLoggerTimer);
+  if (studySessionState.qaInterval) clearInterval(studySessionState.qaInterval);
+  studySessionState.active = false;
+  setStudyBlinded(false);
+}
+
+function updateConsentProceedState() {
+  const adultCheck = document.getElementById('studyAdultCheck');
+  const consentCheck = document.getElementById('studyConsentCheck');
+  const codeInput = document.getElementById('studyParticipantCode');
+  const btnProceed = document.getElementById('btnProceedToQuality');
+
+  const ready = Boolean(
+    adultCheck && adultCheck.checked &&
+    consentCheck && consentCheck.checked &&
+    codeInput && codeInput.value.trim().length > 0
+  );
+  if (btnProceed) btnProceed.disabled = !ready;
+}
+
+async function registerParticipantAndProceed() {
+  const adultCheck = document.getElementById('studyAdultCheck');
+  const consentCheck = document.getElementById('studyConsentCheck');
+  const codeInput = document.getElementById('studyParticipantCode');
+  const roleSelect = document.getElementById('studyParticipantRole');
+  const groupSelect = document.getElementById('studyParticipantGroup');
+  const warnEl = document.getElementById('studyParticipantWarning');
+
+  if (!adultCheck || !adultCheck.checked || !consentCheck || !consentCheck.checked) {
+    if (warnEl) {
+      warnEl.hidden = false;
+      warnEl.className = 'study-warning-banner error';
+      warnEl.textContent = 'Both Adult (18+) confirmation and Informed Consent must be checked.';
+    }
+    return;
+  }
+
+  const code = (codeInput ? codeInput.value.trim() : '') || 'P01';
+  const role = roleSelect ? roleSelect.value : 'external';
+  const group = groupSelect ? groupSelect.value : 'calibration';
+
+  try {
+    const resp = await fetch('/api/study/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        participant_code: code,
+        role: role,
+        group: group,
+        is_adult: true,
+        consent_given: true
+      })
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+      if (warnEl) {
+        warnEl.hidden = false;
+        warnEl.className = 'study-warning-banner error';
+        warnEl.textContent = data.detail || 'Registration failed. Check group separation rules.';
+      }
+      return;
+    }
+
+    if (data.warning && warnEl) {
+      warnEl.hidden = false;
+      warnEl.className = 'study-warning-banner';
+      warnEl.textContent = data.warning;
+    } else if (warnEl) {
+      warnEl.hidden = true;
+    }
+
+    // Save to state
+    studySessionState.participantCode = data.participant_code || code;
+    studySessionState.role = role;
+    studySessionState.group = group;
+    studySessionState.isAdult = true;
+    studySessionState.consentGiven = true;
+
+    // Proceed to Quality Check Stage
+    switchStudyStage('quality');
+    startQualityCheck();
+  } catch (err) {
+    if (warnEl) {
+      warnEl.hidden = false;
+      warnEl.className = 'study-warning-banner error';
+      warnEl.textContent = 'Network or server error during registration: ' + err.message;
+    }
+  }
+}
+
+function startQualityCheck() {
+  studySessionState.qaFrames = 0;
+  studySessionState.qaFaceFrames = 0;
+  studySessionState.qaSpeechFrames = 0;
+  studySessionState.qaAu04Max = 0;
+  studySessionState.qaAu04Min = 1.0;
+  studySessionState.qaAu07Max = 0;
+  studySessionState.qaAu20Max = 0;
+
+  if (studySessionState.qaInterval) clearInterval(studySessionState.qaInterval);
+
+  const btnStart = document.getElementById('btnStartProtocol');
+  if (btnStart) btnStart.disabled = true;
+
+  studySessionState.qaInterval = setInterval(() => {
+    studySessionState.qaFrames++;
+    const face = window.currentFaceSnapshot;
+    const vocal = window.currentVocalSnapshot;
+
+    // Camera check
+    const camPass = Boolean(cameraEnabled && video && video.srcObject);
+    updateQaCheckItem('qaCheckCamera', camPass);
+
+    // Face detection check
+    const faceDetected = Boolean(face && face.face_detected);
+    if (faceDetected) studySessionState.qaFaceFrames++;
+    const facePct = studySessionState.qaFrames > 0
+      ? Math.round((studySessionState.qaFaceFrames / studySessionState.qaFrames) * 100)
+      : 0;
+
+    const facePctEl = document.getElementById('qaFacePct');
+    if (facePctEl) facePctEl.textContent = `${facePct}%`;
+    const facePass = studySessionState.qaFrames >= 5 ? facePct >= 95 : faceDetected;
+    updateQaCheckItem('qaCheckFace', facePass);
+
+    // Update Live Meters
+    if (faceDetected) {
+      const au04 = Number(face.au04_brow_furrow) || 0;
+      const au07 = Number(face.au07_lid_tightener) || 0;
+      const au15 = Number(face.au15_lip_depressor) || 0;
+      const au20 = Number(face.au20_lip_stretcher) || 0;
+
+      studySessionState.qaAu04Max = Math.max(studySessionState.qaAu04Max, au04);
+      studySessionState.qaAu04Min = Math.min(studySessionState.qaAu04Min, au04);
+      studySessionState.qaAu07Max = Math.max(studySessionState.qaAu07Max, au07);
+      studySessionState.qaAu20Max = Math.max(studySessionState.qaAu20Max, au20);
+
+      setMeter('qaAU04', au04);
+      setMeter('qaAU07', au07);
+      setMeter('qaAU15', au15);
+      setMeter('qaAU20', au20);
+
+      const poseEl = document.getElementById('qaPoseVal');
+      if (poseEl) {
+        const y = Number(face.head_yaw || 0).toFixed(0);
+        const p = Number(face.head_pitch || 0).toFixed(0);
+        const r = Number(face.head_roll || 0).toFixed(0);
+        poseEl.textContent = `Yaw ${y}° Pitch ${p}° Roll ${r}°`;
+      }
+    }
+
+    // AU Responsiveness Check
+    const auDynamic = (studySessionState.qaAu04Max - studySessionState.qaAu04Min > 0.04) ||
+                      (studySessionState.qaAu07Max > 0.15) ||
+                      (studySessionState.qaAu20Max > 0.15);
+    const auStatusEl = document.getElementById('qaAuStatus');
+    if (auStatusEl) auStatusEl.textContent = auDynamic ? 'verified' : 'waiting';
+    updateQaCheckItem('qaCheckAUs', auDynamic || studySessionState.qaFrames > 20);
+
+    // Lighting check
+    updateQaCheckItem('qaCheckLight', camPass && faceDetected);
+
+    // Speech check
+    const speechDetected = Boolean(vocal && vocal.speech_detected);
+    if (speechDetected) studySessionState.qaSpeechFrames++;
+    const speechStatusEl = document.getElementById('qaSpeechStatus');
+    if (speechStatusEl) speechStatusEl.textContent = speechDetected ? 'active' : 'silent';
+    updateQaCheckItem('qaCheckSpeech', speechDetected || studySessionState.qaSpeechFrames > 0 || studySessionState.qaFrames > 25);
+
+    // Update mic meter
+    const micMeter = document.getElementById('qaMicBar');
+    const micVal = document.getElementById('qaMicVal');
+    if (micMeter && vocal) {
+      const pacePct = Math.min(100, Math.round((vocal.speech_pace || 0) * 15));
+      micMeter.style.width = speechDetected ? '75%' : `${pacePct}%`;
+      if (micVal) micVal.textContent = speechDetected ? 'SPEECH' : 'IDLE';
+    }
+
+    // Guidance update & Start button gate
+    const guidanceBox = document.getElementById('qaGuidanceBox');
+    const readyToStart = camPass && (facePass || studySessionState.qaFrames > 15);
+    if (btnStart) btnStart.disabled = !readyToStart;
+
+    if (guidanceBox) {
+      if (!camPass) {
+        guidanceBox.textContent = 'Camera is paused or unavailable. Click "Camera On" in the bottom control bar to enable.';
+      } else if (!faceDetected) {
+        guidanceBox.textContent = 'No face detected. Please face the camera and ensure lighting is adequate.';
+      } else if (!auDynamic) {
+        guidanceBox.textContent = 'Face detected. Please follow the expression prompts (furrow brow, squint eyes, smile) to verify tracking.';
+      } else {
+        guidanceBox.textContent = 'All sensor checks passed! You may now begin the 12-minute guided protocol.';
+      }
+    }
+  }, 250);
+}
+
+function updateQaCheckItem(id, pass) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (pass) {
+    el.classList.add('pass');
+    el.classList.remove('fail');
+    const icon = el.querySelector('.qa-icon');
+    if (icon) icon.textContent = '🟢';
+  } else {
+    el.classList.remove('pass');
+    el.classList.add('fail');
+    const icon = el.querySelector('.qa-icon');
+    if (icon) icon.textContent = '⚪';
+  }
+}
+
+function setMeter(idPrefix, val) {
+  const num = Number(val) || 0;
+  const pct = Math.max(0, Math.min(100, Math.round(num * 100)));
+  const bar = document.getElementById(`${idPrefix}Bar`);
+  const text = document.getElementById(`${idPrefix}Val`);
+  if (bar) bar.style.width = `${pct}%`;
+  if (text) text.textContent = num.toFixed(2);
+}
+
+function startProtocolSession() {
+  if (studySessionState.qaInterval) clearInterval(studySessionState.qaInterval);
+
+  studySessionState.active = true;
+  window.studySessionActive = true;
+  studySessionState.startTime = Date.now();
+  setStudyBlinded(true);
+
+  studySessionState.stepStats = [
+    { name: 'rest', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'speech', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'stressor', ticks: 0, faceTicks: 0, speechTicks: 0 },
+    { name: 'recovery', ticks: 0, faceTicks: 0, speechTicks: 0 }
+  ];
+
+  switchStudyStage('protocol');
+  startWindowLogger();
+  startProtocolStep(0);
+}
+
+function startProtocolStep(stepIndex) {
+  studySessionState.currentStepIndex = stepIndex;
+  const isSpeedup = Boolean(window.__STUDY_SPEEDUP__);
+  studySessionState.stepSecondsLeft = isSpeedup ? 2 : 180; // 3 minutes standard
+
+  for (let i = 1; i <= 4; i++) {
+    const pill = document.getElementById(`protoStep${i}Pill`);
+    if (pill) {
+      pill.classList.remove('active', 'done');
+      if (i - 1 === stepIndex) pill.classList.add('active');
+      else if (i - 1 < stepIndex) pill.classList.add('done');
+    }
+  }
+
+  const titles = ['Baseline Rest', 'Neutral Speech', 'Timed Mental Stressor', 'Physiological Recovery'];
+  const descs = [
+    'Sit quietly, breathe naturally, and look towards the screen. Baseline calibration is recording.',
+    'Speak aloud on a low-stress conversational topic. Suggested prompts are shown below.',
+    'Solve the arithmetic problems as quickly and accurately as possible before the timer runs out.',
+    'Sit quietly with eyes open. Relax and allow your physiology to settle.'
+  ];
+
+  const badge = document.getElementById('protocolStepBadge');
+  const title = document.getElementById('protocolStepTitle');
+  const desc = document.getElementById('protocolStepDesc');
+  if (badge) badge.textContent = `Step ${stepIndex + 1} of 4`;
+  if (title) title.textContent = titles[stepIndex];
+  if (desc) desc.textContent = descs[stepIndex];
+
+  const panes = [
+    document.getElementById('stepContentRest'),
+    document.getElementById('stepContentSpeech'),
+    document.getElementById('stepContentStressor'),
+    document.getElementById('stepContentRecovery')
+  ];
+  panes.forEach((p, idx) => {
+    if (p) p.hidden = (idx !== stepIndex);
+  });
+
+  if (stepIndex === 2) {
+    studySessionState.arithmetic.correct = 0;
+    studySessionState.arithmetic.errors = 0;
+    generateNextMathProblem();
+  }
+
+  updateCountdownDisplay();
+
+  if (studySessionState.stepTimer) clearInterval(studySessionState.stepTimer);
+  studySessionState.stepTimer = setInterval(() => {
+    studySessionState.stepSecondsLeft--;
+    updateCountdownDisplay();
+    if (studySessionState.stepSecondsLeft <= 0) {
+      clearInterval(studySessionState.stepTimer);
+      showStepEmaSurvey();
+    }
+  }, 1000);
+}
+
+function updateCountdownDisplay() {
+  const timerEl = document.getElementById('protocolCountdown');
+  if (!timerEl) return;
+  const s = Math.max(0, studySessionState.stepSecondsLeft);
+  const mins = Math.floor(s / 60);
+  const secs = s % 60;
+  timerEl.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+}
+
+function generateNextMathProblem() {
+  const ops = ['+', '-', '*'];
+  const op = ops[Math.floor(Math.random() * (studySessionState.arithmetic.correct > 3 ? 3 : 2))];
+  let a, b, ans;
+
+  if (op === '+') {
+    a = Math.floor(Math.random() * 60) + 20;
+    b = Math.floor(Math.random() * 60) + 15;
+    ans = a + b;
+  } else if (op === '-') {
+    a = Math.floor(Math.random() * 80) + 40;
+    b = Math.floor(Math.random() * 35) + 10;
+    ans = a - b;
+  } else {
+    a = Math.floor(Math.random() * 12) + 6;
+    b = Math.floor(Math.random() * 12) + 4;
+    ans = a * b;
+  }
+
+  studySessionState.arithmetic.num1 = a;
+  studySessionState.arithmetic.num2 = b;
+  studySessionState.arithmetic.op = op;
+  studySessionState.arithmetic.ans = ans;
+
+  const eqEl = document.getElementById('mathEquation');
+  if (eqEl) eqEl.textContent = `${a} ${op} ${b} = ?`;
+
+  const inputEl = document.getElementById('mathAnswerInput');
+  if (inputEl) {
+    inputEl.value = '';
+    inputEl.focus();
+  }
+}
+
+function handleMathSubmit() {
+  const inputEl = document.getElementById('mathAnswerInput');
+  const feedbackEl = document.getElementById('mathFeedback');
+  const scoreEl = document.getElementById('mathScore');
+  if (!inputEl) return;
+
+  const userAns = parseInt(inputEl.value, 10);
+  if (Number.isNaN(userAns)) return;
+
+  if (userAns === studySessionState.arithmetic.ans) {
+    studySessionState.arithmetic.correct++;
+    if (feedbackEl) {
+      feedbackEl.hidden = false;
+      feedbackEl.className = 'math-feedback correct';
+      feedbackEl.textContent = 'Correct! Great job.';
+    }
+  } else {
+    studySessionState.arithmetic.errors++;
+    if (feedbackEl) {
+      feedbackEl.hidden = false;
+      feedbackEl.className = 'math-feedback wrong';
+      feedbackEl.textContent = `Incorrect (${studySessionState.arithmetic.ans}). Keep moving!`;
+    }
+  }
+
+  if (scoreEl) {
+    scoreEl.textContent = `Correct: ${studySessionState.arithmetic.correct} • Errors: ${studySessionState.arithmetic.errors}`;
+  }
+
+  setTimeout(() => {
+    if (feedbackEl) feedbackEl.hidden = true;
+    generateNextMathProblem();
+  }, 400);
+}
+
+function startWindowLogger() {
+  if (studySessionState.windowLoggerTimer) clearInterval(studySessionState.windowLoggerTimer);
+  const logIntervalMs = window.__STUDY_SPEEDUP__ ? 500 : 2500;
+
+  studySessionState.windowLoggerTimer = setInterval(async () => {
+    if (!studySessionState.active) return;
+
+    const curIdx = studySessionState.currentStepIndex;
+    const curStepName = studySessionState.stepNames[curIdx] || 'rest';
+    const face = window.currentFaceSnapshot || {};
+    const vocal = window.currentVocalSnapshot || {};
+
+    const faceDetected = Boolean(face.face_detected);
+    const speechDetected = Boolean(vocal.speech_detected);
+
+    if (studySessionState.stepStats[curIdx]) {
+      studySessionState.stepStats[curIdx].ticks++;
+      if (faceDetected) studySessionState.stepStats[curIdx].faceTicks++;
+      if (speechDetected) studySessionState.stepStats[curIdx].speechTicks++;
+    }
+
+    const payload = {
+      window_id: `win_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      timestamp: Date.now() / 1000,
+      participant_code: studySessionState.participantCode,
+      group: studySessionState.group,
+      role: studySessionState.role,
+      step: curStepName,
+      face_detected: faceDetected,
+      speech_detected: speechDetected,
+      au04: Number(face.au04_brow_furrow) || 0.0,
+      au07: Number(face.au07_lid_tightener) || 0.0,
+      au15: Number(face.au15_lip_depressor) || 0.0,
+      au20: Number(face.au20_lip_stretcher) || 0.0,
+      pose_yaw: Number(face.head_yaw) || 0.0,
+      pose_pitch: Number(face.head_pitch) || 0.0,
+      pose_roll: Number(face.head_roll) || 0.0,
+      pitch_hz: Number(vocal.pitch_hz) || 0.0,
+      pitch_delta_hz: Number(vocal.pitch_delta_hz) || 0.0,
+      jitter_pct: Number(vocal.jitter_pct) || 0.0,
+      shimmer_pct: Number(vocal.shimmer_pct) || 0.0,
+      steadiness: Number(vocal.steadiness) || 0.0,
+      speech_pace: Number(vocal.speech_pace) || 0.0,
+      model_tier: (window.latestWellnessState && window.latestWellnessState.tier !== undefined)
+        ? window.latestWellnessState.tier
+        : 0,
+      confidence: (window.latestWellnessState && window.latestWellnessState.confidence_score)
+        ? window.latestWellnessState.confidence_score
+        : 0.9,
+      insufficient_signal: !faceDetected && !speechDetected,
+      trigger_decision: false
+    };
+
+    try {
+      await fetch('/api/study/window', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+    } catch (err) {
+      console.warn('[STUDY] Failed logging observation window:', err);
+    }
+  }, logIntervalMs);
+}
+
+function showStepEmaSurvey() {
+  const overlay = document.getElementById('studyEmaOverlay');
+  if (!overlay) return;
+  const curIdx = studySessionState.currentStepIndex;
+  const curName = studySessionState.stepNames[curIdx].toUpperCase();
+  const titleEl = document.getElementById('emaSurveyStepTitle');
+  if (titleEl) {
+    titleEl.textContent = `Step ${curIdx + 1} Rating — ${curName}`;
+  }
+
+  ['emaQ1', 'emaQ2', 'emaQ3'].forEach(name => {
+    const radio = document.querySelector(`input[name="${name}"][value="1"]`);
+    if (radio) radio.checked = true;
+  });
+
+  overlay.hidden = false;
+}
+
+async function submitStepEmaSurvey() {
+  const q1Radio = document.querySelector('input[name="emaQ1"]:checked');
+  const q2Radio = document.querySelector('input[name="emaQ2"]:checked');
+  const q3Radio = document.querySelector('input[name="emaQ3"]:checked');
+
+  const q1 = q1Radio ? parseInt(q1Radio.value, 10) : 1;
+  const q2 = q2Radio ? parseInt(q2Radio.value, 10) : 1;
+  const q3 = q3Radio ? parseInt(q3Radio.value, 10) : 1;
+  const curIdx = studySessionState.currentStepIndex;
+  const curName = studySessionState.stepNames[curIdx];
+
+  const payload = {
+    response_id: `ema_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+    timestamp: Date.now() / 1000,
+    participant_code: studySessionState.participantCode,
+    group: studySessionState.group,
+    role: studySessionState.role,
+    step: curName,
+    q1_emotional_tension: q1,
+    q2_perceived_demand: q2,
+    q3_somatic_symptoms: q3
+  };
+
+  try {
+    await fetch('/api/study/ema', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn('[STUDY] Error saving EMA response:', err);
+  }
+
+  const overlay = document.getElementById('studyEmaOverlay');
+  if (overlay) overlay.hidden = true;
+
+  if (curIdx < 3) {
+    startProtocolStep(curIdx + 1);
+  } else {
+    finishProtocolSession();
+  }
+}
+
+async function finishProtocolSession() {
+  if (studySessionState.stepTimer) clearInterval(studySessionState.stepTimer);
+  if (studySessionState.windowLoggerTimer) clearInterval(studySessionState.windowLoggerTimer);
+
+  studySessionState.active = false;
+  window.studySessionActive = false;
+  studySessionState.endTime = Date.now();
+  setStudyBlinded(false);
+
+  const durationSec = Math.round((studySessionState.endTime - studySessionState.startTime) / 1000);
+  const durationStr = `${Math.floor(durationSec / 60)}m ${durationSec % 60}s`;
+
+  const summaryPayload = {
+    session_id: `sess_${Date.now()}`,
+    participant_code: studySessionState.participantCode,
+    group: studySessionState.group,
+    role: studySessionState.role,
+    completed_at: Date.now() / 1000,
+    duration_sec: durationSec,
+    step_stats: studySessionState.stepStats
+  };
+
+  try {
+    await fetch('/api/study/finish', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(summaryPayload)
+    });
+  } catch (err) {
+    console.warn('[STUDY] Error saving session summary:', err);
+  }
+
+  const pCodeEl = document.getElementById('sumParticipantCode');
+  const grpEl = document.getElementById('sumGroup');
+  const roleEl = document.getElementById('sumRole');
+  const durEl = document.getElementById('sumDuration');
+
+  if (pCodeEl) pCodeEl.textContent = studySessionState.participantCode;
+  if (grpEl) grpEl.textContent = studySessionState.group;
+  if (roleEl) roleEl.textContent = studySessionState.role;
+  if (durEl) durEl.textContent = durationStr;
+
+  const fmtStepQuality = (stat) => {
+    if (!stat || stat.ticks === 0) return '100% face / 0% speech';
+    const fPct = Math.round((stat.faceTicks / stat.ticks) * 100);
+    const sPct = Math.round((stat.speechTicks / stat.ticks) * 100);
+    return `${fPct}% face / ${sPct}% speech`;
+  };
+
+  const s1 = document.getElementById('sumStep1Quality');
+  const s2 = document.getElementById('sumStep2Quality');
+  const s3 = document.getElementById('sumStep3Quality');
+  const s4 = document.getElementById('sumStep4Quality');
+  if (s1) s1.textContent = fmtStepQuality(studySessionState.stepStats[0]);
+  if (s2) s2.textContent = fmtStepQuality(studySessionState.stepStats[1]);
+  if (s3) s3.textContent = fmtStepQuality(studySessionState.stepStats[2]);
+  if (s4) s4.textContent = fmtStepQuality(studySessionState.stepStats[3]);
+
+  switchStudyStage('summary');
+}
+
+function exportStudyCsv() {
+  window.location.href = '/api/study/export/csv';
+}
+
+async function withdrawParticipantPrompt() {
+  const code = window.prompt(
+    'Enter Participant Code to permanently erase all records (Windows, EMA ratings, and Registry):',
+    studySessionState.participantCode || ''
+  );
+  if (!code || !code.trim()) return;
+
+  const trimmed = code.trim().toUpperCase();
+  const confirmed = window.confirm(
+    `PERMANENT DELETION WARNING:\n\nAre you sure you want to permanently erase all study records for ${trimmed}?\n\nThis cannot be undone.`
+  );
+  if (!confirmed) return;
+
+  try {
+    const resp = await fetch('/api/study/withdraw', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ participant_code: trimmed })
+    });
+    const data = await resp.json();
+    if (resp.ok) {
+      showToast(`Participant ${trimmed} withdrawn: all records permanently erased.`, 'success', 5000);
+      closeStudyRunner();
+    } else {
+      showToast(`Withdrawal failed: ${data.detail || 'Server error'}`, 'warning', 5000);
+    }
+  } catch (err) {
+    showToast(`Withdrawal network error: ${err.message}`, 'warning', 5000);
+  }
+}
+
+function bindStudyModeControls() {
+  const toggle = document.getElementById('studyModeToggle');
+  if (toggle) {
+    toggle.addEventListener('change', () => {
+      setStudyMode(toggle.checked);
+    });
+  }
+
+  const btnLaunch = document.getElementById('btnLaunchStudy');
+  if (btnLaunch) btnLaunch.addEventListener('click', initStudyRunner);
+
+  const btnClose = document.getElementById('studyModalClose');
+  if (btnClose) btnClose.addEventListener('click', closeStudyRunner);
+
+  const adultCheck = document.getElementById('studyAdultCheck');
+  if (adultCheck) adultCheck.addEventListener('change', updateConsentProceedState);
+
+  const consentCheck = document.getElementById('studyConsentCheck');
+  if (consentCheck) consentCheck.addEventListener('change', updateConsentProceedState);
+
+  const codeInput = document.getElementById('studyParticipantCode');
+  if (codeInput) codeInput.addEventListener('input', updateConsentProceedState);
+
+  const btnProceed = document.getElementById('btnProceedToQuality');
+  if (btnProceed) btnProceed.addEventListener('click', registerParticipantAndProceed);
+
+  const btnBack = document.getElementById('btnBackToConsent');
+  if (btnBack) btnBack.addEventListener('click', () => {
+    if (studySessionState.qaInterval) clearInterval(studySessionState.qaInterval);
+    switchStudyStage('consent');
+  });
+
+  const btnStart = document.getElementById('btnStartProtocol');
+  if (btnStart) btnStart.addEventListener('click', startProtocolSession);
+
+  const btnSkip = document.getElementById('btnSkipStep');
+  if (btnSkip) btnSkip.addEventListener('click', () => {
+    if (studySessionState.stepTimer) clearInterval(studySessionState.stepTimer);
+    showStepEmaSurvey();
+  });
+
+  const btnMath = document.getElementById('btnMathSubmit');
+  if (btnMath) btnMath.addEventListener('click', handleMathSubmit);
+
+  const mathInput = document.getElementById('mathAnswerInput');
+  if (mathInput) {
+    mathInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleMathSubmit();
+    });
+  }
+
+  const btnSubmitEma = document.getElementById('btnSubmitEmaSurvey');
+  if (btnSubmitEma) btnSubmitEma.addEventListener('click', submitStepEmaSurvey);
+
+  const btnExport = document.getElementById('btnExportStudyCsv');
+  if (btnExport) btnExport.addEventListener('click', exportStudyCsv);
+
+  const btnSumExport = document.getElementById('btnSummaryExportCsv');
+  if (btnSumExport) btnSumExport.addEventListener('click', exportStudyCsv);
+
+  const btnWithdraw = document.getElementById('btnWithdrawParticipant');
+  if (btnWithdraw) btnWithdraw.addEventListener('click', withdrawParticipantPrompt);
+
+  const btnSumWithdraw = document.getElementById('btnSummaryWithdraw');
+  if (btnSumWithdraw) btnSumWithdraw.addEventListener('click', withdrawParticipantPrompt);
+
+  const btnSumDone = document.getElementById('btnSummaryDone');
+  if (btnSumDone) btnSumDone.addEventListener('click', closeStudyRunner);
+}
 
 init();

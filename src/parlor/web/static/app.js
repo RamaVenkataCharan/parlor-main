@@ -2750,6 +2750,7 @@ document.addEventListener('DOMContentLoaded', () => {
 let studyModeActive = false;
 window.studySessionActive = false;
 
+/** @type {Object} studySessionState - Active study session tracking and step statistics */
 const studySessionState = {
   active: false,
   stage: 'consent', // 'consent', 'quality', 'protocol', 'summary'

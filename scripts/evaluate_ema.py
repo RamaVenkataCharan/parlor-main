@@ -310,6 +310,7 @@ def evaluate(file_path: Path):
         print(f"  {p:<15} {p_role:<12} {len(p_recs):<10} {p_exact:>5.1f}%          {p_tol:>5.1f}%")
 
     # 6. COHORT SAFETY RATES (WITH AND WITHOUT DEVELOPERS)
+    # Separate developer from external cohort to audit confirmation bias
     def calc_safety_rates(records_subset: List[Dict[str, Any]]) -> Tuple[float, float, int, int]:
         sub_yt = [int(r["ground_truth_tier"]) for r in records_subset]
         sub_yp = [int(r["system_assessment"]["tier"]) for r in records_subset]

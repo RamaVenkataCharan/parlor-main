@@ -313,7 +313,7 @@ class StudyStorage:
         if not self.windows_file.exists():
             return output.getvalue()
 
-        # Index EMA responses by (participant_code, step)
+        # Index EMA responses by composite key (participant_code, step)
         ema_index: Dict[Tuple[str, str], Dict[str, Any]] = {}
         if self.ema_file.exists():
             with open(self.ema_file, "r", encoding="utf-8") as f:

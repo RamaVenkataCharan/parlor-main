@@ -435,6 +435,7 @@ async def log_study_window(request: Request):
 @app.post("/api/study/ema")
 async def log_study_ema(request: Request):
     """Append a single EMA response record to ema_responses.jsonl."""
+    # Log Ecological Momentary Assessment response record
     body = await request.json()
     resp_id = study_storage.log_ema_response(body)
     return {"success": True, "response_id": resp_id}

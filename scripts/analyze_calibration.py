@@ -289,7 +289,7 @@ def run_analysis(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Analyze Parlor Calibration Cohort Data")
+    parser = argparse.ArgumentParser(description="Analyze Parlor Calibration Cohort Data", epilog="Example: python scripts/analyze_calibration.py --allow-small-n")
     parser.add_argument("--windows", default=str(DEFAULT_WINDOWS_PATH), help="Path to observation_windows.jsonl")
     parser.add_argument("--report", default=str(DEFAULT_REPORT_PATH), help="Path to write CALIBRATION_REPORT.md")
     parser.add_argument("--plots-dir", default=str(DEFAULT_PLOTS_DIR), help="Directory to save face-free plots")

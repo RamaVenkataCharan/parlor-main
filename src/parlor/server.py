@@ -467,7 +467,7 @@ async def export_study_csv():
     return Response(
         content=csv_data,
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=study_data_anonymized.csv"}
+        headers={"Content-Disposition": "attachment; filename=study_data_anonymized.csv", "Cache-Control": "no-cache, no-store, must-revalidate"}
     )
 
 

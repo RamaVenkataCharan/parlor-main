@@ -401,6 +401,7 @@ async def get_study_participants():
 @app.post("/api/study/register")
 async def register_study_participant(request: Request):
     """Register participant enforcing 18+, consent, and strict group separation."""
+    # Validate participant registration parameters
     body = await request.json()
     code = body.get("participant_code", "")
     group = body.get("group", "")

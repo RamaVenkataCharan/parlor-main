@@ -347,3 +347,10 @@ def test_server_rest_api(monkeypatch, tmp_path: Path):
     r_with = client.post("/api/study/withdraw", json={"participant_code": "P01"})
     assert r_with.status_code == 200
     assert r_with.json()["deleted_counts"]["windows"] == 1
+
+def test_participant_code_whitespace_trimming(temp_storage: StudyStorage):
+    """Participant codes with surrounding whitespace are trimmed and capitalized."""
+    success, _ = temp_storage.register_participant("  p88  ", "calibration", is_adult=True, consent_given=True)
+    assert success is True
+    reg = temp_storage.load_participants()
+    assert "P88" in reg

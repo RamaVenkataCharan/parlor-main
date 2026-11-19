@@ -21,6 +21,109 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_EMA_DATA_PATH = ROOT / "shared_state" / "ema_records.json"
+DEFAULT_STUDY_DIR = ROOT / "study_data"
+
+
+def load_dataset(target_path: Path) -> Tuple[List[Dict[str, Any]], str]:
+    """Loads records from either study_data JSONL files or legacy JSON file."""
+    # 1. If pointing to a study_data dir or jsonl file
+    if target_path.is_dir() or target_path.suffix == ".jsonl" or (not target_path.exists() and DEFAULT_STUDY_DIR.exists()):
+        study_dir = target_path if target_path.is_dir() else (target_path.parent if target_path.suffix == ".jsonl" else DEFAULT_STUDY_DIR)
+        ema_file = study_dir / "ema_responses.jsonl"
+        win_file = study_dir / "observation_windows.jsonl"
+        registry_file = study_dir / "participants_registry.json"
+
+        if not ema_file.exists():
+            return [], f"No study EMA responses found at {ema_file}"
+
+        # Load registry for roles and consent if present
+        registry: Dict[str, Dict[str, Any]] = {}
+        if registry_file.exists():
+            try:
+                with open(registry_file, "r", encoding="utf-8") as rf:
+                    registry = json.load(rf)
+            except Exception:
+                pass
+
+        # Load windows indexed by (participant_code, step)
+        windows_by_pair: Dict[Tuple[str, str], List[Dict[str, Any]]] = {}
+        if win_file.exists():
+            with open(win_file, "r", encoding="utf-8") as wf:
+                for line in wf:
+                    if line.strip():
+                        try:
+                            w = json.loads(line)
+                            p = str(w.get("participant_code", "")).upper()
+                            s = str(w.get("step", "")).lower()
+                            windows_by_pair.setdefault((p, s), []).append(w)
+                        except Exception:
+                            pass
+
+        # Load EMA records
+        paired_records: List[Dict[str, Any]] = []
+        with open(ema_file, "r", encoding="utf-8") as ef:
+            for idx, line in enumerate(ef):
+                if not line.strip():
+                    continue
+                try:
+                    ema = json.loads(line)
+                    p_code = str(ema.get("participant_code", "")).upper()
+                    st = str(ema.get("step", "")).lower()
+                    reg = registry.get(p_code, {})
+
+                    # Determine group & role
+                    grp = str(ema.get("group", reg.get("group", "validation"))).lower()
+                    role = str(ema.get("role", reg.get("role", "external"))).lower()
+                    consent = bool(ema.get("consent_given", reg.get("consent_given", True)))
+                    is_adult = bool(ema.get("is_adult", reg.get("is_adult", True)))
+
+                    # EXCLUDE CALIBRATION COHORT
+                    if grp == "calibration":
+                        continue
+
+                    # Ground truth tier
+                    gt_tier = ema.get("mapped_tier")
+                    if gt_tier is None:
+                        comp = int(ema.get("q1_emotional_tension", 1)) + int(ema.get("q2_perceived_demand", 1)) + int(ema.get("q3_somatic_symptoms", 1))
+                        gt_tier = 0 if comp <= 5 else (1 if comp <= 10 else 2)
+
+                    # Match with system tier from observation windows
+                    pair_wins = windows_by_pair.get((p_code, st), [])
+                    pred_tier = 0
+                    if pair_wins:
+                        tiers = [int(w.get("model_tier", 0)) for w in pair_wins if w.get("model_tier") is not None]
+                        pred_tier = int(np.round(np.mean(tiers))) if tiers else 0
+
+                    paired_records.append({
+                        "record_id": ema.get("response_id", f"ema_{idx}"),
+                        "participant_id": p_code,
+                        "timestamp": ema.get("timestamp", 0),
+                        "consent_given": consent,
+                        "is_adult": is_adult,
+                        "ground_truth_tier": gt_tier,
+                        "group": grp,
+                        "is_developer": (role == "team"),
+                        "system_assessment": {
+                            "tier": pred_tier,
+                            "stress_level": f"Tier {pred_tier}"
+                        }
+                    })
+                except Exception:
+                    continue
+
+        return paired_records, f"Loaded {len(paired_records)} validation records from {study_dir}"
+
+    # 2. Legacy JSON file
+    if target_path.exists():
+        with open(target_path, "r", encoding="utf-8") as f:
+            try:
+                raw_records = json.load(f)
+                filtered = [r for r in raw_records if str(r.get("group", "validation")).lower() != "calibration"]
+                return filtered, f"Loaded {len(filtered)} records from {target_path}"
+            except Exception as e:
+                return [], f"Failed reading JSON from {target_path}: {e}"
+
+    return [], f"File not found: {target_path}"
 
 
 def compute_quadratic_weighted_kappa(y_true: List[int], y_pred: List[int], num_classes: int = 3) -> float:
@@ -84,24 +187,15 @@ def bootstrap_ci(y_true: List[int], y_pred: List[int], metric_fn, n_bootstraps: 
 def evaluate(file_path: Path):
     print("=" * 75)
     print(" PARLOR EMA GROUND-TRUTH ACCURACY EVALUATION")
-    print(f" Target File: {file_path}")
+    print(f" Target Path: {file_path}")
     print("=" * 75)
 
-    if not file_path.exists():
-        print(f"\n[STATUS] REQUIRES HUMAN — PROTOCOL AND COLLECTION HARNESS READY")
-        print(f"File not found: {file_path}")
-        print("No human EMA records collected yet. Run 'python scripts/ema_collector.py' with human participants.")
-        return
-
-    with open(file_path, "r", encoding="utf-8") as f:
-        try:
-            records: List[Dict[str, Any]] = json.load(f)
-        except Exception as e:
-            print(f"[ERROR] Failed reading JSON from {file_path}: {e}")
-            return
+    records, msg = load_dataset(file_path)
+    print(f"[LOADER] {msg}")
 
     if not records:
-        print("\n[STATUS] REQUIRES HUMAN — DATASET IS EMPTY")
+        print("\n[STATUS] REQUIRES HUMAN — PROTOCOL AND COLLECTION HARNESS READY")
+        print("No human EMA records collected yet. Run Study Mode sessions (Settings -> Study Mode) or 'python scripts/ema_collector.py'.")
         return
 
     # 1. STRICT INTEGRITY & CONSENT REFUSAL CHECK

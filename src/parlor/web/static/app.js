@@ -3333,6 +3333,7 @@ function startWindowLogger() {
     };
 
     try {
+      // Discard any network errors gracefully without blocking timer
       await fetch('/api/study/window', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

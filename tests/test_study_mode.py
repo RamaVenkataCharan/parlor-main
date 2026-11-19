@@ -360,3 +360,9 @@ def test_ema_boundary_score_mappings(temp_storage: StudyStorage):
     assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s1", "q1_emotional_tension": 1, "q2_perceived_demand": 1, "q3_somatic_symptoms": 1})
     assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s2", "q1_emotional_tension": 2, "q2_perceived_demand": 2, "q3_somatic_symptoms": 1})
     assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s3", "q1_emotional_tension": 2, "q2_perceived_demand": 2, "q3_somatic_symptoms": 2})
+
+def test_multiple_sequential_withdrawals(temp_storage: StudyStorage):
+    """Withdrawing non-existent or multiple participants behaves deterministically."""
+    counts = temp_storage.withdraw_participant("NONEXISTENT")
+    assert counts["windows"] == 0
+    assert counts["registry"] == 0

@@ -1977,6 +1977,12 @@ input:checked + .slider::before {
   gap: 20px;
   color: #f1f5f9;
 }
+@media (max-width: 640px) {
+  .study-modal-dialog {
+    padding: 16px;
+    width: 95vw;
+  }
+}
 .study-modal-header {
   display: flex;
   align-items: center;

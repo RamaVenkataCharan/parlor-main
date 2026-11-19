@@ -46,6 +46,7 @@ EXCLUDED_DIRS = {
     "htmlcov",
     "models",
     "dist",
+    "study_data",
 }
 
 EXCLUDED_EXTENSIONS = {
@@ -62,6 +63,7 @@ EXCLUDED_EXTENSIONS = {
     ".sqlite",
     ".sqlite3",
     ".har",
+    ".jsonl",
 }
 
 EXCLUDED_FILES = {

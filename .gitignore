@@ -38,6 +38,8 @@ default.profraw
 # Personal data and runtime databases
 shared_state/wellness_history.db
 shared_state/*.db
+study_data/
+*.jsonl
 
 # Evidence artifacts that may contain session data
 evidence/browser/session_privacy.har

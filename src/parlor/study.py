@@ -153,6 +153,7 @@ class StudyStorage:
     def log_observation_window(self, window_data: Dict[str, Any]) -> str:
         """Appends a single observation window record to observation_windows.jsonl."""
         clean = self.sanitize_window_data(window_data)
+        # Ensure valid unique window identifier
         if "window_id" not in clean:
             clean["window_id"] = f"win_{int(time.time() * 1000)}"
         if "timestamp" not in clean:

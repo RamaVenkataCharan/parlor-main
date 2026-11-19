@@ -2570,3 +2570,7 @@ input:checked + .slider::before {
   background: #9f1239;
 }
 
+.study-input:focus-visible, .study-select:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}

@@ -47,6 +47,10 @@
   </nav>
 
   <div class="header-right">
+    <span id="studyModeBadge" class="study-badge" hidden title="Study mode: recording numeric features locally">
+      <span class="badge-icon">🧪</span> Study mode: recording numeric features locally
+    </span>
+
     <span id="simulatedInputBadge" class="simulated-badge" hidden title="Simulated stress input active">
       <span class="badge-icon">⚠️</span> SIMULATED INPUT
     </span>
@@ -122,6 +126,23 @@
         <span class="slider round"></span>
       </label>
     </div>
+
+    <div class="diag-section-title" style="margin-top:14px;">Study &amp; Validation Protocol</div>
+    <div class="diag-row">
+      <div class="diag-label-wrap">
+        <span class="diag-label">Study Mode</span>
+        <span class="diag-sublabel">Guided calibration &amp; validation session runner (consent-first, numeric logging)</span>
+      </div>
+      <label class="switch">
+        <input type="checkbox" id="studyModeToggle">
+        <span class="slider round"></span>
+      </label>
+    </div>
+    <div class="diag-row" style="gap:8px; margin-top:8px;">
+      <button id="btnLaunchStudy" class="btn-primary" type="button" style="flex:1; padding:8px 12px; font-size:12px;">Launch Study Runner</button>
+      <button id="btnExportStudyCsv" class="btn-secondary" type="button" style="padding:8px 12px; font-size:12px;" title="Export Anonymized CSV">Export CSV</button>
+      <button id="btnWithdrawParticipant" class="btn-danger" type="button" style="padding:8px 12px; font-size:12px;" title="Withdraw Participant Data">Withdraw</button>
+    </div>
   </div>
 </div>
 
@@ -184,6 +205,323 @@
   </div>
   <div class="exercise-actions">
     <button id="exerciseFinish" class="btn-primary" type="button">Finish Exercise</button>
+  </div>
+</div>
+
+<!-- Guided Study Mode Session Runner Modal -->
+<div id="studyModal" class="study-modal" hidden role="dialog" aria-label="Study Session Runner">
+  <div class="study-modal-backdrop"></div>
+  <div class="study-modal-dialog">
+    <div class="study-modal-header">
+      <div class="study-header-title">
+        <span class="study-icon">🧪</span>
+        <div>
+          <h3>Study Mode Session Runner</h3>
+          <span class="study-subhead">Consent-First Human Calibration &amp; Validation Protocol</span>
+        </div>
+      </div>
+      <button id="studyModalClose" class="diag-close" title="Close Study Runner">✕</button>
+    </div>
+
+    <!-- Wizard Steps Indicator -->
+    <div class="study-stepper">
+      <div id="stepDot1" class="step-dot active"><span class="dot-num">1</span> Consent &amp; Setup</div>
+      <div class="step-line"></div>
+      <div id="stepDot2" class="step-dot"><span class="dot-num">2</span> Sensor QA</div>
+      <div class="step-line"></div>
+      <div id="stepDot3" class="step-dot"><span class="dot-num">3</span> Guided Protocol</div>
+      <div class="step-line"></div>
+      <div id="stepDot4" class="step-dot"><span class="dot-num">4</span> Summary &amp; Data</div>
+    </div>
+
+    <!-- STAGE 1: Consent & Participant Setup -->
+    <div id="studyStageConsent" class="study-stage active">
+      <div class="study-notice-box">
+        <h4>Participant Consent &amp; Privacy Guarantee</h4>
+        <div class="study-consent-text">
+          <p><strong>Purpose:</strong> You are invited to participate in an evaluation of on-device affective wellness detection. The system estimates stress-related biometric markers (facial action units and vocal prosody) in real time.</p>
+          <p><strong>What is recorded:</strong> <em>Strictly numeric features</em> (action unit values, head pose angles, voice pitch, steadiness) and your survey ratings. <strong>NO video frames, raw audio recordings, or facial landmark meshes are EVER saved.</strong></p>
+          <p><strong>Privacy &amp; Local Storage:</strong> All computation and logging occur strictly on this local computer in local files (<code>study_data/</code>). Nothing is transmitted to external servers.</p>
+          <p><strong>Voluntary:</strong> Participation is voluntary. You may end the session or withdraw your data at any time with complete data erasure.</p>
+        </div>
+        <div class="study-checkbox-group">
+          <label class="study-check-label">
+            <input type="checkbox" id="studyAdultCheck">
+            <span><strong>I confirm that I am 18 years of age or older</strong> (Adults only).</span>
+          </label>
+          <label class="study-check-label">
+            <input type="checkbox" id="studyConsentCheck">
+            <span><strong>I understand that audio and facial landmarks are extracted locally in real-time on this device with zero external transmission, and that raw video/audio is immediately discarded. I agree to complete 3-item self-report ratings following observation windows.</strong></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="study-form-grid">
+        <div class="study-field">
+          <label for="studyParticipantCode">Participant Code</label>
+          <input type="text" id="studyParticipantCode" class="study-input" placeholder="e.g. P01" autocomplete="off">
+          <span class="field-hint">Auto-generated sequential anonymous code</span>
+        </div>
+        <div class="study-field">
+          <label for="studyParticipantRole">Participant Role</label>
+          <select id="studyParticipantRole" class="study-select">
+            <option value="external" selected>External Participant</option>
+            <option value="team">Team Member</option>
+          </select>
+          <span class="field-hint">Identifies cohort for safety / developer bias analysis</span>
+        </div>
+        <div class="study-field">
+          <label for="studyParticipantGroup">Study Group</label>
+          <select id="studyParticipantGroup" class="study-select">
+            <option value="calibration" selected>Calibration Cohort</option>
+            <option value="validation">Validation Cohort</option>
+          </select>
+          <span class="field-hint">One participant cannot belong to both groups</span>
+        </div>
+      </div>
+
+      <div id="studyParticipantWarning" class="study-warning-banner" hidden></div>
+
+      <div class="study-action-bar">
+        <button id="btnProceedToQuality" class="btn-primary" type="button" disabled>Proceed to Sensor Quality Check &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STAGE 2: Sensor Quality Check (~1 min) -->
+    <div id="studyStageQuality" class="study-stage" hidden>
+      <div class="quality-check-container">
+        <div class="quality-left">
+          <h4>Pre-Session Sensor Responsiveness Check (~1 min)</h4>
+          <p class="section-desc">Verify facial action unit and vocal tracking before starting the protocol.</p>
+          
+          <div class="qa-prompts-card">
+            <h5>Expression Prompts:</h5>
+            <ol class="qa-prompts-list">
+              <li><strong>1. Neutral Face:</strong> Relax facial muscles and look directly at screen.</li>
+              <li><strong>2. Brow Furrow:</strong> Knit eyebrows together (AU04 check).</li>
+              <li><strong>3. Eye Squint:</strong> Tighten lower eyelids (AU07 check).</li>
+              <li><strong>4. Lip Stretch / Smile:</strong> Stretch lips horizontally (AU20 check).</li>
+              <li><strong>5. Vocal Check:</strong> Say "One, two, three" aloud.</li>
+            </ol>
+          </div>
+
+          <div class="qa-checklist">
+            <div id="qaCheckCamera" class="qa-check-item fail"><span class="qa-icon">⚪</span> Camera stream active &amp; visible</div>
+            <div id="qaCheckFace" class="qa-check-item fail"><span class="qa-icon">⚪</span> Face detected &ge; 95% of frames (<span id="qaFacePct">0%</span>)</div>
+            <div id="qaCheckAUs" class="qa-check-item fail"><span class="qa-icon">⚪</span> AUs responsive between prompts (<span id="qaAuStatus">waiting</span>)</div>
+            <div id="qaCheckLight" class="qa-check-item fail"><span class="qa-icon">⚪</span> Lighting adequate (not underexposed)</div>
+            <div id="qaCheckSpeech" class="qa-check-item fail"><span class="qa-icon">⚪</span> Microphone &amp; speech detected (<span id="qaSpeechStatus">waiting</span>)</div>
+          </div>
+        </div>
+
+        <div class="quality-right">
+          <div class="qa-meters-card">
+            <h5>Live Signal Meters</h5>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">AU04 Brow</span>
+              <div class="metric-track"><div id="qaAU04Bar" class="metric-fill cyan" style="width:0%"></div></div>
+              <span id="qaAU04Val" class="qa-meter-val">0.00</span>
+            </div>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">AU07 Lid</span>
+              <div class="metric-track"><div id="qaAU07Bar" class="metric-fill cyan" style="width:0%"></div></div>
+              <span id="qaAU07Val" class="qa-meter-val">0.00</span>
+            </div>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">AU15 Lip Dep.</span>
+              <div class="metric-track"><div id="qaAU15Bar" class="metric-fill cyan" style="width:0%"></div></div>
+              <span id="qaAU15Val" class="qa-meter-val">0.00</span>
+            </div>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">AU20 Lip Str.</span>
+              <div class="metric-track"><div id="qaAU20Bar" class="metric-fill cyan" style="width:0%"></div></div>
+              <span id="qaAU20Val" class="qa-meter-val">0.00</span>
+            </div>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">Head Pose</span>
+              <span id="qaPoseVal" class="qa-meter-val">Yaw 0° Pitch 0° Roll 0°</span>
+            </div>
+            <div class="qa-meter-row">
+              <span class="qa-meter-label">Mic Energy</span>
+              <div class="metric-track"><div id="qaMicBar" class="metric-fill green" style="width:0%"></div></div>
+              <span id="qaMicVal" class="qa-meter-val">—</span>
+            </div>
+          </div>
+
+          <div id="qaGuidanceBox" class="qa-guidance-box info">
+            Center your face within the camera viewport and speak a short phrase to verify sensors.
+          </div>
+        </div>
+      </div>
+
+      <div class="study-action-bar">
+        <button id="btnBackToConsent" class="btn-secondary" type="button">&larr; Back to Consent</button>
+        <button id="btnStartProtocol" class="btn-primary" type="button" disabled>Start 12-Minute Guided Protocol &rarr;</button>
+      </div>
+    </div>
+
+    <!-- STAGE 3: Guided Protocol (4 x 3 min) -->
+    <div id="studyStageProtocol" class="study-stage" hidden>
+      <div class="protocol-runner-container">
+        <!-- Step tabs indicator -->
+        <div class="protocol-steps-nav">
+          <div id="protoStep1Pill" class="proto-step-pill active">1. Rest (3m)</div>
+          <div id="protoStep2Pill" class="proto-step-pill">2. Neutral Speech (3m)</div>
+          <div id="protoStep3Pill" class="proto-step-pill">3. Stressor Task (3m)</div>
+          <div id="protoStep4Pill" class="proto-step-pill">4. Recovery (3m)</div>
+        </div>
+
+        <div class="protocol-card-main">
+          <div class="protocol-top-bar">
+            <div>
+              <span id="protocolStepBadge" class="protocol-badge">Step 1 of 4</span>
+              <h3 id="protocolStepTitle">Baseline Rest</h3>
+              <p id="protocolStepDesc" class="protocol-desc">Sit quietly, breathe naturally, and look towards the screen. Baseline calibration is recording.</p>
+            </div>
+            <div class="protocol-timer-wrap">
+              <div id="protocolCountdown" class="protocol-timer">03:00</div>
+              <span class="timer-sublabel">remaining in step</span>
+            </div>
+          </div>
+
+          <!-- Interactive Content Panel (Dynamic per step) -->
+          <div id="protocolContentPanel" class="protocol-content-panel">
+            <!-- Step 1: Rest Content -->
+            <div id="stepContentRest" class="step-content-pane">
+              <div class="rest-visual">
+                <span class="rest-icon">🧘</span>
+                <p>Relax, keep your eyes open, and breathe naturally. No action is required during this step.</p>
+              </div>
+            </div>
+
+            <!-- Step 2: Speech Content -->
+            <div id="stepContentSpeech" class="step-content-pane" hidden>
+              <div class="speech-prompts-box">
+                <h4>Suggested Speaking Prompts:</h4>
+                <ul>
+                  <li><strong>Daily Routine:</strong> Describe what you normally do from waking up to starting work or classes.</li>
+                  <li><strong>Favorite Film / Book:</strong> Summarize the plot of a movie or book you enjoyed recently.</li>
+                  <li><strong>Recipe:</strong> Walk through the exact steps to prepare your favorite dish.</li>
+                </ul>
+                <p class="field-hint">Speak in a normal, relaxed conversational tone.</p>
+              </div>
+            </div>
+
+            <!-- Step 3: Timed Stressor Task (Mental Arithmetic) -->
+            <div id="stepContentStressor" class="step-content-pane" hidden>
+              <div class="stressor-box">
+                <div class="math-card">
+                  <div class="math-score-bar">
+                    <span>Speed Mental Arithmetic</span>
+                    <span id="mathScore">Correct: 0 &bull; Errors: 0</span>
+                  </div>
+                  <div id="mathEquation" class="math-equation">47 + 68 = ?</div>
+                  <div class="math-input-row">
+                    <input type="number" id="mathAnswerInput" class="study-input math-input" placeholder="Enter answer" autocomplete="off">
+                    <button id="btnMathSubmit" class="btn-primary" type="button">Submit</button>
+                  </div>
+                  <div id="mathFeedback" class="math-feedback" hidden></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Recovery Content -->
+            <div id="stepContentRecovery" class="step-content-pane" hidden>
+              <div class="rest-visual">
+                <span class="rest-icon">🌿</span>
+                <p>Quiet recovery. Sit comfortably, look towards the screen, and allow your physiology to settle.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="protocol-footer-bar">
+            <span class="blinded-pill">🔒 Blinding Active &bull; Numeric Features Logging</span>
+            <button id="btnSkipStep" class="btn-secondary" type="button" title="Advance to next step for testing / early finish">Skip / Next Step &rarr;</button>
+          </div>
+        </div>
+
+        <!-- Post-Step EMA Survey Overlay -->
+        <div id="studyEmaOverlay" class="study-ema-overlay" hidden>
+          <div class="study-ema-dialog">
+            <div class="ema-header">
+              <span class="ema-icon">📝</span>
+              <div>
+                <h4 id="emaSurveyStepTitle">Step Evaluation — Self-Report Rating</h4>
+                <span class="ema-subhead">Please rate your experience during the completed step</span>
+              </div>
+            </div>
+
+            <div class="ema-questions-list">
+              <div class="ema-q-card">
+                <p class="ema-q-text">1. How emotionally tense or stressed did you feel during this step?</p>
+                <div class="ema-radio-group">
+                  <label><input type="radio" name="emaQ1" value="1" checked> 1<br><small>Not at all</small></label>
+                  <label><input type="radio" name="emaQ1" value="2"> 2<br><small>Mildly</small></label>
+                  <label><input type="radio" name="emaQ1" value="3"> 3<br><small>Moderately</small></label>
+                  <label><input type="radio" name="emaQ1" value="4"> 4<br><small>Noticeably</small></label>
+                  <label><input type="radio" name="emaQ1" value="5"> 5<br><small>Extremely</small></label>
+                </div>
+              </div>
+
+              <div class="ema-q-card">
+                <p class="ema-q-text">2. How mentally demanding was this step?</p>
+                <div class="ema-radio-group">
+                  <label><input type="radio" name="emaQ2" value="1" checked> 1<br><small>Not at all</small></label>
+                  <label><input type="radio" name="emaQ2" value="2"> 2<br><small>Manageable</small></label>
+                  <label><input type="radio" name="emaQ2" value="3"> 3<br><small>Slightly strained</small></label>
+                  <label><input type="radio" name="emaQ2" value="4"> 4<br><small>Struggling</small></label>
+                  <label><input type="radio" name="emaQ2" value="5"> 5<br><small>Overwhelmed</small></label>
+                </div>
+              </div>
+
+              <div class="ema-q-card">
+                <p class="ema-q-text">3. Did you notice any physical tension (jaw, brow, shoulders, heart rate)?</p>
+                <div class="ema-radio-group">
+                  <label><input type="radio" name="emaQ3" value="1" checked> 1<br><small>None</small></label>
+                  <label><input type="radio" name="emaQ3" value="2"> 2<br><small>Slight/Fleeting</small></label>
+                  <label><input type="radio" name="emaQ3" value="3"> 3<br><small>Mild</small></label>
+                  <label><input type="radio" name="emaQ3" value="4"> 4<br><small>Distinct tightness</small></label>
+                  <label><input type="radio" name="emaQ3" value="5"> 5<br><small>Severe</small></label>
+                </div>
+              </div>
+            </div>
+
+            <div class="study-action-bar">
+              <button id="btnSubmitEmaSurvey" class="btn-primary" type="button">Save Rating &amp; Proceed &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 4: QA Summary & Data Operations -->
+    <div id="studyStageSummary" class="study-stage" hidden>
+      <div class="qa-summary-container">
+        <div class="summary-top">
+          <span class="summary-check-icon">✅</span>
+          <h3>Study Session Complete</h3>
+          <p class="section-desc">Paired biometric observation windows and EMA survey ratings have been saved locally.</p>
+        </div>
+
+        <div class="qa-summary-table-wrap">
+          <table class="qa-summary-table">
+            <tbody>
+              <tr><th>Participant Code:</th><td id="sumParticipantCode">—</td><th>Group:</th><td id="sumGroup">—</td></tr>
+              <tr><th>Role:</th><td id="sumRole">—</td><th>Total Duration:</th><td id="sumDuration">—</td></tr>
+              <tr><th>Step 1 (Rest):</th><td id="sumStep1Quality">—</td><th>Step 2 (Speech):</th><td id="sumStep2Quality">—</td></tr>
+              <tr><th>Step 3 (Stressor):</th><td id="sumStep3Quality">—</td><th>Step 4 (Recovery):</th><td id="sumStep4Quality">—</td></tr>
+              <tr><th>Signal Quality:</th><td id="sumSignalQuality">100% Valid (No Dropouts)</td><th>Raw Media Storage:</th><td>ZERO (Sanitized Numeric Only)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="summary-actions-grid">
+          <button id="btnSummaryExportCsv" class="btn-primary" type="button">Download Anonymized CSV</button>
+          <button id="btnSummaryWithdraw" class="btn-danger" type="button">Withdraw Participant &amp; Erase Data</button>
+          <button id="btnSummaryDone" class="btn-secondary" type="button">Finish &amp; Close Runner</button>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -596,6 +934,13 @@
         <h2>Wellness Overview</h2>
       </div>
       <span class="rail-sublabel">Personal monitoring & resets</span>
+    </div>
+
+    <!-- Blinding Notice during Active Study Session -->
+    <div id="studyBlindedOverlay" class="study-blinded-banner" hidden>
+      <div class="blinded-icon">🔒</div>
+      <h4>Study Protocol Active · Blinded</h4>
+      <p>Real-time affective telemetry and wellness interventions are blinded to prevent participant confirmation bias. Background numeric logging remains active.</p>
     </div>
 
     <!-- Current Affective State Tier Card -->

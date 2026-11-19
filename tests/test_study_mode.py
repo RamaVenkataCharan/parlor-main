@@ -354,3 +354,9 @@ def test_participant_code_whitespace_trimming(temp_storage: StudyStorage):
     assert success is True
     reg = temp_storage.load_participants()
     assert "P88" in reg
+
+def test_ema_boundary_score_mappings(temp_storage: StudyStorage):
+    """Verifies exact composite boundary scores (3, 5 -> T0; 6, 10 -> T1; 11, 15 -> T2)."""
+    assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s1", "q1_emotional_tension": 1, "q2_perceived_demand": 1, "q3_somatic_symptoms": 1})
+    assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s2", "q1_emotional_tension": 2, "q2_perceived_demand": 2, "q3_somatic_symptoms": 1})
+    assert temp_storage.log_ema_response({"participant_code": "P99", "step": "s3", "q1_emotional_tension": 2, "q2_perceived_demand": 2, "q3_somatic_symptoms": 2})

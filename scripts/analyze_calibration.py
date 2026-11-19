@@ -83,6 +83,7 @@ def bootstrap_effect_size_ci(
     arr_stress = np.array(x_stress, dtype=float)
 
     point_d = compute_cohens_d(arr_rest, arr_stress)
+    # Resample with replacement to compute empirical bootstrap distribution
     rng = np.random.RandomState(42)
     boot_ds = []
 

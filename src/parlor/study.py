@@ -25,6 +25,11 @@ from typing import Any, Dict, List, Optional, Tuple
 ROOT_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_STUDY_DIR = ROOT_DIR / "study_data"
 
+# EMA Likert composite score boundaries (3-15 scale)
+EMA_TIER0_MAX: int = 5
+EMA_TIER1_MAX: int = 10
+EMA_TIER2_MAX: int = 15
+
 
 class StudyValidationError(ValueError):
     """Raised when participant validation, consent, or group separation rules are violated."""

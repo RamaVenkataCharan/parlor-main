@@ -180,9 +180,9 @@ class StudyStorage:
         clean["composite_score"] = composite
 
         if "mapped_tier" not in clean:
-            if composite <= 5:
+            if composite <= EMA_TIER0_MAX:
                 clean["mapped_tier"] = 0
-            elif composite <= 10:
+            elif composite <= EMA_TIER1_MAX:
                 clean["mapped_tier"] = 1
             else:
                 clean["mapped_tier"] = 2

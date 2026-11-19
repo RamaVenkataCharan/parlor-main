@@ -247,7 +247,7 @@ def run_analysis(
     except Exception as e:
         print(f"\n[PLOTS NOTE] Could not render matplotlib plot ({e}). Proceeding with text report.")
 
-    # Write CALIBRATION_REPORT.md
+    # Write CALIBRATION_REPORT.md with formatted tables and metric interpretations
     report_path.parent.mkdir(parents=True, exist_ok=True)
     with open(report_path, "w", encoding="utf-8") as f:
         f.write("# Parlor Human Calibration Analysis Report\n\n")

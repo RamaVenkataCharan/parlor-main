@@ -281,6 +281,7 @@ def evaluate(file_path: Path):
     print(f"  Quadratic-Weighted Kappa  : {qw_kappa:.3f}")
 
     # 4. 3x3 CONFUSION MATRIX
+    # Fixed-width ASCII confusion matrix terminal output
     matrix = np.zeros((3, 3), dtype=int)
     for gt, pred in zip(y_true, y_pred):
         if 0 <= gt < 3 and 0 <= pred < 3:

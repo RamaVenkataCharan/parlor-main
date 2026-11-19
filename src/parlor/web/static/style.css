@@ -1900,6 +1900,7 @@ input:checked + .slider::before {
 /* ── Study Mode & Participant Protocol Runner ── */
 .study-badge {
   display: inline-flex;
+  transition: all 0.2s ease-in-out;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;

@@ -133,11 +133,11 @@ class StudyStorage:
     @staticmethod
     def sanitize_window_data(data: Dict[str, Any]) -> Dict[str, Any]:
         """Enforces that NO raw media (images, frames, audio buffers, mesh points) is stored."""
-        forbidden_keys = {
+        forbidden_keys = frozenset({
             "image", "frame", "frame_b64", "raw_image", "img",
             "audio", "audio_b64", "pcm_bytes", "samples", "raw_audio",
             "mesh_points", "landmarks", "raw_landmarks", "video_buffer"
-        }
+        })
         clean = {}
         for k, v in data.items():
             if k.lower() in forbidden_keys:

@@ -204,6 +204,11 @@ class StudyStorage:
             f.write(json.dumps(clean) + "\n")
         return str(clean["session_id"])
 
+    def get_participant_status(self, participant_code: str) -> Optional[Dict[str, Any]]:
+        """Retrieves registration record for a given participant code."""
+        registry = self.load_participants()
+        return registry.get(participant_code.strip().upper())
+
     # ── Participant Withdrawal (Data Erasure) ────────────────────────────────
 
     def withdraw_participant(self, participant_code: str) -> Dict[str, int]:
